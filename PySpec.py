@@ -297,16 +297,21 @@ class FitMainGui(QtWidgets.QMainWindow):
     def fit_try(self):
         # get fitting parameters
         self.get_par()
+
         if not self.fit_stat.stat:
-            # get fit function
-            f = self.fit_par.get_function()
-            # re-load data with boxcar win and rescale
-            xdata, ydata = self.load_data()
-            popt, uncertainty, noise, ppoly, self.fit_stat.stat = sflib.fit_spectrum(f,
+            if self.fit_par.peak:
+                # get fit function
+                f = self.fit_par.get_function()
+                # re-load data with boxcar win and rescale
+                xdata, ydata = self.load_data()
+                popt, uncertainty, noise, ppoly, self.fit_stat.stat = sflib.fit_spectrum(f,
                 xdata, ydata, self.fit_par.par, self.fit_par.deg, self.fit_par.smooth_edge)
+            else:    # if no peak, fit baseline
+                xdata, ydata = self.load_data()
+                popt, uncertainty, noise, ppoly, self.fit_stat.stat = sflib.fit_baseline(xdata, ydata, self.fit_par.deg)
 
         # if fit successful, plot fit
-        if not self.fit_stat.stat:
+        if not self.fit_stat.stat and self.fit_par.peak:
             # Make plot for successful fit
             fit = f.get_func()(xdata, *popt)
             baseline = np.polyval(ppoly, xdata - np.median(xdata))
@@ -314,6 +319,14 @@ class FitMainGui(QtWidgets.QMainWindow):
             self.statusbar.showMessage('Noise {:.4f}'.format(noise))
             self.plot_spect(xdata, ydata, fit, baseline)
             # concatenate data table
+            data_table = np.column_stack((xdata, ydata, fit, baseline))
+            return data_table, popt, uncertainty, ppoly
+        elif not self.fit_stat.stat:
+            baseline = np.polyval(ppoly, xdata - np.median(xdata))
+            residual = ydata - baseline
+            fit = np.zeros_like(ydata)
+            self.statusbar.showMessage('Noise {:.4f}'.format(noise))
+            self.plot_spect(xdata, ydata, fit, baseline)
             data_table = np.column_stack((xdata, ydata, fit, baseline))
             return data_table, popt, uncertainty, ppoly
         else:

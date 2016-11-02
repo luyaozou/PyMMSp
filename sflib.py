@@ -239,6 +239,21 @@ def noise_db(x, residual, baseline_idx):
     return np.std(newres[baseline_idx], dtype=np.float64), res_smooth
 
 
+def fit_baseline(xdata, ydata, deg):
+    ''' Simply fit polynomial baseline '''
+
+    xshift = xdata - np.median(xdata)
+    try:
+        ppoly = np.polyfit(xshift, ydata, deg)
+        baseline = np.polyval(ppoly, xshift)
+        noise = np.std(ydata - baseline)
+        fake_popt = np.array([0, 0, 0])
+        return fake_popt, 0, noise, ppoly, 0
+    except (TypeError, ValueError, RuntimeError):
+        stat = 4           # error: baseline fit failed
+        return [], [], 0, [], stat
+
+
 def get_delm(testline):
     ''' Analyse delimiter in a line '''
     try:
@@ -370,11 +385,14 @@ def save_log(out_name, popt, uncertainty, ppoly, ftype, der, peak, parname):
     # Write info to log file
     with open(out_name, 'w', newline='') as outlog:
         outlog.write('{0:s} {1:d} derivative fit\n'.format(ftype_str, der))
-        for k in range(0, peak):
-            outlog.write('------ Parameters Set {0:d}------\n'.format(k+1))
-            for n in range(0,3):
-                outlog.write('{0:10s}{1:.6f} ({2:.6f})\n'.format(
-                             parname[n], popt[n+3*k], uncertainty[n+3*k]))
+        if not peak:    # if 0 peak
+            outlog.write('------ No peak -----\n')
+        else:
+            for k in range(0, peak):
+                outlog.write('------ Parameters Set {0:d}------\n'.format(k+1))
+                for n in range(0,3):
+                    outlog.write('{0:10s}{1:.6f} ({2:.6f})\n'.format(
+                                 parname[n], popt[n+3*k], uncertainty[n+3*k]))
         outlog.write('------------------------------\n\n')
         outlog.write(baseline_str)
     return None
