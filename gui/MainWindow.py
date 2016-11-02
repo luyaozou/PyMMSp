@@ -14,19 +14,19 @@ class MainWindow(QtGui.QMainWindow):
 
         # Set global window properties
         self.setWindowTitle(self.title_text)
-        self.setMinimumWidth(800)
-        self.setMinimumHeight(600)
+        self.setMinimumWidth(1200)
+        self.setMinimumHeight(800)
 
         # Set main window layout
         self.mainLayout = QtGui.QGridLayout()
         self.mainLayout.setSpacing(6)
-        self.mainLayout.addWidget(SynCtrl(self), 0, 0)
-        self.mainLayout.addWidget(LockinCtrl(self), 1, 0)
-        self.mainLayout.addWidget(ScopeCtrl(self), 2, 0)
-        self.mainLayout.addWidget(CavityCtrl(self), 3, 0)
-        self.mainLayout.addWidget(ScopeMonitor(self), 0, 1)
-        self.mainLayout.addWidget(PowerMonitor(self), 0, 2)
-        self.mainLayout.addWidget(SpectrumMonitor(self), 0, 3)
+        self.mainLayout.addWidget(SynCtrl(self), 0, 0, 1, 2)
+        self.mainLayout.addWidget(LockinCtrl(self), 1, 0, 1, 2)
+        self.mainLayout.addWidget(ScopeCtrl(self), 2, 0, 1, 2)
+        self.mainLayout.addWidget(CavityCtrl(self), 3, 0, 1, 2)
+        self.mainLayout.addWidget(ScopeMonitor(self), 0, 2, 1, 4)
+        self.mainLayout.addWidget(LockinMonitor(self), 1, 2, 1, 4)
+        self.mainLayout.addWidget(SpectrumMonitor(self), 2, 2, 1, 4)
 
         # Enable main window
         self.mainWidget = QtGui.QWidget()
