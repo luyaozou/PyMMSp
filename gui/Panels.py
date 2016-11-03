@@ -85,13 +85,16 @@ class SynCtrl(QtGui.QWidget):
 
         ## -- Define synthesizer power switch
         synPowerToggle = QtGui.QCheckBox()
-        synPowerManualInput = QtGui.QPushButton('Manual Power')
+        synPowerToggle.setCheckState(False)
+        synPowerManualInput = QtGui.QPushButton('Set Power')
+
+        self.synCurrentPower = QtGui.QLabel()
+        self.synCurrentPower.setText('{:d} dbm'.format(synapi.read_syn_power()))
         synPowerLayout = QtGui.QHBoxLayout()
-        synpower = synapi.read_syn_power()
         synPowerLayout.addWidget(QtGui.QLabel('Synthesizer On'))
         synPowerLayout.addWidget(synPowerToggle)
         synPowerLayout.addWidget(QtGui.QLabel('Current Power'))
-        synPowerLayout.addWidget(QtGui.QLabel('{:d} dbm'.format(synpower)))
+        synPowerLayout.addWidget(self.synCurrentPower)
         synPowerLayout.addWidget(synPowerManualInput)
         synPowerCtrl = QtGui.QWidget()
         synPowerCtrl.setLayout(synPowerLayout)
@@ -113,6 +116,10 @@ class SynCtrl(QtGui.QWidget):
         QObject.connect(self.modDepthFill, QtCore.SIGNAL("textChanged(const QString)"), self.modParComm)
         QObject.connect(self.modToggle, QtCore.SIGNAL("stateChanged(int)"), self.modToggleComm)
 
+        # Trigger synthesizer power toggle and communication
+        QObject.connect(synPowerManualInput, QtCore.SIGNAL("clicked()"), self.synPowerComm)
+        QObject.connect(synPowerToggle, QtCore.SIGNAL("stateChanged(int)"), self.synPowerDialog)
+
     def freqComm(self):
         '''
             Communicate with the synthesizer and update frequency setting.
@@ -120,11 +127,39 @@ class SynCtrl(QtGui.QWidget):
 
         # return communication status
         syn_stat = synapi.set_syn_freq(self.probfreqFill.text(),
-                                      self.bandSelect.currentIndex())
+                                       self.bandSelect.currentIndex())
         # update synthesizer frequency
         self.synfreq.setText('{:.12f}'.format(synapi.read_syn_freq()))
         # set sheet border color by syn_stat
         self.probfreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(syn_stat)))
+
+    def synPowerComm(self):
+        '''
+            Communicate with the synthesizer and set up RF power.
+        '''
+
+        # Get current syn power
+        synpower = synapi.read_syn_power()
+        self.synCurrentPower.setText('{:d} dbm'.format(synpower))
+        # Grab manual input power
+        synpower, stat = QtGui.QInputDialog.getInt(self, 'Synthesizer RF Power'
+                                    'Manual Input (-20 to 0)', synpower, -20, 0, 1)
+        synapi.set_syn_power(int_value)
+
+
+    def synPowerDialog(self, toggle_stat):
+        '''
+            Pop-up warning window when user trigger the synthesizer toggle
+        '''
+
+        stat = synapi.syn_power_toggle(toggle_stat)
+
+        if not stat:        # Normal
+            pass
+        else:               # Warning
+            QtGui.QMessageBox('Warning')
+
+
 
     def modModeComm(self):
         '''

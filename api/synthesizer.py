@@ -15,6 +15,14 @@ def read_syn_power():
     return -20
 
 
+def set_syn_power(power):
+    ''' Set synthesizer power '''
+    if power > 0 or power < 20:
+        return 1
+    else:
+        return 0
+
+
 def read_syn_freq():
     ''' Read current synthesizer frequecy '''
 
@@ -22,7 +30,10 @@ def read_syn_freq():
 
 def set_syn_freq(probfreqtext, band_index):
     ''' Set the synthesizer frequency to freq.
-        Returns communication status.
+        Arguments
+            probfreqtext: str (user input)
+            band_index:   int (list index)
+        Returns communication status
             0: safe
             1: fatal
     '''
@@ -41,8 +52,8 @@ def set_syn_freq(probfreqtext, band_index):
 
 def read_mod_par():
     ''' Read current modulation setting.
-        Returns:
-            freq: mod freq, str
+        Returns
+            freq:  mod freq, str
             depth: mod depth, str
     '''
 
@@ -51,6 +62,7 @@ def read_mod_par():
 
 def set_mod_mode(mod_index):
     ''' Set synthesizer modulation mode.
+        Arguments: mod_index, int
             0: no modulation
             1: AM
             2: FM
@@ -80,7 +92,11 @@ def set_mod_mode(mod_index):
 
 def set_am(freqtext, depthtext, toggle_bool):
     ''' Set synthesizer AM to freq and depth.
-        Returns freq_stat and depth_stat:
+        Arguments
+            freqtext: str (user input)
+            depthtext: str (user input)
+            toggle_bool: boolean
+        Returns freq_stat and depth_stat
             0: safe
             1: fatal
             2: warning
@@ -114,7 +130,11 @@ def set_am(freqtext, depthtext, toggle_bool):
 
 def set_fm(freqtext, depthtext, toggle_bool):
     ''' Set synthesizer FM to freq and depth.
-        Returns freq_stat and depth_stat:
+        Arguments
+            freqtext: str (user input)
+            depthtext: str (user input)
+            toggle_bool: boolean
+        Returns freq_stat and depth_stat
             0: safe
             1: fatal
             2: warning
@@ -149,7 +169,12 @@ def set_fm(freqtext, depthtext, toggle_bool):
 
 
 def mod_toggle(toggle_bool):
-    ''' Turn on/off modulation '''
+    ''' Turn on/off modulation.
+        Arguments
+            toggle_bool: boolean
+        Returns
+            None
+    '''
 
     if toggle_bool:
         print('On')
