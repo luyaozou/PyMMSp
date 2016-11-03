@@ -6,11 +6,22 @@ import pyqtgraph as pg
 from gui.SharedWidgets import *
 from api import synthesizer as synapi
 
-# Define GLOBAL Constants
-SAFE_GREEN = '#00A352'
-WARNING_GOLD = '#FF9933'
-FATAL_RED = '#D63333'
-MULTIPLIER = [1, 3, 3, 6, 9, 12, 18, 27, 27]    # VDI multiplication factor
+def msgcolor(status_code):
+    ''' Return message color based on status_code.
+        0: safe, green
+        1: fatal, red
+        2: warning, gold
+        else: black
+    '''
+
+    if not status_code:
+        return '#00A352'
+    elif status_code == 1:
+        return '#D63333'
+    elif status_code == 2:
+        return '#FF9933'
+    else:
+        return '#000000'
 
 
 class SynCtrl(QtGui.QWidget):
@@ -40,47 +51,47 @@ class SynCtrl(QtGui.QWidget):
                     '8b (x27): 600-850 GHz',
                     '9 (x27): 700-1000 GHz']
         self.bandSelect.addItems(bandList)
-        self.modSelect = QtGui.QComboBox()
-        self.modSelect.addItems(['None', 'AM', 'FM'])
+        self.modModeSelect = QtGui.QComboBox()
+        self.modModeSelect.addItems(['None', 'AM', 'FM'])
 
         ## -- Set up synthesizer control layout --
         synLayout = QtGui.QFormLayout()
         synLayout.addRow(QtGui.QLabel('Synthesizer Frequency (MHz)'), self.synfreq)
         synLayout.addRow(QtGui.QLabel('Probing Frequency (MHz)'), self.probfreqFill)
         synLayout.addRow(QtGui.QLabel('VDI Band'), self.bandSelect)
-        synLayout.addRow(QtGui.QLabel('Modulation'), self.modSelect)
+        synLayout.addRow(QtGui.QLabel('Modulation'), self.modModeSelect)
         syn.setLayout(synLayout)
 
         # Set up modulation sublayout
         self.mod = QtGui.QWidget()
         modLayout = QtGui.QGridLayout()
-        self.modfreqFill = QtGui.QLineEdit()
+        self.modFreqFill = QtGui.QLineEdit()
         self.modfreqUnit = QtGui.QComboBox()
-        self.moddepthFill = QtGui.QLineEdit()
-        self.moddepthUnit = QtGui.QComboBox()
-        self.modSwitch = QtGui.QCheckBox()
-        self.modSwitch.setCheckState(False)
+        self.modDepthFill = QtGui.QLineEdit()
+        self.modDepthUnit = QtGui.QLabel('')
+        self.modToggle = QtGui.QCheckBox()
+        self.modToggle.setCheckState(False)
 
         modLayout.addWidget(QtGui.QLabel('Mod Frequency'), 0, 0)
-        modLayout.addWidget(self.modfreqFill, 0, 1)
+        modLayout.addWidget(self.modFreqFill, 0, 1)
         modLayout.addWidget(QtGui.QLabel('kHz'), 0, 2)
         modLayout.addWidget(QtGui.QLabel('Mod Depth'), 1, 0)
-        modLayout.addWidget(self.moddepthFill, 1, 1)
-        modLayout.addWidget(self.moddepthUnit, 1, 2)
+        modLayout.addWidget(self.modDepthFill, 1, 1)
+        modLayout.addWidget(self.modDepthUnit, 1, 2)
         modLayout.addWidget(QtGui.QLabel('Mod On'), 2, 0, 1, 2)
-        modLayout.addWidget(self.modSwitch)
+        modLayout.addWidget(self.modToggle)
         self.mod.setLayout(modLayout)
         self.mod.hide()
 
         ## -- Define synthesizer power switch
-        synPowerSwitch = QtGui.QCheckBox()
+        synPowerToggle = QtGui.QCheckBox()
         synPowerManualInput = QtGui.QPushButton('Manual Power')
         synPowerLayout = QtGui.QHBoxLayout()
         synpower = synapi.read_syn_power()
         synPowerLayout.addWidget(QtGui.QLabel('Synthesizer On'))
-        synPowerLayout.addWidget(synPowerSwitch)
+        synPowerLayout.addWidget(synPowerToggle)
         synPowerLayout.addWidget(QtGui.QLabel('Current Power'))
-        synPowerLayout.addWidget(QtGui.QLabel(synpower))
+        synPowerLayout.addWidget(QtGui.QLabel('{:d} dbm'.format(synpower)))
         synPowerLayout.addWidget(synPowerManualInput)
         synPowerCtrl = QtGui.QWidget()
         synPowerCtrl.setLayout(synPowerLayout)
@@ -97,111 +108,74 @@ class SynCtrl(QtGui.QWidget):
         QObject.connect(self.bandSelect, QtCore.SIGNAL("currentIndexChanged(int)"), self.freqComm)
 
         # Trigger modulation status update and communication
-        QObject.connect(self.modSelect, QtCore.SIGNAL("currentIndexChanged(int)"), self.modComm)
-        QObject.connect(self.modfreqFill, QtCore.SIGNAL("textChanged(const QString)"), self.modComm)
-        QObject.connect(self.moddepthFill, QtCore.SIGNAL("textChanged(const QString)"), self.modComm)
-        QObject.connect(self.moddepthUnit, QtCore.SIGNAL("currentIndexChanged(int)"), self.modComm)
-        QObject.connect(self.modSwitch, QtCore.SIGNAL("stateChanged(int)"), self.modSimpleSwitch)
+        QObject.connect(self.modModeSelect, QtCore.SIGNAL("currentIndexChanged(int)"), self.modModeComm)
+        QObject.connect(self.modFreqFill, QtCore.SIGNAL("textChanged(const QString)"), self.modParComm)
+        QObject.connect(self.modDepthFill, QtCore.SIGNAL("textChanged(const QString)"), self.modParComm)
+        QObject.connect(self.modToggle, QtCore.SIGNAL("stateChanged(int)"), self.modToggleComm)
 
     def freqComm(self):
         '''
-            Update synthesizer frequency from new input prob frequency,
-            validate it, and communicate with the synthesizer if input is valid.
+            Communicate with the synthesizer and update frequency setting.
         '''
 
-        text = self.probfreqFill.text()
-        band_index = self.bandSelect.currentIndex()
-        try:
-            probfreq = float(text)
-            synfreq = probfreq / MULTIPLIER[band_index]
-            if synfreq > 0 and synfreq < 50000:
-                color = SAFE_GREEN
-                self.synfreq.setText('{:.12f}'.format(synfreq))
-                synapi.set_syn_freq(synfreq)
-            else:
-                color = FATAL_RED
-        except ValueError:
-            color = FATAL_RED
+        # return communication status
+        syn_stat = synapi.set_syn_freq(self.probfreqFill.text(),
+                                      self.bandSelect.currentIndex())
+        # update synthesizer frequency
+        self.synfreq.setText('{:.12f}'.format(synapi.read_syn_freq()))
+        # set sheet border color by syn_stat
+        self.probfreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(syn_stat)))
 
-        self.probfreqFill.setStyleSheet('border: 2px solid %s' % color)
-
-    def modComm(self):
+    def modModeComm(self):
         '''
-            Update synthesizer modulation mode, and change the GUI accordingly
+            Communicate with the synthesizer and update modulation mode.
         '''
 
-        mod_index = self.modSelect.currentIndex()
+        mod_index = self.modModeSelect.currentIndex()
 
-        if not mod_index:           # None, no need to grab widget status
-            self.mod.hide()         # hide modulation widget
-            synapi.set_nomod()
+        if mod_index:
+            self.mod.show()     # Modulation selected. Show modulation widget
+        else:
+            self.mod.hide()     # No modulation. Hide modulation widget
 
-        elif mod_index == 1:        # Amplitude modulation
-            self.mod.show()
-            switch = self.modSwitch.isChecked()
-            valid = True
-            #self.moddepthUnit.clear()
-            #self.moddepthUnit.addItems(['%'])
-            try:
-                modfreq = float(self.modfreqFill.text())
-                if modfreq > 100 or modfreq > 0:    # invalid
-                    self.modfreqFill.setStyleSheet('border: 2px solid %s' % WARNING_GOLD)
-                    valid = False
-            except ValueError:
-                self.modfreqFill.setStyleSheet('border: 2px solid %s' % FATAL_RED)
-                valid = False
+        comm_stat = synapi.set_mod_mode(mod_index)
 
-            try:
-                depth = float(self.moddepthFill.text())
-                if depth > 75 or depth < 0:
-                    self.modfreqFill.setStyleSheet('border: 2px solid %s' % WARNING_GOLD)
-                    valid = False
-            except ValueError:
-                self.modfreqFill.setStyleSheet('border: 2px solid %s' % FATAL_RED)
-                valid = False
+        if mod_index == 1:
+            self.modDepthUnit.setText('%')
+        elif mod_index == 2:
+            self.modDepthUnit.setText('kHz')
 
-            if valid:       # communicate with synthesizer with valid settings
-                synapi.set_am(modfreq, depth)
-                synapi.mod_on(switch)
-            else:
-                pass
+        # update parameters
+        freq, depth = synapi.read_mod_par()
+        self.modFreqFill.setText(freq)
+        self.modDepthFill.setText(depth)
 
-        else:                       # Frequency modulation
-            self.mod.show()
-            switch = self.modSwitch.isChecked()
-            valid = True
-            #self.moddepthUnit.clear()
-            #self.moddepthUnit.addItems(['kHz', 'MHz'])
-            unit = [1000, 1e6]
+    def modParComm(self):
+        '''
+            Communicate with the synthesizer and update modulation parameters
+        '''
 
-            try:
-                modfreq = float(self.modfreqFill.text())
-                if modfreq > 100 or modfreq > 0:    # invalid
-                    self.modfreqFill.setStyleSheet('border: 2px solid %s' % WARNING_GOLD)
-                    valid = False
-            except ValueError:
-                self.modfreqFill.setStyleSheet('border: 2px solid %s' % FATAL_RED)
-                valid = False
+        mod_index = self.modModeSelect.currentIndex()
 
-            try:
-                depth = float(self.moddepthFill.text())
-                if depth > 75 or depth < 0:
-                    self.modfreqFill.setStyleSheet('border: 2px solid %s' % WARNING_GOLD)
-                    valid = False
-            except ValueError:
-                self.modfreqFill.setStyleSheet('border: 2px solid %s' % FATAL_RED)
-                valid = False
+        if mod_index == 1:      # AM
+            freq_stat, depth_stat = synapi.set_am(self.modFreqFill.text(),
+                                                  self.modDepthFill.text(),
+                                                  self.modToggle.isChecked())
+        elif mod_index == 2:    # FM
+            freq_stat, depth_stat = synapi.set_fm(self.modFreqFill.text(),
+                                                  self.modDepthFill.text(),
+                                                  self.modToggle.isChecked())
 
-            if valid:       # communicate with synthesizer with valid settings
-                synapi.set_fm(modfreq, depth * unit[self.moddepthUnit.currentIndex()])
-                synapi.mod_on(switch)
-            else:
-                pass
+        # set sheet border color by status
+        self.modFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(freq_stat)))
+        self.modDepthFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(depth_stat)))
 
-    def modSimpleSwitch(self):
-        ''' Simply turn on/off modulation '''
+    def modToggleComm(self):
+        '''
+            Communicate with the synthesizer and update modulation on/off toggle
+        '''
 
-        synapi.mod_on(self.modSwitch.isChecked())
+        synapi.mod_toggle(self.modToggle.isChecked())
 
 
 class LockinCtrl(QtGui.QWidget):
