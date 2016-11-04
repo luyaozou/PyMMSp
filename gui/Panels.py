@@ -84,15 +84,15 @@ class SynCtrl(QtGui.QWidget):
         self.mod.hide()
 
         ## -- Define synthesizer power switch
-        synPowerToggle = QtGui.QCheckBox()
-        synPowerToggle.setCheckState(False)
+        self.synPowerToggle = QtGui.QCheckBox()
+        self.synPowerToggle.setCheckState(False)
         synPowerManualInput = QtGui.QPushButton('Set Power')
 
         self.synCurrentPower = QtGui.QLabel()
         self.synCurrentPower.setText('{:d} dbm'.format(synapi.read_syn_power()))
         synPowerLayout = QtGui.QHBoxLayout()
         synPowerLayout.addWidget(QtGui.QLabel('Synthesizer On'))
-        synPowerLayout.addWidget(synPowerToggle)
+        synPowerLayout.addWidget(self.synPowerToggle)
         synPowerLayout.addWidget(QtGui.QLabel('Current Power'))
         synPowerLayout.addWidget(self.synCurrentPower)
         synPowerLayout.addWidget(synPowerManualInput)
@@ -118,7 +118,7 @@ class SynCtrl(QtGui.QWidget):
 
         # Trigger synthesizer power toggle and communication
         QObject.connect(synPowerManualInput, QtCore.SIGNAL("clicked()"), self.synPowerComm)
-        QObject.connect(synPowerToggle, QtCore.SIGNAL("stateChanged(int)"), self.synPowerDialog)
+        QObject.connect(self.synPowerToggle, QtCore.SIGNAL("stateChanged(int)"), self.synPowerDialog)
 
     def freqComm(self):
         '''
@@ -135,17 +135,21 @@ class SynCtrl(QtGui.QWidget):
 
     def synPowerComm(self):
         '''
-            Communicate with the synthesizer and set up RF power.
+            Communicate with the synthesizer and set up RF power
+            (automatically turn RF on)
         '''
 
         # Get current syn power
-        synpower = synapi.read_syn_power()
-        self.synCurrentPower.setText('{:d} dbm'.format(synpower))
+        current_power = synapi.read_syn_power()
+        self.synCurrentPower.setText('{:d} dbm'.format(current_power))
         # Grab manual input power
-        synpower, stat = QtGui.QInputDialog.getInt(self, 'Synthesizer RF Power'
-                                    'Manual Input (-20 to 0)', synpower, -20, 0, 1)
-        synapi.set_syn_power(int_value)
-
+        set_power, stat = QtGui.QInputDialog.getInt(self, 'Synthesizer RF Power',
+                                'Manual Input (-20 to 0)', current_power, -20, 0, 1)
+        synapi.set_syn_power(set_power)
+        # automatically turn on RF
+        self.synPowerToggle.setCheckState(True)
+        # update power reading
+        self.synCurrentPower.setText(synapi.read_syn_power())
 
     def synPowerDialog(self, toggle_stat):
         '''
@@ -153,13 +157,8 @@ class SynCtrl(QtGui.QWidget):
         '''
 
         stat = synapi.syn_power_toggle(toggle_stat)
-
-        if not stat:        # Normal
-            pass
-        else:               # Warning
-            QtGui.QMessageBox('Warning')
-
-
+        self.synPowerToggle.setCheckState(stat)
+        self.synCurrentPower.setText(synapi.read_syn_power())
 
     def modModeComm(self):
         '''
