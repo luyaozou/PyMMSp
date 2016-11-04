@@ -5,6 +5,7 @@ from PyQt4.QtCore import QObject
 import pyqtgraph as pg
 from gui.SharedWidgets import *
 from api import synthesizer as synapi
+from api import lockin as lcapi
 
 def msgcolor(status_code):
     ''' Return message color based on status_code.
@@ -224,7 +225,7 @@ class LockinCtrl(QtGui.QWidget):
         ## -- Define layout elements --
         harmSelect = QtGui.QComboBox()
         harmSelect.addItems(['1', '2', '3', '4'])
-        phaseFill = QtGui.QLineEdit()
+        self.phaseFill = QtGui.QLineEdit()
         sensSelect = QtGui.QComboBox()
         sensList = ['1 V', '500 mV', '200 mV', '100 mV', '50 mV', '20 mV',
                     '10 mV', '1 mV', '500 uV', '200 uV', '100 uV', '50 uV',
@@ -244,7 +245,7 @@ class LockinCtrl(QtGui.QWidget):
         ## -- Set up main layout --
         mainLayout = QtGui.QFormLayout()
         mainLayout.addRow(QtGui.QLabel('Harmonics'), harmSelect)
-        mainLayout.addRow(QtGui.QLabel('Phase'), phaseFill)
+        mainLayout.addRow(QtGui.QLabel('Phase'), self.phaseFill)
         mainLayout.addRow(QtGui.QLabel('Sensitivity'), sensSelect)
         mainLayout.addRow(QtGui.QLabel('Time Constant'), tcSelect)
         mainLayout.addRow(QtGui.QLabel('Couple'), coupleSelect)
@@ -252,26 +253,80 @@ class LockinCtrl(QtGui.QWidget):
         self.setLayout(mainLayout)
 
         # Validate input status
-        phaseFill.textChanged.connect(self.phaseVal)
+        QObject.connect(self.phaseFill, QtCore.SIGNAL("textChanged(const QString)"), self.phaseComm)
+        QObject.connect(harmSelect, QtCore.SIGNAL("currentIndexChanged(const QString)"), self.harmComm)
+        QObject.connect(tcSelect, QtCore.SIGNAL("currentIndexChanged(int)"), self.tcComm)
+        QObject.connect(sensSelect, QtCore.SIGNAL("currentIndexChanged(int)"), self.sensComm)
+        QObject.connect(coupleSelect, QtCore.SIGNAL("currentIndexChanged(const QString)"), self.coupleComm)
+        QObject.connect(reserveSelect, QtCore.SIGNAL("currentIndexChanged(const QString)"), self.reserveComm)
 
-    def phaseVal(self):
+    def phaseComm(self, phase_text):
         '''
-            Validate phase input. Must between 0-360.
+            Communicate with the lockin and set phase
         '''
 
-        sender = self.sender()
-        text = sender.text()
-        validator = QtGui.QDoubleValidator()
-        status = ((validator.validate(text, 0)[0] == QtGui.QValidator.Acceptable)
-                   and (float(text) < 360)
-                   and (float(text) >= 0))
+        stat = lcapi.set_phase(phase_text)
+        self.phaseFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(stat)))
 
-        if status:
-            color = SAFE_GREEN
+    def harmComm(self, harm_text):
+        '''
+            Communicate with the lockin and set Harmonics
+        '''
+
+        stat = lcapi.set_harm(harm_text)
+
+        if stat:
+            QtGui.QMessageBox.warning(self, 'Out of Range!', 'Input harmonics exceed legal range!', QtGui.QMessageBox.Ok)
         else:
-            color = FATAL_RED
+            pass
 
-        sender.setStyleSheet('border: 2px solid %s' % color)
+    def sensComm(self, sens_index):
+        '''
+            Communicate with the lockin and set sensitivity
+        '''
+
+        stat = lcapi.set_sensitivity(sens_index)
+
+        if stat:
+            QtGui.QMessageBox.warning(self, 'Out of Range!', 'Input sensitivity exceed legal range!', QtGui.QMessageBox.Ok)
+        else:
+            pass
+
+    def tcComm(self, tc_index):
+        '''
+            Communicate with the lockin and set sensitivity
+        '''
+
+        stat = lcapi.set_tc(tc_index)
+
+        if stat:
+            QtGui.QMessageBox.warning(self, 'Out of Range!', 'Input time constant exceed legal range!', QtGui.QMessageBox.Ok)
+        else:
+            pass
+
+    def coupleComm(self, couple_text):
+        '''
+            Communicate with the lockin and set couple mode
+        '''
+
+        stat = lcapi.set_couple(couple_text)
+
+        if stat:
+            QtGui.QMessageBox.critical(self, 'Invalid Input!', 'Input couple unrecognized!', QtGui.QMessageBox.Ok)
+        else:
+            pass
+
+    def reserveComm(self, reserve_text):
+        '''
+            Communicate with the lockin and set reserve
+        '''
+
+        stat = lcapi.set_reserve(reserve_text)
+
+        if stat:
+            QtGui.QMessageBox.critical(self, 'Invalid Input!', 'Input reserve mode unrecognized!', QtGui.QMessageBox.Ok)
+        else:
+            pass
 
 
 class ScopeCtrl(QtGui.QWidget):
