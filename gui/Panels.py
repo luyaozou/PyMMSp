@@ -145,11 +145,13 @@ class SynCtrl(QtGui.QWidget):
         # Grab manual input power
         set_power, stat = QtGui.QInputDialog.getInt(self, 'Synthesizer RF Power',
                                 'Manual Input (-20 to 0)', current_power, -20, 0, 1)
-        synapi.set_syn_power(set_power)
-        # automatically turn on RF
-        self.synPowerToggle.setCheckState(True)
-        # update power reading
-        self.synCurrentPower.setText(synapi.read_syn_power())
+        stat = synapi.set_syn_power(set_power)
+        if not stat:    # hopefully no error occurs
+            self.synPowerToggle.setCheckState(True)
+            # update power reading
+            self.synCurrentPower.setText('{:d} dbm'.format(synapi.read_syn_power()))
+        else:
+            QtGui.QMessageBox.warning(self, 'Dangerous Input!', 'Input power exceed safety range!', QtGui.QMessageBox.Ok)
 
     def synPowerDialog(self, toggle_stat):
         '''
@@ -158,7 +160,7 @@ class SynCtrl(QtGui.QWidget):
 
         stat = synapi.syn_power_toggle(toggle_stat)
         self.synPowerToggle.setCheckState(stat)
-        self.synCurrentPower.setText(synapi.read_syn_power())
+        self.synCurrentPower.setText('{:d} dbm'.format(synapi.read_syn_power()))
 
     def modModeComm(self):
         '''

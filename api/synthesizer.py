@@ -39,18 +39,18 @@ def set_syn_power(set_power):
 
     current_power = read_syn_power()
 
-    if set_power > 0 or set_power < 20:
+    if set_power > 0 or set_power < -20:
         return 1
     elif set_power > current_power:
         # turn on RF
         for n in ramp_up(current_power, set_power):
             # talk to synthesizer
-            time.sleep(1)   # pause 1 second
+            time.sleep(0.5)   # pause 0.5 second
         return 0
     elif set_power < current_power:
         for n in ramp_down(current_power, set_power):
             # talk to synthesizer
-            time.sleep(1)   # pause 1 second
+            time.sleep(0.5)   # pause 0.5 second
         return 0
     else:
         pass
