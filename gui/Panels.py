@@ -6,6 +6,7 @@ import pyqtgraph as pg
 from gui.SharedWidgets import *
 from api import synthesizer as synapi
 from api import lockin as lcapi
+from api import pci as pciapi
 
 def msgcolor(status_code):
     ''' Return message color based on status_code.
@@ -252,7 +253,7 @@ class LockinCtrl(QtGui.QWidget):
         mainLayout.addRow(QtGui.QLabel('Reserve'), reserveSelect)
         self.setLayout(mainLayout)
 
-        # Validate input status
+        ## -- Trigger setting status and communication
         QObject.connect(self.phaseFill, QtCore.SIGNAL("textChanged(const QString)"), self.phaseComm)
         QObject.connect(harmSelect, QtCore.SIGNAL("currentIndexChanged(const QString)"), self.harmComm)
         QObject.connect(tcSelect, QtCore.SIGNAL("currentIndexChanged(int)"), self.tcComm)
@@ -337,20 +338,47 @@ class ScopeCtrl(QtGui.QWidget):
         self.setWindowTitle('Scope Control')
 
         ## -- Define layout elements --
-        srateFill = QtGui.QLineEdit()
-        slenFill = QtGui.QLineEdit()
+        self.srateFill = QtGui.QLineEdit()
+        self.slenFill = QtGui.QLineEdit()
         sensSelect = QtGui.QComboBox()
         sensList = ['20 V', '5 V', '1 V', '0.5 V', '0.2 V']
         sensSelect.addItems(sensList)
-        avgFill = QtGui.QLineEdit()
+        self.avgFill = QtGui.QLineEdit()
 
         ## -- Set up main layout --
         mainLayout = QtGui.QFormLayout()
-        mainLayout.addRow(QtGui.QLabel('Sample Rate'), srateFill)
-        mainLayout.addRow(QtGui.QLabel('Sample Length'), slenFill)
+        mainLayout.addRow(QtGui.QLabel('Sample Rate (MHz)'), self.srateFill)
+        mainLayout.addRow(QtGui.QLabel('Sample Length'), self.slenFill)
         mainLayout.addRow(QtGui.QLabel('Sensitivity'), sensSelect)
-        mainLayout.addRow(QtGui.QLabel('Oscilloscope Average'), avgFill)
+        mainLayout.addRow(QtGui.QLabel('Oscilloscope Average'), self.avgFill)
         self.setLayout(mainLayout)
+
+        ## -- Trigger setting status and communication
+        QObject.connect(self.srateFill, QtCore.SIGNAL("textChanged(const QString)"), self.rateComm)
+        QObject.connect(self.slenFill, QtCore.SIGNAL("textChanged(const QString)"), self.lenComm)
+        QObject.connect(sensSelect, QtCore.SIGNAL("currentIndexChanged(int)"), self.sensComm)
+        QObject.connect(self.avgFill, QtCore.SIGNAL("textChanged(const QString)"), self.avgComm)
+
+
+    def rateComm(self, rate_text):
+
+        stat = pciapi.set_sampling_rate(rate_text)
+        self.srateFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(stat)))
+
+    def lenComm(self, len_text):
+
+        stat = pciapi.set_sampling_len(len_text)
+        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(stat)))
+
+    def sensComm(self, sens_index):
+
+        stat = pciapi.set_sensitivity(sens_index)
+
+    def avgComm(self, avg_text):
+
+        stat = pciapi.set_osc_avg(avg_text)
+        self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(stat)))
+
 
 
 class CavityCtrl(QtGui.QWidget):
