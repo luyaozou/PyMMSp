@@ -31,12 +31,16 @@ class SynCtrl(QtGui.QGroupBox):
         Synthesizer control panel
     '''
 
-    def __init__(self, parent):
+    def __init__(self, parent, synHandle):
         QtGui.QWidget.__init__(self, parent)
 
         self.setTitle('Synthesizer Control')
         self.setAlignment(1)    # align left
         self.setCheckable(True)
+        if synHandle:
+            self.setChecked(True)
+        else:
+            self.setChecked(False)
 
         ## -- Define synthesizer control elements --
         syn = QtGui.QWidget()
@@ -220,12 +224,16 @@ class SynCtrl(QtGui.QGroupBox):
 
 class LockinCtrl(QtGui.QGroupBox):
 
-    def __init__(self, parent):
+    def __init__(self, parent, lcHandle):
         QtGui.QWidget.__init__(self, parent)
 
         self.setTitle('Lockin Control')
         self.setAlignment(1)        # align left
         self.setCheckable(True)
+        if lcHandle:
+            self.setChecked(True)
+        else:
+            self.setChecked(False)
 
         ## -- Define layout elements --
         harmSelect = QtGui.QComboBox()
@@ -336,12 +344,16 @@ class LockinCtrl(QtGui.QGroupBox):
 
 class ScopeCtrl(QtGui.QGroupBox):
 
-    def __init__(self, parent):
+    def __init__(self, parent, pciHandle):
         QtGui.QWidget.__init__(self, parent)
 
         self.setTitle('Oscilloscope Control')
         self.setAlignment(1)
         self.setCheckable(True)
+        if pciHandle:
+            self.setChecked(True)
+        else:
+            self.setChecked(False)
 
         ## -- Define layout elements --
         self.srateFill = QtGui.QLineEdit()
@@ -389,12 +401,16 @@ class ScopeCtrl(QtGui.QGroupBox):
 
 class CavityCtrl(QtGui.QGroupBox):
 
-    def __init__(self, parent):
+    def __init__(self, parent, motorHandle):
         QtGui.QWidget.__init__(self, parent)
 
         self.setTitle('Cavity Control')
         self.setAlignment(1)
         self.setCheckable(True)
+        if motorHandle:
+            self.setChecked(True)
+        else:
+            self.setChecked(False)
 
         mainLayout = QtGui.QHBoxLayout()
         mainLayout.addWidget(QtGui.QPushButton('Tune Cavity'))

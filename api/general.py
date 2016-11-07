@@ -1,7 +1,7 @@
 #! encoding = utf-8
 
-import visa
-
+import pyvisa
+import os.path
 
 def list_inst():
     '''
@@ -13,7 +13,7 @@ def list_inst():
 
     # open pyvisa resource manager
     try:
-        rm = visa.ResourceManager()
+        rm = pyvisa.highlevel.ResourceManager()
     except OSError:
         return {}, 'Cannot open VISA library!'
     # get available instrument address list
@@ -39,9 +39,54 @@ def list_inst():
     return inst_dict, inst_str
 
 
-def close_inst():
+def load_inst(inst_cfg_file):
+    '''
+        Load instruments from the internal instrument config file
+        Returns
+            synHandle:    pyvisa object for the synthesizer
+            lcHandle:     pyvisa object for the lockin
+            pciHandle:    pyvisa object for the PCI card
+            motorHandle:  pyvisa object for the step motor
+    '''
+
+    # first check if configure file exists
+    if os.path.exists(inst_cfg_file):
+        with open(inst_cfg_file, 'r') as f:
+            address = f.readline()
+            synHandle = open_inst(address.strip())
+            address = f.readline()
+            lcHandle = open_inst(address.strip())
+            address = f.readline()
+            pciHandle = open_inst(address.strip())
+            address = f.readline()
+            motorHandle = open_inst(address.strip())
+        return synHandle, lcHandle, pciHandle, motorHandle
+    else:
+        return None, None, None, None
+
+
+def open_inst(inst_address):
+    '''
+        Open single instrument by its address.
+        Returns
+            inst_handle: pyvisa object for the instrument
+            None:        if cannot open the instrument
+    '''
+
+    rm = pyvisa.highlevel.ResourceManager()
+    try:
+        inst_handle = rm.open_resource(inst_address)
+    except:
+        inst_handle = None
+
+    return inst_handle
+
+
+def close_inst(inst_handle):
     '''
         Close all connecting instruments
     '''
+
+    inst_handle.close()
 
     return 0

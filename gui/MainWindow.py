@@ -20,6 +20,9 @@ class MainWindow(QtGui.QMainWindow):
         self.setMinimumWidth(1200)
         self.setMinimumHeight(800)
 
+        # Initiate pyvisa instrument objects
+        self.synHandle, self.lcHandle, self.pciHandle, self.motorHandle = apigen.load_inst('api/inst.cfg')
+
         # Set menu bar actions
         exitAction = QtGui.QAction('Exit', self)
         exitAction.setShortcuts(['Ctrl+Q', 'Esc'])
@@ -67,10 +70,10 @@ class MainWindow(QtGui.QMainWindow):
         # Set main window layout
         self.mainLayout = QtGui.QGridLayout()
         self.mainLayout.setSpacing(6)
-        self.mainLayout.addWidget(SynCtrl(self), 0, 0, 1, 2)
-        self.mainLayout.addWidget(LockinCtrl(self), 1, 0, 1, 2)
-        self.mainLayout.addWidget(ScopeCtrl(self), 2, 0, 1, 2)
-        self.mainLayout.addWidget(CavityCtrl(self), 3, 0, 1, 2)
+        self.mainLayout.addWidget(SynCtrl(self, self.synHandle), 0, 0, 1, 2)
+        self.mainLayout.addWidget(LockinCtrl(self, self.lcHandle), 1, 0, 1, 2)
+        self.mainLayout.addWidget(ScopeCtrl(self, self.pciHandle), 2, 0, 1, 2)
+        self.mainLayout.addWidget(CavityCtrl(self, self.motorHandle), 3, 0, 1, 2)
         self.mainLayout.addWidget(ScopeMonitor(self), 0, 2, 1, 4)
         self.mainLayout.addWidget(LockinMonitor(self), 1, 2, 1, 4)
         self.mainLayout.addWidget(SpectrumMonitor(self), 2, 2, 1, 4)
@@ -79,6 +82,7 @@ class MainWindow(QtGui.QMainWindow):
         self.mainWidget = QtGui.QWidget()
         self.mainWidget.setLayout(self.mainLayout)
         self.setCentralWidget(self.mainWidget)
+
 
     def on_exit(self):
         q = QtGui.QMessageBox.question(self, 'Quit?',
@@ -102,7 +106,9 @@ class MainWindow(QtGui.QMainWindow):
 
     def on_sel_inst(self):
         d = SelInstDialog(self, self)
-        d.show()
+        d.exec_()
+        # Refresh instrument handles
+        self.synHandle, self.lcHandle, self.pciHandle, self.motorHandle = apigen.load_inst('api/inst.cfg')
 
     def on_view_inst_stat(self):
         d = ViewInstDialog(self, self)

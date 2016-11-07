@@ -78,7 +78,13 @@ class SelInstDialog(QtGui.QDialog):
         self.selMotor.addItems(list(instDict.keys()))
 
     def accept(self):
-        print('accept')
+
+        with open('inst.cfg', 'w') as f:
+            f.write(self.selSyn.currentText() + '\n')
+            f.write(self.selLockin.currentText() + '\n')
+            f.write(self.selScope.currentText() + '\n')
+            f.write(self.selMotor.currentText() + '\n')
+
         self.close()
 
 
