@@ -26,16 +26,16 @@ class SelInstDialog(QtGui.QDialog):
         selInstLayout = QtGui.QFormLayout()
         self.selSyn = QtGui.QComboBox()
         self.selSyn.addItems(['N.A.'])
-        self.selSyn.addItems(list(instDict.values()))
+        self.selSyn.addItems(list(instDict.keys()))
         self.selLockin = QtGui.QComboBox()
         self.selLockin.addItems(['N.A.'])
-        self.selLockin.addItems(list(instDict.values()))
+        self.selLockin.addItems(list(instDict.keys()))
         self.selScope = QtGui.QComboBox()
         self.selScope.addItems(['N.A.'])
-        self.selScope.addItems(list(instDict.values()))
+        self.selScope.addItems(list(instDict.keys()))
         self.selMotor = QtGui.QComboBox()
         self.selMotor.addItems(['N.A.'])
-        self.selMotor.addItems(list(instDict.values()))
+        self.selMotor.addItems(list(instDict.keys()))
         selInstLayout.addRow(QtGui.QLabel('Synthesizer'), self.selSyn)
         selInstLayout.addRow(QtGui.QLabel('Lock-in'), self.selLockin)
         selInstLayout.addRow(QtGui.QLabel('Oscilloscope'), self.selScope)
@@ -79,7 +79,7 @@ class SelInstDialog(QtGui.QDialog):
 
     def accept(self):
 
-        with open('inst.cfg', 'w') as f:
+        with open('api/inst.cfg', 'w') as f:
             f.write(self.selSyn.currentText() + '\n')
             f.write(self.selLockin.currentText() + '\n')
             f.write(self.selScope.currentText() + '\n')
