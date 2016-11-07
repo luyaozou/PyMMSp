@@ -23,7 +23,7 @@ def list_inst():
         # open each instrument and get instrument information
         temp = rm.open_resource(inst)
         try:
-            inst_dict[inst] = temp.query('*IDN?')
+            inst_dict[inst] = temp.query('*IDN?\n')
         except:
             inst_dict[inst] = 'Visa IO Error'
         # close instrument right way to prevent unexpected crashes
@@ -73,8 +73,8 @@ def open_inst(inst_address):
             None:        if cannot open the instrument
     '''
 
-    rm = pyvisa.highlevel.ResourceManager()
     try:
+        rm = pyvisa.highlevel.ResourceManager()
         inst_handle = rm.open_resource(inst_address)
     except:
         inst_handle = None

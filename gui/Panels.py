@@ -33,11 +33,12 @@ class SynCtrl(QtGui.QGroupBox):
 
     def __init__(self, parent, synHandle):
         QtGui.QWidget.__init__(self, parent)
+        self.synHandle = synHandle
 
         self.setTitle('Synthesizer Control')
         self.setAlignment(1)    # align left
         self.setCheckable(True)
-        if synHandle:
+        if self.synHandle:
             self.setChecked(True)
         else:
             self.setChecked(False)
@@ -226,11 +227,12 @@ class LockinCtrl(QtGui.QGroupBox):
 
     def __init__(self, parent, lcHandle):
         QtGui.QWidget.__init__(self, parent)
+        self.lcHandle = lcHandle
 
         self.setTitle('Lockin Control')
         self.setAlignment(1)        # align left
         self.setCheckable(True)
-        if lcHandle:
+        if self.lcHandle:
             self.setChecked(True)
         else:
             self.setChecked(False)
@@ -346,11 +348,12 @@ class ScopeCtrl(QtGui.QGroupBox):
 
     def __init__(self, parent, pciHandle):
         QtGui.QWidget.__init__(self, parent)
+        self.pciHandle = pciHandle
 
         self.setTitle('Oscilloscope Control')
         self.setAlignment(1)
         self.setCheckable(True)
-        if pciHandle:
+        if self.pciHandle:
             self.setChecked(True)
         else:
             self.setChecked(False)
@@ -403,18 +406,27 @@ class CavityCtrl(QtGui.QGroupBox):
 
     def __init__(self, parent, motorHandle):
         QtGui.QWidget.__init__(self, parent)
+        self.motorHandle = motorHandle
 
         self.setTitle('Cavity Control')
         self.setAlignment(1)
         self.setCheckable(True)
-        if motorHandle:
+        if self.motorHandle:
             self.setChecked(True)
         else:
             self.setChecked(False)
 
+        tuneButton = QtGui.QPushButton('Tune Cavity')
         mainLayout = QtGui.QHBoxLayout()
-        mainLayout.addWidget(QtGui.QPushButton('Tune Cavity'))
+        mainLayout.addWidget(tuneButton)
         self.setLayout(mainLayout)
+
+        ## -- Trigger settings and motor communication
+        QObject.connect(tuneButton, QtCore.SIGNAL("clicked()"), self.tune_cavity)
+
+    def tune_cavity(self):
+
+        stat = apimotor.move(self.motorHandle, 1)
 
 
 class ScopeMonitor(pg.PlotWidget):
