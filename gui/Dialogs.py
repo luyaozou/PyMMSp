@@ -72,10 +72,10 @@ class SelInstDialog(QtGui.QDialog):
             self.selLockin.removeItem(1)
             self.selScope.removeItem(1)
             self.selMotor.removeItem(1)
-        self.selSyn.addItems(list(instDict.values()))
-        self.selLockin.addItems(list(instDict.values()))
-        self.selScope.addItems(list(instDict.values()))
-        self.selMotor.addItems(list(instDict.values()))
+        self.selSyn.addItems(list(instDict.keys()))
+        self.selLockin.addItems(list(instDict.keys()))
+        self.selScope.addItems(list(instDict.keys()))
+        self.selMotor.addItems(list(instDict.keys()))
 
     def accept(self):
         print('accept')
@@ -92,5 +92,3 @@ class ViewInstDialog(QtGui.QDialog):
 
         self.setMinimumWidth(400)
         self.setMinimumHeight(400)
-
-        

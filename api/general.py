@@ -22,7 +22,10 @@ def list_inst():
     for inst in inst_list:
         # open each instrument and get instrument information
         temp = rm.open_resource(inst)
-        inst_dict[inst] = temp.query('*IDN?')
+        try:
+            inst_dict[inst] = temp.query('*IDN?')
+        except:
+            inst_dict[inst] = 'Visa IO Error'
         # close instrument right way to prevent unexpected crashes
         temp.close()
 
