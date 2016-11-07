@@ -26,7 +26,7 @@ def msgcolor(status_code):
         return '#000000'
 
 
-class SynCtrl(QtGui.QWidget):
+class SynCtrl(QtGui.QGroupBox):
     '''
         Synthesizer control panel
     '''
@@ -34,7 +34,9 @@ class SynCtrl(QtGui.QWidget):
     def __init__(self, parent):
         QtGui.QWidget.__init__(self, parent)
 
-        self.setWindowTitle('Synthesizer Control')
+        self.setTitle('Synthesizer Control')
+        self.setAlignment(1)    # align left
+        self.setCheckable(True)
 
         ## -- Define synthesizer control elements --
         syn = QtGui.QWidget()
@@ -216,12 +218,14 @@ class SynCtrl(QtGui.QWidget):
         synapi.mod_toggle(self.modToggle.isChecked())
 
 
-class LockinCtrl(QtGui.QWidget):
+class LockinCtrl(QtGui.QGroupBox):
 
     def __init__(self, parent):
         QtGui.QWidget.__init__(self, parent)
 
-        self.setWindowTitle('Lockin Control')
+        self.setTitle('Lockin Control')
+        self.setAlignment(1)        # align left
+        self.setCheckable(True)
 
         ## -- Define layout elements --
         harmSelect = QtGui.QComboBox()
@@ -330,12 +334,14 @@ class LockinCtrl(QtGui.QWidget):
             pass
 
 
-class ScopeCtrl(QtGui.QWidget):
+class ScopeCtrl(QtGui.QGroupBox):
 
     def __init__(self, parent):
         QtGui.QWidget.__init__(self, parent)
 
-        self.setWindowTitle('Scope Control')
+        self.setTitle('Oscilloscope Control')
+        self.setAlignment(1)
+        self.setCheckable(True)
 
         ## -- Define layout elements --
         self.srateFill = QtGui.QLineEdit()
@@ -381,12 +387,14 @@ class ScopeCtrl(QtGui.QWidget):
 
 
 
-class CavityCtrl(QtGui.QWidget):
+class CavityCtrl(QtGui.QGroupBox):
 
     def __init__(self, parent):
         QtGui.QWidget.__init__(self, parent)
 
-        self.setWindowTitle('Cavity Control')
+        self.setTitle('Cavity Control')
+        self.setAlignment(1)
+        self.setCheckable(True)
 
         mainLayout = QtGui.QHBoxLayout()
         mainLayout.addWidget(QtGui.QPushButton('Tune Cavity'))
