@@ -1,8 +1,10 @@
 #! encoding = utf-8
 
 from PyQt4 import QtCore, QtGui
+import time
 from gui.Panels import *
 from gui.Dialogs import *
+from api import general as apigen
 
 class MainWindow(QtGui.QMainWindow):
     '''
@@ -24,14 +26,30 @@ class MainWindow(QtGui.QMainWindow):
         exitAction.setStatusTip('Exit program')
         exitAction.triggered.connect(self.on_exit)
 
-        selInstAction = QtGui.QAction('Select Instrument', self)
-        selInstAction.setShortcut('Ctrl+I')
-        selInstAction.setStatusTip('Select Instrument')
-        selInstAction.triggered.connect(self.on_sel_inst)
+        instSelAction = QtGui.QAction('Select Instrument', self)
+        instSelAction.setShortcut('Ctrl+Shift+I')
+        instSelAction.setStatusTip('Select Instrument')
+        instSelAction.triggered.connect(self.on_sel_inst)
 
-        viewInstStatAction = QtGui.QAction('View Instrument Status', self)
-        viewInstStatAction.setStatusTip('View status of currently connected instrument')
-        viewInstStatAction.triggered.connect(self.on_view_inst_stat)
+        instStatViewAction = QtGui.QAction('View Instrument Status', self)
+        instStatViewAction.setShortcut('Ctrl+Shift+V')
+        instStatViewAction.setStatusTip('View status of currently connected instrument')
+        instStatViewAction.triggered.connect(self.on_view_inst_stat)
+
+        scanJPLAction = QtGui.QAction('JPL Scanning Routine', self)
+        scanJPLAction.setShortcut('Ctrl+Shift+J')
+        scanJPLAction.setStatusTip('Use the scanning style of the JPL scanning routine')
+        scanJPLAction.triggered.connect(self.on_scan_jpl)
+
+        scanPCIAction = QtGui.QAction('PCI Oscilloscope', self)
+        scanPCIAction.setShortcut('Ctrl+Shift+P')
+        scanPCIAction.setStatusTip("Use the scanning style of Brian's NIPCI card routine")
+        scanPCIAction.triggered.connect(self.on_scan_pci)
+
+        scanCavityAction = QtGui.QAction('Cavity Enhanced', self)
+        scanCavityAction.setShortcut('Ctrl+Shift+C')
+        scanCavityAction.setStatusTip('Use cavity enhanced spectroscopy')
+        scanCavityAction.triggered.connect(self.on_scan_cavity)
 
         # Set menu bar
         self.statusBar()
@@ -39,8 +57,12 @@ class MainWindow(QtGui.QMainWindow):
         menuFile = self.menuBar().addMenu('&File')
         menuFile.addAction(exitAction)
         menuInst = self.menuBar().addMenu('&Instrument')
-        menuInst.addAction(selInstAction)
-        menuInst.addAction(viewInstStatAction)
+        menuInst.addAction(instSelAction)
+        menuInst.addAction(instStatViewAction)
+        menuScan = self.menuBar().addMenu('&Scan')
+        menuScan.addAction(scanJPLAction)
+        menuScan.addAction(scanPCIAction)
+        menuScan.addAction(scanCavityAction)
 
         # Set main window layout
         self.mainLayout = QtGui.QGridLayout()
@@ -59,7 +81,24 @@ class MainWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.mainWidget)
 
     def on_exit(self):
-        self.close()
+        q = QtGui.QMessageBox.question(self, 'Quit?',
+                       'Are you sure to quit?', QtGui.QMessageBox.Yes |
+                       QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
+        if q == QtGui.QMessageBox.Yes:
+            stat = apigen.close_inst()
+            if not stat:    # safe to close
+                self.close()
+            else:
+                qq = QtGui.QMessageBox.question(self, 'Error',
+                               '''Error in disconnecting instruments.
+                               Are you sure to force quit?''', QtGui.QMessageBox.Yes |
+                               QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+                if qq == QtGui.QMessageBox.Yes:
+                    self.close()
+                else:
+                    pass
+        else:
+            pass
 
     def on_sel_inst(self):
         d = SelInstDialog(self, self)
@@ -68,3 +107,12 @@ class MainWindow(QtGui.QMainWindow):
     def on_view_inst_stat(self):
         d = ViewInstDialog(self, self)
         d.show()
+
+    def on_scan_jpl(self):
+        pass
+
+    def on_scan_pci(self):
+        pass
+
+    def on_scan_cavity(self):
+        pass

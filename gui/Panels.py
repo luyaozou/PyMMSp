@@ -5,8 +5,8 @@ from PyQt4.QtCore import QObject
 import pyqtgraph as pg
 from gui.SharedWidgets import *
 from api import synthesizer as synapi
-from api import lockin as lcapi
-from api import pci as pciapi
+from api import lockin as apilc
+from api import pci as apipci
 
 def msgcolor(status_code):
     ''' Return message color based on status_code.
@@ -270,7 +270,7 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set phase
         '''
 
-        stat = lcapi.set_phase(phase_text)
+        stat = apilc.set_phase(phase_text)
         self.phaseFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(stat)))
 
     def harmComm(self, harm_text):
@@ -278,7 +278,7 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set Harmonics
         '''
 
-        stat = lcapi.set_harm(harm_text)
+        stat = apilc.set_harm(harm_text)
 
         if stat:
             QtGui.QMessageBox.warning(self, 'Out of Range!', 'Input harmonics exceed legal range!', QtGui.QMessageBox.Ok)
@@ -290,7 +290,7 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set sensitivity
         '''
 
-        stat = lcapi.set_sensitivity(sens_index)
+        stat = apilc.set_sensitivity(sens_index)
 
         if stat:
             QtGui.QMessageBox.warning(self, 'Out of Range!', 'Input sensitivity exceed legal range!', QtGui.QMessageBox.Ok)
@@ -302,7 +302,7 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set sensitivity
         '''
 
-        stat = lcapi.set_tc(tc_index)
+        stat = apilc.set_tc(tc_index)
 
         if stat:
             QtGui.QMessageBox.warning(self, 'Out of Range!', 'Input time constant exceed legal range!', QtGui.QMessageBox.Ok)
@@ -314,7 +314,7 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set couple mode
         '''
 
-        stat = lcapi.set_couple(couple_text)
+        stat = apilc.set_couple(couple_text)
 
         if stat:
             QtGui.QMessageBox.critical(self, 'Invalid Input!', 'Input couple unrecognized!', QtGui.QMessageBox.Ok)
@@ -326,7 +326,7 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set reserve
         '''
 
-        stat = lcapi.set_reserve(reserve_text)
+        stat = apilc.set_reserve(reserve_text)
 
         if stat:
             QtGui.QMessageBox.critical(self, 'Invalid Input!', 'Input reserve mode unrecognized!', QtGui.QMessageBox.Ok)
@@ -368,21 +368,21 @@ class ScopeCtrl(QtGui.QGroupBox):
 
     def rateComm(self, rate_text):
 
-        stat = pciapi.set_sampling_rate(rate_text)
+        stat = apipci.set_sampling_rate(rate_text)
         self.srateFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(stat)))
 
     def lenComm(self, len_text):
 
-        stat = pciapi.set_sampling_len(len_text)
+        stat = apipci.set_sampling_len(len_text)
         self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(stat)))
 
     def sensComm(self, sens_index):
 
-        stat = pciapi.set_sensitivity(sens_index)
+        stat = apipci.set_sensitivity(sens_index)
 
     def avgComm(self, avg_text):
 
-        stat = pciapi.set_osc_avg(avg_text)
+        stat = apipci.set_osc_avg(avg_text)
         self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(stat)))
 
 

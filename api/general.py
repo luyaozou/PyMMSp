@@ -37,3 +37,11 @@ def list_inst():
         inst_str = 'No instrument available. Check your connection/driver.'
 
     return inst_dict, inst_str
+
+
+def close_inst():
+    '''
+        Close all connecting instruments
+    '''
+
+    return 0
