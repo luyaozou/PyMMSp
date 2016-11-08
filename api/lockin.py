@@ -1,8 +1,36 @@
 #! encoding = utf-8
 
-def set_phase(phase_text):
+def wrap_phase(phase):
+    ''' Wrap phase into the range of [-180, 180] degrees.
+        Arguments
+            phase: float
+        Returns
+            phase: float
+    '''
+
+    if phase > 180:
+        while phase > 180:
+            phase -= 360
+    elif phase <= -180:
+        while phase <= -180:
+            phase += 360
+    else:
+        pass
+
+    return phase
+
+
+def init_lia(LIAHandle):
+    ''' Initiate the lockin with default settings. '''
+
+    LIAHandle.write('OUTX1\n')      # GPIB output
+    LIAHandle.write('FMOD0;ISRC0;IGND1;DDEF1,0,0;DDEF2,1,0;FPOP1,1\n')
+
+
+def set_phase(LIAHandle, phase_text):
     ''' Set the lockin phase to phase_text.
         Arguments
+            LIAHandle: pyvisa.resources.Resource, Lockin handle
             phase_text: str, user input
         Returns communication status
             0: safe
@@ -11,69 +39,97 @@ def set_phase(phase_text):
 
     try:
         phase = float(phase_text)
-        if phase >= 0 and phase < 360:
-            # call lockin
-            return 0
-        else:
-            return 1
+        phase = wrap_phase(phase)
+        stat = LIAHandle.write('PHAS{:.2f}'.format(phase), '\n')
+        return stat
     except ValueError:
         return 1
 
 
-def set_harm(harm_text):
-    ''' Set the lockin harmonics to idx. '''
+def auto_phase(LIAHandle):
+    ''' Autophase in lockin '''
 
+    LIAHandle.write('APHS\n')
+
+
+def set_harm(LIAHandle, harm_text):
+    ''' Set the lockin harmonics to idx.
+        Arguments
+            LIAHandle: pyvisa.resources.Resource, Lockin handle
+            harm_text: str, user input
+        Returns communication status
+            0: safe
+            1: fatal
+    '''
+
+    freq = LIAHandle.query('FREQ?', '\n')
     try:
         harm = int(harm_text)
-        if harm > 0 and harm < 5:
-            # call lockin
+        if harm > 0 and harm < (102000/freq):
+            LIAHandle.write('HARM{:d}'.format(harm), '\n')
             return 0
         else:
             return 1
     except ValueError:
         return 1
 
-def set_sensitivity(sens_index):
-    ''' Set the lockin sensitivity '''
 
-    sens_list = [1, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01,
-                 1e-3, 5e-4, 2e-4, 1e-4, 5e-5, 2e-5, 1e-5, 5e-6, 2e-6, 1e-6]
+def set_sensitivity(LIAHandle, sens_index):
+    ''' Set the lockin sensitivity.
+        Arguments
+            LIAHandle: pyvisa.resources.Resource, Lockin handle
+            sens_index: int, user input.
+                        The index directly map to the lockin command
+        Returns communication status
+            0: safe
+            1: fatal
+    '''
 
-    if sens_index >= len(sens_list):
-        return 1
-    else:
-        # call lockin
-        return 0
+    stat = LIAHandle.write('SENS{:d}'.format(sens_index), '\n')
+    return stat
 
-def set_tc(tc_index):
-    ''' Set the lockin time constant '''
 
-    tc_list = [3e-5, 1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1, 3, 10]
+def set_tc(LIAHandle, tc_index):
+    ''' Set the lockin time constant.
+        Arguments
+            LIAHandle: pyvisa.resources.Resource, Lockin handle
+            tc_index: int, user input.
+                      The index directly map to the lockin command
+        Returns communication status
+            0: safe
+            1: fatal
+    '''
 
-    if tc_index >= len(tc_list):
-        return 1
-    else:
-        # call lockin
-        return 0
+    stat = LIAHandle.write('OFLT{:d}'.format(tc_index), '\n')
+    return stat
 
-def set_couple(couple_text):
-    ''' Set the lockin couple '''
+
+def set_couple(LIAHandle, couple_text):
+    ''' Set the lockin couple.
+        Arguments
+            LIAHandle: pyvisa.resources.Resource, Lockin handle
+            couple_text: str, user input.
+        Returns communication status
+            0: safe
+            1: fatal
+    '''
 
     if couple_text == 'AC':
-        return 0
+        LIAHandle.write('ICPL0\n')
     elif couple_text == 'DC':
-        return 0
+        LIAHandle.write('ICPL1\n')
     else:
         return 1
+
 
 def set_reserve(reserve_text):
     ''' Set the lockin reserve '''
 
     if reserve_text == 'Low Noise':
-        return 0
+        LIAHandle.write('RMOD2\n')
     elif reserve_text == 'Normal':
-        return 0
+        LIAHandle.write('RMOD1\n')
     elif reserve_text == 'High Reserve':
-        return 0
+        LIAHandle.write('RMOD0\n')
     else:
         return 1

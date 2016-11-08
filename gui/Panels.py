@@ -242,14 +242,16 @@ class LockinCtrl(QtGui.QGroupBox):
         harmSelect.addItems(['1', '2', '3', '4'])
         self.phaseFill = QtGui.QLineEdit()
         sensSelect = QtGui.QComboBox()
-        sensList = ['1 V', '500 mV', '200 mV', '100 mV', '50 mV', '20 mV',
-                    '10 mV', '1 mV', '500 uV', '200 uV', '100 uV', '50 uV',
-                    '20 uV', '10 uV', '5 uV', '2 uV', '1 uV'
+        sensList = ['2 nV', '5 nV', '10 nV', '20 nV', '50 nV', '100 nV',
+                    '200 nV', '500 nV', '1 uV', '2 uV', '5 uV', '10 uV',
+                    '20 uV', '50 uV', '100 uV', '200 uV', '500 uV', '1 mV',
+                    '2 mV', '5 mV', '10 mV', '20 mV', '50 mV', '100 mV',
+                    '200 mV', '500 mV', '1 V'
                     ]
         sensSelect.addItems(sensList)
         tcSelect = QtGui.QComboBox()
-        tcList = ['30 us', '100 us', '300 us', '1 ms', '3 ms', '10 ms',
-                  '30 ms', '100 ms', '300 ms', '1 s', '3 s', '10 s'
+        tcList = ['10 us', '30 us', '100 us', '300 us', '1 ms', '3 ms', '10 ms',
+                  '30 ms', '100 ms', '300 ms', '1 s', '3 s', '10 s', '30 s'
                   ]
         tcSelect.addItems(tcList)
         coupleSelect = QtGui.QComboBox()
