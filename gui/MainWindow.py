@@ -70,13 +70,16 @@ class MainWindow(QtGui.QMainWindow):
         # Set main window layout
         self.mainLayout = QtGui.QGridLayout()
         self.mainLayout.setSpacing(6)
-        self.mainLayout.addWidget(SynCtrl(self, self.synHandle), 0, 0, 1, 2)
-        self.mainLayout.addWidget(LockinCtrl(self, self.lcHandle), 1, 0, 1, 2)
-        self.mainLayout.addWidget(ScopeCtrl(self, self.pciHandle), 2, 0, 1, 2)
-        self.mainLayout.addWidget(CavityCtrl(self, self.motorHandle), 3, 0, 1, 2)
-        self.mainLayout.addWidget(ScopeMonitor(self), 0, 2, 1, 4)
-        self.mainLayout.addWidget(LockinMonitor(self), 1, 2, 1, 4)
-        self.mainLayout.addWidget(SpectrumMonitor(self), 2, 2, 1, 4)
+        self.mainLayout.addWidget(SynStatus(self, self.synHandle), 0, 0, 3, 2)
+        self.mainLayout.addWidget(LockinStatus(self, self.lcHandle), 1, 0, 1, 2)
+        self.mainLayout.addWidget(ScopeStatus(self, self.pciHandle), 2, 0, 1, 2)
+        self.mainLayout.addWidget(SynCtrl(self, self.synHandle), 0, 2, 1, 2)
+        self.mainLayout.addWidget(LockinCtrl(self, self.lcHandle), 1, 2, 1, 2)
+        self.mainLayout.addWidget(ScopeCtrl(self, self.pciHandle), 2, 2, 1, 2)
+        self.mainLayout.addWidget(CavityCtrl(self, self.motorHandle), 3, 2, 1, 2)
+        self.mainLayout.addWidget(ScopeMonitor(self), 0, 4, 1, 4)
+        self.mainLayout.addWidget(LockinMonitor(self), 1, 4, 1, 4)
+        self.mainLayout.addWidget(SpectrumMonitor(self), 2, 4, 1, 4)
 
         # Enable main window
         self.mainWidget = QtGui.QWidget()
