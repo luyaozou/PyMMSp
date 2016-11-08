@@ -4,9 +4,10 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import QObject
 import pyqtgraph as pg
 from gui.SharedWidgets import *
-from api import synthesizer as synapi
+from api import synthesizer as apisyn
 from api import lockin as apilc
 from api import pci as apipci
+from api import validator as apival
 
 def msgcolor(status_code):
     ''' Return message color based on status_code.
@@ -34,12 +35,14 @@ class SynStatus(QtGui.QGroupBox):
     def __init__(self, parent, synHandle):
         QtGui.QWidget.__init__(self, parent)
         self.synHandle = synHandle
+        self.parent = parent
 
         self.setTitle('Synthesizer Status')
         self.setAlignment(1)
         self.setCheckable(False)
 
         ## -- Define synthesizer status elements --
+        self.synUpdate = QtGui.QPushButton('Refresh')
         self.synAddress = QtGui.QLabel()
         self.synFreq = QtGui.QLabel()
         self.synMod = QtGui.QLabel()
@@ -50,6 +53,7 @@ class SynStatus(QtGui.QGroupBox):
 
         ## -- Set layout and add GUI elements
         mainLayout = QtGui.QFormLayout()
+        mainLayout.addRow(QtGui.QLabel(''), self.synUpdate)
         mainLayout.addRow(QtGui.QLabel('GPIB Address'), self.synAddress)
         mainLayout.addRow(QtGui.QLabel('Frequency'), self.synFreq)
         mainLayout.addRow(QtGui.QLabel('Modulation'), self.synMod)
@@ -73,12 +77,14 @@ class LockinStatus(QtGui.QGroupBox):
     def __init__(self, parent, lcHandle):
         QtGui.QWidget.__init__(self, parent)
         self.lcHandle = lcHandle
+        self.parent = parent
 
         self.setTitle('Lockin Status')
         self.setAlignment(1)
         self.setCheckable(False)
 
         ## -- Define synthesizer status elements --
+        self.lcUpdate = QtGui.QPushButton('Refresh')
         self.lcAddress = QtGui.QLabel()
         self.lcHarm = QtGui.QLabel()
         self.lcPhase = QtGui.QLabel()
@@ -91,6 +97,7 @@ class LockinStatus(QtGui.QGroupBox):
 
         ## -- Set layout and add GUI elements
         mainLayout = QtGui.QFormLayout()
+        mainLayout.addRow(QtGui.QLabel(''), self.lcUpdate)
         mainLayout.addRow(QtGui.QLabel('GPIB Address'), self.lcAddress)
         mainLayout.addRow(QtGui.QLabel('Harmonics'), self.lcHarm)
         mainLayout.addRow(QtGui.QLabel('Phase'), self.lcPhase)
@@ -121,16 +128,19 @@ class ScopeStatus(QtGui.QGroupBox):
     def __init__(self, parent, synHandle):
         QtGui.QWidget.__init__(self, parent)
         self.synHandle = synHandle
+        self.parent = parent
 
         self.setTitle('Oscilloscope Status')
         self.setAlignment(1)
         self.setCheckable(False)
 
         ## -- Define synthesizer status elements --
+        self.scopeUpdate = QtGui.QPushButton('Refresh')
         self.scopeAddress = QtGui.QLabel()
 
         ## -- Set layout and add GUI elements
         mainLayout = QtGui.QFormLayout()
+        mainLayout.addRow(QtGui.QLabel(''), self.scopeUpdate)
         mainLayout.addRow(QtGui.QLabel('GPIB Address'), self.scopeAddress)
         self.setLayout(mainLayout)
 
@@ -271,13 +281,19 @@ class SynCtrl(QtGui.QGroupBox):
             Communicate with the synthesizer and update frequency setting.
         '''
 
-        # return communication status
-        syn_stat = synapi.set_syn_freq(self.probfreqFill.text(),
-                                       self.bandSelect.currentIndex())
-        # update synthesizer frequency
-        self.synfreq.setText('{:.12f}'.format(synapi.read_syn_freq()))
+        # validate input
+        status, synfreq = apival.val_syn_freq(self.probfreqFill.text(),
+                                              self.bandSelect.currentIndex())
         # set sheet border color by syn_stat
-        self.probfreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(syn_stat)))
+        self.probfreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+
+        if not status:  # if status is safe
+            # call syn api and return communication status
+            status = apisyn.set_syn_freq(self.synHandle, synfreq)
+
+        # update synthesizer frequency
+        self.synfreq.setText('{:.12f}'.format(apisyn.read_syn_freq()))
+
 
     def synPowerComm(self):
         '''
@@ -286,11 +302,11 @@ class SynCtrl(QtGui.QGroupBox):
         '''
 
         # Get current syn power
-        current_power = synapi.read_syn_power()
+        current_power = apisyn.read_syn_power()
         # Grab manual input power
         set_power, stat = QtGui.QInputDialog.getInt(self, 'Synthesizer RF Power',
                                 'Manual Input (-20 to 0)', current_power, -20, 0, 1)
-        stat = synapi.set_syn_power(set_power)
+        stat = apisyn.set_syn_power(set_power)
         if not stat:    # hopefully no error occurs
             self.synPowerToggle.setCheckState(True)
         else:
@@ -301,7 +317,7 @@ class SynCtrl(QtGui.QGroupBox):
             Pop-up warning window when user trigger the synthesizer toggle
         '''
 
-        stat = synapi.syn_power_toggle(toggle_stat)
+        stat = apisyn.syn_power_toggle(toggle_stat)
         self.synPowerToggle.setCheckState(stat)
 
     def modModeComm(self):
@@ -318,7 +334,7 @@ class SynCtrl(QtGui.QGroupBox):
             self.modFreq.hide()     # No modulation. Hide modulation widget
             self.modDepth.hide()
 
-        comm_stat = synapi.set_mod_mode(mod_index)
+        comm_stat = apisyn.set_mod_mode(mod_index)
 
         if mod_index == 1:
             if self.modDepthUnit.count() == 1:  # it is set to AM
@@ -338,7 +354,7 @@ class SynCtrl(QtGui.QGroupBox):
             pass
 
         # update parameters
-        freq, depth = synapi.read_mod_par()
+        freq, depth = apisyn.read_mod_par()
         self.modFreqFill.setText(freq)
         self.modDepthFill.setText(depth)
 
@@ -348,26 +364,30 @@ class SynCtrl(QtGui.QGroupBox):
         '''
 
         mod_index = self.modModeSelect.currentIndex()
+        toggle = self.modToggle.isChecked()
+
+        # convert input and set sheet border color by status
+        freq_status, mod_freq = apival.val_syn_mod_freq(self.modFreqFill.text(),
+                                       self.modFreqUnit.currentText())
+        self.modFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(freq_stat)))
+        depth_status, mod_depth = apival.val_syn_mod_depth(self.modDepthFill.text(),
+                                         self.modDepthUnit.currentText())
+        self.modDepthFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(depth_stat)))
 
         if mod_index == 1:      # AM
-            freq_stat, depth_stat = synapi.set_am(self.modFreqFill.text(),
-                                                  self.modDepthFill.text(),
-                                                  self.modToggle.isChecked())
+            status = apisyn.set_am(self.synHandle, mod_freq, mod_depth, toggle)
         elif mod_index == 2:    # FM
-            freq_stat, depth_stat = synapi.set_fm(self.modFreqFill.text(),
-                                                  self.modDepthFill.text(),
-                                                  self.modToggle.isChecked())
+            status = apisyn.set_fm(self.synHandle, mod_freq, mod_depth, toggle)
+        else:
+            pass
 
-        # set sheet border color by status
-        self.modFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(freq_stat)))
-        self.modDepthFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(depth_stat)))
 
     def modToggleComm(self):
         '''
             Communicate with the synthesizer and update modulation on/off toggle
         '''
 
-        synapi.mod_toggle(self.modToggle.isChecked())
+        apisyn.mod_toggle(self.modToggle.isChecked())
 
 
 class LockinCtrl(QtGui.QGroupBox):
@@ -436,20 +456,22 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set phase
         '''
 
-        stat = apilc.set_phase(self.lcHandle, phase_text)
-        self.phaseFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(stat)))
+        status, phase = apival.val_lc_phase(phase_text)
+        self.phaseFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        apilc.set_phase(self.lcHandle, phase)
 
     def harmComm(self, harm_text):
         '''
             Communicate with the lockin and set Harmonics
         '''
 
-        stat = apilc.set_harm(self.lcHandle, harm_text)
+        lc_freq = apilc.read_freq(self.lcHandle)
+        status, harm = apival.val_lc_harm(harm_text, lc_freq)
 
-        if stat:
+        if status:
             QtGui.QMessageBox.warning(self, 'Out of Range!', 'Input harmonics exceed legal range!', QtGui.QMessageBox.Ok)
         else:
-            pass
+            apilc.set_harm(self.lcHandle, harm)
 
     def sensComm(self, sens_index):
         '''

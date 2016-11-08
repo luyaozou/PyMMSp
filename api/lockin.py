@@ -1,25 +1,5 @@
 #! encoding = utf-8
 
-def wrap_phase(phase):
-    ''' Wrap phase into the range of [-180, 180] degrees.
-        Arguments
-            phase: float
-        Returns
-            phase: float
-    '''
-
-    if phase > 180:
-        while phase > 180:
-            phase -= 360
-    elif phase <= -180:
-        while phase <= -180:
-            phase += 360
-    else:
-        pass
-
-    return phase
-
-
 def init_lia(lcHandle):
     ''' Initiate the lockin with default settings. '''
 
@@ -72,22 +52,20 @@ def read_sens(lcHandle):
 
 
 
-def set_phase(lcHandle, phase_text):
+def set_phase(lcHandle, phase):
     ''' Set the lockin phase to phase_text.
         Arguments
             lcHandle: pyvisa.resources.Resource, Lockin handle
-            phase_text: str, user input
+            phase: float
         Returns communication status
             0: safe
             1: fatal
     '''
 
     try:
-        phase = float(phase_text)
-        phase = wrap_phase(phase)
-        stat = lcHandle.write('PHAS{:.2f}'.format(phase), '\n')
-        return stat
-    except ValueError:
+        status = lcHandle.write('PHAS{:.2f}'.format(phase), '\n')
+        return status
+    except:
         return 1
 
 
@@ -97,25 +75,20 @@ def auto_phase(lcHandle):
     lcHandle.write('APHS\n')
 
 
-def set_harm(lcHandle, harm_text):
+def set_harm(lcHandle, harm):
     ''' Set the lockin harmonics to idx.
         Arguments
             lcHandle: pyvisa.resources.Resource, Lockin handle
-            harm_text: str, user input
+            harm: int
         Returns communication status
             0: safe
             1: fatal
     '''
 
-    freq = lcHandle.query('FREQ?', '\n')
     try:
-        harm = int(harm_text)
-        if harm > 0 and harm < (102000/freq):
-            lcHandle.write('HARM{:d}'.format(harm), '\n')
-            return 0
-        else:
-            return 1
-    except ValueError:
+        status = lcHandle.write('HARM{:d}'.format(harm), '\n')
+        return status
+    except:
         return 1
 
 
