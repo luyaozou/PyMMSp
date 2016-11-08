@@ -70,9 +70,9 @@ class LockinStatus(QtGui.QGroupBox):
         Lockin status display
     '''
 
-    def __init__(self, parent, synHandle):
+    def __init__(self, parent, lcHandle):
         QtGui.QWidget.__init__(self, parent)
-        self.synHandle = synHandle
+        self.lcHandle = lcHandle
 
         self.setTitle('Lockin Status')
         self.setAlignment(1)
@@ -103,9 +103,14 @@ class LockinStatus(QtGui.QGroupBox):
         self.setLayout(mainLayout)
 
         ## -- Trigger status updates
+        self.update()
 
     def update(self):
-        pass
+
+        self.lcHarm.setText(apilc.read_harm(self.lcHandle))
+        self.lcPhase.setText(apilc.read_phase(self.lcHandle))
+        self.lcFreq.setText(apilc.read_freq(self.lcHandle))
+        self.lcSens.setText(apilc.read_sens(self.lcHandle))
 
 
 class ScopeStatus(QtGui.QGroupBox):
@@ -142,6 +147,7 @@ class SynCtrl(QtGui.QGroupBox):
 
     def __init__(self, parent, synHandle):
         QtGui.QWidget.__init__(self, parent)
+        self.parent = parent
         self.synHandle = synHandle
 
         self.setTitle('Synthesizer Control')
@@ -368,6 +374,7 @@ class LockinCtrl(QtGui.QGroupBox):
 
     def __init__(self, parent, lcHandle):
         QtGui.QWidget.__init__(self, parent)
+        self.parent = parent
         self.lcHandle = lcHandle
 
         self.setTitle('Lockin Control')
@@ -429,7 +436,7 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set phase
         '''
 
-        stat = apilc.set_phase(phase_text)
+        stat = apilc.set_phase(self.lcHandle, phase_text)
         self.phaseFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(stat)))
 
     def harmComm(self, harm_text):
@@ -437,7 +444,7 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set Harmonics
         '''
 
-        stat = apilc.set_harm(harm_text)
+        stat = apilc.set_harm(self.lcHandle, harm_text)
 
         if stat:
             QtGui.QMessageBox.warning(self, 'Out of Range!', 'Input harmonics exceed legal range!', QtGui.QMessageBox.Ok)
@@ -449,7 +456,7 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set sensitivity
         '''
 
-        stat = apilc.set_sensitivity(sens_index)
+        stat = apilc.set_sensitivity(self.lcHandle, sens_index)
 
         if stat:
             QtGui.QMessageBox.warning(self, 'Out of Range!', 'Input sensitivity exceed legal range!', QtGui.QMessageBox.Ok)
@@ -461,7 +468,7 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set sensitivity
         '''
 
-        stat = apilc.set_tc(tc_index)
+        stat = apilc.set_tc(self.lcHandle, tc_index)
 
         if stat:
             QtGui.QMessageBox.warning(self, 'Out of Range!', 'Input time constant exceed legal range!', QtGui.QMessageBox.Ok)
@@ -473,7 +480,7 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set couple mode
         '''
 
-        stat = apilc.set_couple(couple_text)
+        stat = apilc.set_couple(self.lcHandle, couple_text)
 
         if stat:
             QtGui.QMessageBox.critical(self, 'Invalid Input!', 'Input couple unrecognized!', QtGui.QMessageBox.Ok)
@@ -485,7 +492,7 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set reserve
         '''
 
-        stat = apilc.set_reserve(reserve_text)
+        stat = apilc.set_reserve(self.lcHandle, reserve_text)
 
         if stat:
             QtGui.QMessageBox.critical(self, 'Invalid Input!', 'Input reserve mode unrecognized!', QtGui.QMessageBox.Ok)
@@ -497,6 +504,7 @@ class ScopeCtrl(QtGui.QGroupBox):
 
     def __init__(self, parent, pciHandle):
         QtGui.QWidget.__init__(self, parent)
+        self.parent = parent
         self.pciHandle = pciHandle
 
         self.setTitle('Oscilloscope Control')
@@ -551,10 +559,11 @@ class ScopeCtrl(QtGui.QGroupBox):
 
 
 
-class CavityCtrl(QtGui.QGroupBox):
+class MotorCtrl(QtGui.QGroupBox):
 
     def __init__(self, parent, motorHandle):
         QtGui.QWidget.__init__(self, parent)
+        self.parent = parent
         self.motorHandle = motorHandle
 
         self.setTitle('Cavity Control')

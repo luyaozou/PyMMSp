@@ -2,8 +2,8 @@
 
 from PyQt4 import QtCore, QtGui
 import time
-from gui.Panels import *
-from gui.Dialogs import *
+from gui import Panels
+from gui import Dialogs
 from api import general as apigen
 
 class MainWindow(QtGui.QMainWindow):
@@ -67,19 +67,28 @@ class MainWindow(QtGui.QMainWindow):
         menuScan.addAction(scanPCIAction)
         menuScan.addAction(scanCavityAction)
 
+        # Set main window widgets
+        self.synStatus = Panels.SynStatus(self, self.synHandle)
+        self.lcStatus = Panels.LockinStatus(self, self.lcHandle)
+        self.scopeStatus = Panels.ScopeStatus(self, self.pciHandle)
+        self.synCtrl = Panels.SynCtrl(self, self.synHandle)
+        self.lcCtrl = Panels.LockinCtrl(self, self.lcHandle)
+        self.scopeCtrl = Panels.ScopeCtrl(self, self.pciHandle)
+        self.motorCtrl = Panels.MotorCtrl(self, self.motorHandle)
+
         # Set main window layout
         self.mainLayout = QtGui.QGridLayout()
         self.mainLayout.setSpacing(6)
-        self.mainLayout.addWidget(SynStatus(self, self.synHandle), 0, 0, 3, 2)
-        self.mainLayout.addWidget(LockinStatus(self, self.lcHandle), 1, 0, 1, 2)
-        self.mainLayout.addWidget(ScopeStatus(self, self.pciHandle), 2, 0, 1, 2)
-        self.mainLayout.addWidget(SynCtrl(self, self.synHandle), 0, 2, 1, 2)
-        self.mainLayout.addWidget(LockinCtrl(self, self.lcHandle), 1, 2, 1, 2)
-        self.mainLayout.addWidget(ScopeCtrl(self, self.pciHandle), 2, 2, 1, 2)
-        self.mainLayout.addWidget(CavityCtrl(self, self.motorHandle), 3, 2, 1, 2)
-        self.mainLayout.addWidget(ScopeMonitor(self), 0, 4, 1, 4)
-        self.mainLayout.addWidget(LockinMonitor(self), 1, 4, 1, 4)
-        self.mainLayout.addWidget(SpectrumMonitor(self), 2, 4, 1, 4)
+        self.mainLayout.addWidget(self.synStatus, 0, 0, 3, 2)
+        self.mainLayout.addWidget(self.lcStatus, 1, 0, 1, 2)
+        self.mainLayout.addWidget(self.scopeStatus, 2, 0, 1, 2)
+        self.mainLayout.addWidget(self.synCtrl, 0, 2, 1, 2)
+        self.mainLayout.addWidget(self.lcCtrl, 1, 2, 1, 2)
+        self.mainLayout.addWidget(self.scopeCtrl, 2, 2, 1, 2)
+        self.mainLayout.addWidget(self.motorCtrl, 3, 2, 1, 2)
+        self.mainLayout.addWidget(Panels.ScopeMonitor(self), 0, 4, 1, 4)
+        self.mainLayout.addWidget(Panels.LockinMonitor(self), 1, 4, 1, 4)
+        self.mainLayout.addWidget(Panels.SpectrumMonitor(self), 2, 4, 1, 4)
 
         # Enable main window
         self.mainWidget = QtGui.QWidget()
@@ -108,13 +117,13 @@ class MainWindow(QtGui.QMainWindow):
             pass
 
     def on_sel_inst(self):
-        d = SelInstDialog(self, self)
+        d = Dialogs.SelInstDialog(self, self)
         d.exec_()
         # Refresh instrument handles
         self.synHandle, self.lcHandle, self.pciHandle, self.motorHandle = apigen.load_inst('api/inst.cfg')
 
     def on_view_inst_stat(self):
-        d = ViewInstDialog(self, self)
+        d = Dialogs.ViewInstDialog(self, self)
         d.show()
 
     def on_scan_jpl(self):
