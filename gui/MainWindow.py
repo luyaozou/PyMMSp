@@ -79,7 +79,7 @@ class MainWindow(QtGui.QMainWindow):
         # Set main window layout
         self.mainLayout = QtGui.QGridLayout()
         self.mainLayout.setSpacing(6)
-        self.mainLayout.addWidget(self.synStatus, 0, 0, 3, 2)
+        self.mainLayout.addWidget(self.synStatus, 0, 0, 1, 2)
         self.mainLayout.addWidget(self.lcStatus, 1, 0, 1, 2)
         self.mainLayout.addWidget(self.scopeStatus, 2, 0, 1, 2)
         self.mainLayout.addWidget(self.synCtrl, 0, 2, 1, 2)

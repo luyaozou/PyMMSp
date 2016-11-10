@@ -3,76 +3,35 @@
 def init_lia(lcHandle):
     ''' Initiate the lockin with default settings. '''
 
-    lcHandle.write('OUTX1\n')      # GPIB output
-    lcHandle.write('FMOD0;ISRC0;IGND1;DDEF1,0,0;DDEF2,1,0;FPOP1,1\n')
-
-
-def read_harm(lcHandle):
-    ''' Read current lockin harmonics '''
-
-    try:
-        text = lcHandle.query('HARM?\n')
-    except:
-        text = 'N.A.'
-
-    return text
-
-
-def read_phase(lcHandle):
-    ''' Read current lockin phase '''
-
-    try:
-        text = lcHandle.query('PHAS?\n')
-    except:
-        text = 'N.A.'
-
-    return text
+    lcHandle.write('OUTX1')      # GPIB output
+    lcHandle.write('FMOD0;ISRC0;IGND1;DDEF1,0,0;DDEF2,1,0;FPOP1,1')
 
 
 def read_freq(lcHandle):
-    ''' Read current lockin frequency '''
-
-    try:
-        text = lcHandle.query('FREQ?\n')
-    except:
-        text = 'N.A.'
-
-    return text
-
-
-def read_sens(lcHandle):
-    ''' Read current lockin sensitivity '''
-
-    try:
-        text = lcHandle.query('SENS?\n')
-    except:
-        text = 'N.A.'
-
-    return text
-
-
-
-def set_phase(lcHandle, phase):
-    ''' Set the lockin phase to phase_text.
-        Arguments
-            lcHandle: pyvisa.resources.Resource, Lockin handle
-            phase: float
-        Returns communication status
-            0: safe
-            1: fatal
+    ''' Read current lockin frequency.
+        Returns frequency in kHz (float)
     '''
 
     try:
-        status = lcHandle.write('PHAS{:.2f}'.format(phase), '\n')
-        return status
+        text = lcHandle.query('FREQ?')
+        freq = float(text.strip()) * 1e-3
     except:
-        return 1
+        freq = 0
+
+    return freq
 
 
-def auto_phase(lcHandle):
-    ''' Autophase in lockin '''
+def read_harm(lcHandle):
+    ''' Read current lockin harmonics.
+        Returns verbatim text
+    '''
 
-    lcHandle.write('APHS\n')
+    try:
+        text = lcHandle.query('HARM?')
+    except:
+        text = 'N.A.'
+
+    return text.strip()
 
 
 def set_harm(lcHandle, harm):
@@ -86,13 +45,67 @@ def set_harm(lcHandle, harm):
     '''
 
     try:
-        status = lcHandle.write('HARM{:d}'.format(harm), '\n')
-        return status
+        lcHandle.write('HARM{:d}'.format(harm))
+        return 0
     except:
         return 1
 
 
-def set_sensitivity(lcHandle, sens_index):
+def read_phase(lcHandle):
+    ''' Read current lockin phase.
+        Returns verbatim text
+    '''
+
+    try:
+        text = lcHandle.query('PHAS?')
+    except:
+        text = 'N.A.'
+
+    return text.strip()
+
+
+def set_phase(lcHandle, phase):
+    ''' Set the lockin phase to phase_text.
+        Arguments
+            lcHandle: pyvisa.resources.Resource, Lockin handle
+            phase: float
+        Returns communication status
+            0: safe
+            1: fatal
+    '''
+
+    try:
+        lcHandle.write('PHAS{:.2f}'.format(phase))
+        return 0
+    except:
+        return 1
+
+
+def auto_phase(lcHandle):
+    ''' Autophase in lockin '''
+
+    try:
+        lcHandle.write('APHS')
+        return 0
+    except:
+        return 1
+
+
+def read_sens(lcHandle):
+    ''' Read current lockin sensitivity.
+        Returns index number (int)
+    '''
+
+    try:
+        text = lcHandle.query('SENS?')
+        index = int(text.strip())
+    except:
+        index = 0
+
+    return index
+
+
+def set_sens(lcHandle, sens_index):
     ''' Set the lockin sensitivity.
         Arguments
             lcHandle: pyvisa.resources.Resource, Lockin handle
@@ -103,8 +116,25 @@ def set_sensitivity(lcHandle, sens_index):
             1: fatal
     '''
 
-    stat = lcHandle.write('SENS{:d}'.format(sens_index), '\n')
-    return stat
+    try:
+        lcHandle.write('SENS{:d}'.format(sens_index))
+        return 0
+    except:
+        return 1
+
+
+def read_tc(lcHandle):
+    ''' Read current lockin sensitivity.
+        Returns index number (int)
+    '''
+
+    try:
+        text = lcHandle.query('OFLT?')
+        index = int(text.strip())
+    except:
+        index = 0
+
+    return index
 
 
 def set_tc(lcHandle, tc_index):
@@ -118,8 +148,25 @@ def set_tc(lcHandle, tc_index):
             1: fatal
     '''
 
-    stat = lcHandle.write('OFLT{:d}'.format(tc_index), '\n')
-    return stat
+    try:
+        lcHandle.write('OFLT{:d}'.format(tc_index))
+        return 0
+    except:
+        return 1
+
+
+def read_couple(lcHandle):
+    ''' Read current lockin couple.
+        Returns couple text (str)
+    '''
+
+    a_dict = {'0': 'AC', '1': 'DC'}
+
+    try:
+        text = lcHandle.query('ICPL?')
+        return a_dict[text.strip()]
+    except:
+        return 'N.A.'
 
 
 def set_couple(lcHandle, couple_text):
@@ -132,22 +179,40 @@ def set_couple(lcHandle, couple_text):
             1: fatal
     '''
 
-    if couple_text == 'AC':
-        lcHandle.write('ICPL0\n')
-    elif couple_text == 'DC':
-        lcHandle.write('ICPL1\n')
-    else:
+    a_dict = {'AC': 'ICPL0',
+              'DC': 'ICPL1'}
+
+    try:
+        lcHandle.write(a_dict[couple_text])
+        return 0
+    except:
         return 1
 
 
-def set_reserve(reserve_text):
+def read_reserve(lcHandle):
+    ''' Read current lockin reserve.
+        Returns reserve text (str)
+    '''
+
+    a_dict = {'2': 'Low Noise',
+              '1': 'Normal',
+              '0':'High Reserve'}
+
+    try:
+        text = lcHandle.query('RMOD?')
+        return a_dict[text.strip()]
+    except:
+        return 'N.A.'
+
+
+def set_reserve(lcHandle, reserve_text):
     ''' Set the lockin reserve '''
 
-    if reserve_text == 'Low Noise':
-        lcHandle.write('RMOD2\n')
-    elif reserve_text == 'Normal':
-        lcHandle.write('RMOD1\n')
-    elif reserve_text == 'High Reserve':
-        lcHandle.write('RMOD0\n')
-    else:
+    a_dict = {'Low Noise': 'RMOD2',
+              'Normal': 'RMOD1',
+              'High Reserve': 'RMOD0'}
+
+    try:
+        lcHandle.write(a_dict[reserve_text])
+    except:
         return 1

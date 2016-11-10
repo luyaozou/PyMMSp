@@ -137,7 +137,7 @@ def val_syn_mod_freq(freq_text, freq_unit_text):
             freq_unit_text: str, modulation frequency unit
         Returns
             status: int (0: safe; 1: error; 2: warning)
-            freq: float
+            freq: float (kHz)
     '''
 
     status, modfreq = conv_mod_freq_kHz(freq_text, freq_unit_text)
@@ -177,7 +177,7 @@ def val_syn_mod_depth(depth_text, depth_unit):
             depth_unit: int, modulation depth unit
         Returns
             status: int (0: safe; 1: error; 2: warning)
-            freq: float
+            freq: float ('%' for AM, kHz for FM)
     '''
 
     status, depth = conv_mod_depth_kHz(depth_text, depth_unit)
