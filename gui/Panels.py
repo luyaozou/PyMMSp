@@ -410,6 +410,7 @@ class SynCtrl(QtGui.QGroupBox):
                 for i in range(self.modDepthUnit.count()): # remove all items
                     self.modDepthUnit.removeItem(0)
                 self.modDepthUnit.addItems(['%'])
+            freq, depth, status = apisyn.read_am_par(self.synHandle)
         elif mod_index == 2:
             if self.modDepthUnit.count() == 2:  # it is set to AM
                 pass
@@ -417,11 +418,11 @@ class SynCtrl(QtGui.QGroupBox):
                 for i in range(self.modDepthUnit.count()): # remove all items
                     self.modDepthUnit.removeItem(0)
                 self.modDepthUnit.addItems(['kHz', 'MHz'])
+            freq, depth, status = apisyn.read_fm_par(self.synHandle)
         else:
             pass
 
         # update parameters
-        freq, depth = apisyn.read_mod_par()
         self.modFreqFill.setText(freq)
         self.modDepthFill.setText(depth)
 

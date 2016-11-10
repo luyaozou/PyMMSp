@@ -82,11 +82,20 @@ def open_inst(inst_address):
     return inst_handle
 
 
-def close_inst(inst_handle):
+def close_inst(*inst_handle):
     '''
         Close all connecting instruments
     '''
 
-    inst_handle.close()
+    status = False
 
-    return 0
+    for inst in inst_handle:
+        if not inst:
+            try:
+                inst.close()
+            except:
+                status = True
+        else:
+            pass
+
+    return status

@@ -101,8 +101,8 @@ class MainWindow(QtGui.QMainWindow):
                        'Are you sure to quit?', QtGui.QMessageBox.Yes |
                        QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
         if q == QtGui.QMessageBox.Yes:
-            stat = apigen.close_inst()
-            if not stat:    # safe to close
+            status = apigen.close_inst(self.synHandle, self.lcHandle, self.pciHandle, self.motorHandle)
+            if not status:    # safe to close
                 self.close()
             else:
                 qq = QtGui.QMessageBox.question(self, 'Error',
