@@ -20,14 +20,16 @@ def list_inst():
     inst_list = rm.list_resources()
     inst_dict = {}
     for inst in inst_list:
-        # open each instrument and get instrument information
-        temp = rm.open_resource(inst)
         try:
-            inst_dict[inst] = temp.query('*IDN?')
+            # open each instrument and get instrument information
+            temp = rm.open_resource(inst)
+            # If the instrument is GPIB, query for the instrument name
+            if int(temp.interface_type) == 4:
+                inst_dict[inst] = temp.query('*IDN?')
+            # close instrument right way in case of unexpected crashes
+            temp.close()
         except:
             inst_dict[inst] = 'Visa IO Error'
-        # close instrument right way to prevent unexpected crashes
-        temp.close()
 
     inst_str = 'Detected Instrument:\n'
     if inst_dict:
