@@ -43,23 +43,22 @@ def val_lc_phase(text):
         return 1, 0
 
 
-def val_lc_harm(harm_text, freq_text):
+def val_lc_harm(harm_text, freq):
     ''' Validate locking phase input.
         Arguments
             harm_text: str, harmonics input text
-            freq_text: str, locked frequency input text
+            freq: float, locked frequency input text
         Returns
-            status: int (0: safe; 1: error; 2: warning)
+            status: int (0: safe; 1: error)
             harm: int
     '''
     try:
         harm = int(harm_text)
-        freq = float(freq_text)
         if harm > 0 and harm < (102000/freq):
             return 0, harm
         else:
-            return 2, 1
-    except ValueError:
+            return 1, 1
+    except (ValueError, ZeroDivisionError):
         return 1, 1
 
 

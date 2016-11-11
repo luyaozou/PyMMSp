@@ -3,6 +3,7 @@
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import QObject
 import pyqtgraph as pg
+import pyvisa
 from gui.SharedWidgets import *
 from api import synthesizer as apisyn
 from api import lockin as apilc
@@ -525,7 +526,15 @@ class LockinCtrl(QtGui.QGroupBox):
 
         status, phase = apival.val_lc_phase(phase_text)
         self.phaseFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
-        apilc.set_phase(self.lcHandle, phase)
+        if status!= 1:
+            vCode = apilc.set_phase(self.lcHandle, phase)
+            if vCode == pyvisa.constants.StatusCode.success:
+                pass
+            else:
+                msg = InstStatus(self, vcode)
+                msg.exec_()
+        else:
+            pass
 
     def harmComm(self, harm_text):
         '''
@@ -535,58 +544,68 @@ class LockinCtrl(QtGui.QGroupBox):
         lc_freq = apilc.read_freq(self.lcHandle)
         status, harm = apival.val_lc_harm(harm_text, lc_freq)
 
-        if status:
-            QtGui.QMessageBox.warning(self, 'Out of Range!', 'Input harmonics exceed legal range!', QtGui.QMessageBox.Ok)
+        if not status:
+            vcode = apilc.set_harm(self.lcHandle, harm)
+            if vcode == pyvisa.constants.StatusCode.success:
+                pass
+            else:
+                msg = InstStatus(self, vcode)
+                msg.exec_()
         else:
-            apilc.set_harm(self.lcHandle, harm)
+            msg = MsgError(self, 'Out of Range!', 'Input harmonics exceed legal range!')
+            msg.exec_()
 
     def sensComm(self, sens_index):
         '''
             Communicate with the lockin and set sensitivity
         '''
 
-        stat = apilc.set_sens(self.lcHandle, sens_index)
+        vcode = apilc.set_sens(self.lcHandle, sens_index)
 
-        if stat:
-            QtGui.QMessageBox.warning(self, 'Out of Range!', 'Input sensitivity exceed legal range!', QtGui.QMessageBox.Ok)
-        else:
+        if vcode == pyvisa.constants.StatusCode.success:
             pass
+        else:
+            msg = InstStatus(self, vcode)
+            msg.exec_()
 
     def tcComm(self, tc_index):
         '''
             Communicate with the lockin and set sensitivity
         '''
 
-        stat = apilc.set_tc(self.lcHandle, tc_index)
+        vcode = apilc.set_tc(self.lcHandle, tc_index)
 
-        if stat:
-            QtGui.QMessageBox.warning(self, 'Out of Range!', 'Input time constant exceed legal range!', QtGui.QMessageBox.Ok)
-        else:
+        if vcode == pyvisa.constants.StatusCode.success:
             pass
+        else:
+            msg = InstStatus(self, vcode)
+            msg.exec_()
 
     def coupleComm(self, couple_text):
         '''
             Communicate with the lockin and set couple mode
         '''
 
-        stat = apilc.set_couple(self.lcHandle, couple_text)
+        vcode = apilc.set_couple(self.lcHandle, couple_text)
 
-        if stat:
-            QtGui.QMessageBox.critical(self, 'Invalid Input!', 'Input couple unrecognized!', QtGui.QMessageBox.Ok)
-        else:
+        if vcode == pyvisa.constants.StatusCode.success:
             pass
+        else:
+            msg = InstStatus(self, vcode)
+            msg.exec_()
 
     def reserveComm(self, reserve_text):
         '''
             Communicate with the lockin and set reserve
         '''
 
-        stat = apilc.set_reserve(self.lcHandle, reserve_text)
+        vcode = apilc.set_reserve(self.lcHandle, reserve_text)
 
-        if stat:
-            QtGui.QMessageBox.critical(self, 'Invalid Input!', 'Input reserve mode unrecognized!', QtGui.QMessageBox.Ok)
-        else:
+        if vcode == pyvisa.constants.StatusCode.success:
             pass
+        else:
+            msg = InstStatus(self, vcode)
+            msg.exec_()
 
 
 class ScopeCtrl(QtGui.QGroupBox):

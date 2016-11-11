@@ -1,10 +1,14 @@
 #! encoding = utf-8
 
 def init_lia(lcHandle):
-    ''' Initiate the lockin with default settings. '''
+    ''' Initiate the lockin with default settings.
+        Returns visaCode
+    '''
 
-    lcHandle.write('OUTX1')      # GPIB output
-    lcHandle.write('FMOD0;ISRC0;IGND1;DDEF1,0,0;DDEF2,1,0;FPOP1,1')
+    num, vcode = lcHandle.write('OUTX1')      # GPIB output
+    num, vcode = lcHandle.write('FMOD0;ISRC0;IGND1;DDEF1,0,0;DDEF2,1,0;FPOP1,1')
+
+    return vcode
 
 
 def read_freq(lcHandle):
@@ -39,16 +43,14 @@ def set_harm(lcHandle, harm):
         Arguments
             lcHandle: pyvisa.resources.Resource, Lockin handle
             harm: int
-        Returns communication status
-            0: safe
-            1: fatal
+        Returns visaCode
     '''
 
     try:
-        lcHandle.write('HARM{:d}'.format(harm))
-        return 0
+        num, vcode = lcHandle.write('HARM{:d}'.format(harm))
+        return vcode
     except:
-        return 1
+        return 'IOError'
 
 
 def read_phase(lcHandle):
@@ -69,26 +71,26 @@ def set_phase(lcHandle, phase):
         Arguments
             lcHandle: pyvisa.resources.Resource, Lockin handle
             phase: float
-        Returns communication status
-            0: safe
-            1: fatal
+        Returns visaCode
     '''
 
     try:
-        lcHandle.write('PHAS{:.2f}'.format(phase))
-        return 0
+        num, vcode = lcHandle.write('PHAS{:.2f}'.format(phase))
+        return vcode
     except:
-        return 1
+        return 'IOError'
 
 
 def auto_phase(lcHandle):
-    ''' Autophase in lockin '''
+    ''' Autophase in lockin.
+        Returns visaCode
+    '''
 
     try:
-        lcHandle.write('APHS')
-        return 0
+        num, vcode = lcHandle.write('APHS')
+        return vcode
     except:
-        return 1
+        return 'IOError'
 
 
 def read_sens(lcHandle):
@@ -111,16 +113,14 @@ def set_sens(lcHandle, sens_index):
             lcHandle: pyvisa.resources.Resource, Lockin handle
             sens_index: int, user input.
                         The index directly map to the lockin command
-        Returns communication status
-            0: safe
-            1: fatal
+        Returns visaCode
     '''
 
     try:
-        lcHandle.write('SENS{:d}'.format(sens_index))
-        return 0
+        num, vcode = lcHandle.write('SENS{:d}'.format(sens_index))
+        return vcode
     except:
-        return 1
+        return 'IOError'
 
 
 def read_tc(lcHandle):
@@ -143,16 +143,14 @@ def set_tc(lcHandle, tc_index):
             lcHandle: pyvisa.resources.Resource, Lockin handle
             tc_index: int, user input.
                       The index directly map to the lockin command
-        Returns communication status
-            0: safe
-            1: fatal
+        Returns visaCode
     '''
 
     try:
-        lcHandle.write('OFLT{:d}'.format(tc_index))
-        return 0
+        num, vcode = lcHandle.write('OFLT{:d}'.format(tc_index))
+        return vcode
     except:
-        return 1
+        return 'IOError'
 
 
 def read_couple(lcHandle):
@@ -174,19 +172,17 @@ def set_couple(lcHandle, couple_text):
         Arguments
             lcHandle: pyvisa.resources.Resource, Lockin handle
             couple_text: str, user input.
-        Returns communication status
-            0: safe
-            1: fatal
+        Returns visaCode
     '''
 
     a_dict = {'AC': 'ICPL0',
               'DC': 'ICPL1'}
 
     try:
-        lcHandle.write(a_dict[couple_text])
-        return 0
+        num, vcode = lcHandle.write(a_dict[couple_text])
+        return vcode
     except:
-        return 1
+        return 'IOError'
 
 
 def read_reserve(lcHandle):
@@ -206,13 +202,16 @@ def read_reserve(lcHandle):
 
 
 def set_reserve(lcHandle, reserve_text):
-    ''' Set the lockin reserve '''
+    ''' Set the lockin reserve.
+        Returns visaCode
+    '''
 
     a_dict = {'Low Noise': 'RMOD2',
               'Normal': 'RMOD1',
               'High Reserve': 'RMOD0'}
 
     try:
-        lcHandle.write(a_dict[reserve_text])
+        num, vcode = lcHandle.write(a_dict[reserve_text])
+        return vcode
     except:
-        return 1
+        return 'IOError'

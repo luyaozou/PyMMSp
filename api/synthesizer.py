@@ -1,5 +1,6 @@
 #! encoding = utf-8
 import time
+import pyvisa
 
 
 def ramp_up(start, stop):
@@ -21,13 +22,15 @@ def ramp_down(start, stop):
 
 
 def init_syn(synHandle):
-    ''' Initialize synthesizer '''
+    ''' Initialize synthesizer.
+        Returns visaCode
+    '''
 
     try:
-        synHandle.write('AM1:SOUR INT1; FM1:SOUR INT1; LFO:SOUR INT1; LFO:AMPL 0.1VP; POW:MODE FIX; FREQ:MODE CW')
-        return 0
+        num, vcode = synHandle.write('AM1:SOUR INT1; FM1:SOUR INT1; LFO:SOUR INT1; LFO:AMPL 0.1VP; POW:MODE FIX; FREQ:MODE CW')
+        return vcode
     except:
-        return 1
+        return 'IOError'
 
 
 def read_power_toggle(synHandle):
@@ -45,19 +48,17 @@ def read_power_toggle(synHandle):
 
 def set_power_toggle(synHandle, toggle_stat):
     ''' Turn RF power on/off.
-        Returns communication status
-            0: off
-            1: on
+        Returns visaCode
     '''
 
     if toggle_stat:     # user want to turn on RF
         synHandle.write('OUTP 1')
-        set_syn_power(synHandle, 0)
-        return 1
+        vcode = set_syn_power(synHandle, 0)
     else:               # user want to turn off RF
         set_syn_power(synHandle, -20)
-        synHandle.write('OUTP 0')
-        return 0
+        vcode = synHandle.write('OUTP 0')
+
+    return vcode
 
 
 def read_syn_power(synHandle):
@@ -74,7 +75,9 @@ def read_syn_power(synHandle):
 
 
 def set_syn_power(synHandle, set_power):
-    ''' Set synthesizer power '''
+    ''' Set synthesizer power.
+        Returns visaCode
+    '''
 
     current_power = read_syn_power(synHandle)
 
@@ -82,17 +85,17 @@ def set_syn_power(synHandle, set_power):
         if set_power > current_power:
             # turn on RF
             for n in ramp_up(current_power, set_power):
-                synHandle.write(':POW {:d}DBM'.format(n))
+                num, vcode = synHandle.write(':POW {:d}DBM'.format(n))
                 time.sleep(0.5)   # pause 0.5 second
         elif set_power < current_power:
             for n in ramp_down(current_power, set_power):
-                synHandle.write(':POW {:d}DBM'.format(n))
+                num, vcode = synHandle.write(':POW {:d}DBM'.format(n))
                 time.sleep(0.5)   # pause 0.5 second
         else:
-            pass
-        return 0
+            vcode = pyvisa.constants.StatusCode.success
+        return vcode
     except:
-        return 1
+        return 'IOError'
 
 
 def read_syn_freq(synHandle):
@@ -113,16 +116,14 @@ def set_syn_freq(synHandle, freq):
         Arguments
             lcHandle: pyvisa.resources.Resource, synthesizer handle
             freq: float
-        Returns communication status
-            0: safe
-            1: fatal
+        Returns visaCode
     '''
 
     try:
-        synHandle.write('FREQ:CW {:.9f}MHZ'.format(freq))
-        return 0
+        num, vcode = synHandle.write('FREQ:CW {:.9f}MHZ'.format(freq))
+        return vcode
     except:
-        return 1
+        return 'IOError'
 
 
 def set_mod_mode(synHandle, mod_index):
@@ -131,9 +132,7 @@ def set_mod_mode(synHandle, mod_index):
             0: no modulation
             1: AM
             2: FM
-        Returns communication status.
-            0: safe
-            1: fatal
+        Returns visaCode
     '''
 
     a_dict = {0: 'AM1:STAT 0; FM1:STAT 0',
@@ -141,10 +140,10 @@ def set_mod_mode(synHandle, mod_index):
               2: 'AM1:STAT 0; FM1:STAT1'}
 
     try:
-        synHandle.write(a_dict[mod_index])
-        return 0
+        num, vcode = synHandle.write(a_dict[mod_index])
+        return vcode
     except:
-        return 1
+        return 'IOError'
 
 
 def read_mod_toggle(synHandle):
@@ -163,16 +162,14 @@ def set_mod_toggle(synHandle, toggle_stat):
     ''' Turn on/off modulation.
         Arguments
             toggle_stat: boolean
-        Returns communication status
-            0: safe
-            1: fatal
+        Returns visaCode
     '''
 
     try:
-        synHandle.write('OUTP:MOD {:d}'.format(toggle_stat))
-        return 0
+        num, vcode = synHandle.write('OUTP:MOD {:d}'.format(toggle_stat))
+        return vcode
     except:
-        return 1
+        return 'IOError'
 
 
 def read_am_par(synHandle):
@@ -201,19 +198,17 @@ def set_am(synHandle, freq, depth, toggle_stat):
             freq: float (kHz)
             depth: float ('%')
             toggle_stat: boolean
-        Returns communication status
-            0: safe
-            1: fatal
+        Returns visaCode
     '''
 
     try:
         # set up AM freq and depth
-        synHandle.write('AM1:INT1:FREQ {:.6f}KHZ; AM1 {:.2f}'.format(freq, depth))
-        status = mod_toggle(toggle_stat)
+        mod_toggle(toggle_stat)
+        num, vcode = synHandle.write('AM1:INT1:FREQ {:.6f}KHZ; AM1 {:.2f}'.format(freq, depth))
     except:
-        status = 1
+        vcode = 'IOError'
 
-    return status
+    return vcode
 
 
 def read_fm_par(synHandle):
@@ -242,19 +237,17 @@ def set_fm(synHandle, freq, depth, toggle_stat):
             freq: float (kHz)
             depth: float (kHz)
             toggle_stat: boolean
-        Returns communication status
-            0: safe
-            1: fatal
+        Returns visaCode
     '''
 
     try:
         # set up FM freq and depth
-        synHandle.write('FM1:INT1:FREQ {:.6f}KHZ; FM1:DEV {:.6f}KHZ'.format(freq, depth))
         mod_toggle(toggle_stat)
+        num, vcode = synHandle.write('FM1:INT1:FREQ {:.6f}KHZ; FM1:DEV {:.6f}KHZ'.format(freq, depth))
     except:
-        status = 1
+        vcode = 'IOError'
 
-    return status
+    return vcode
 
 
 def read_lf(synHandle):
@@ -278,29 +271,25 @@ def set_lf_toggle(synHandle, toggle_stat):
     ''' Turn on/off modulation.
         Arguments
             toggle_stat: boolean
-        Returns communication status
-            0: safe
-            1: fatal
+        Returns visaCode
     '''
 
     try:
-        synHandle.write('LFO:STAT {:d}'.format(toggle_stat))
-        return 0
+        num, vcode = synHandle.write('LFO:STAT {:d}'.format(toggle_stat))
+        return vcode
     except:
-        return 1
+        return 'IOError'
 
 
 def set_lf_amp(synHandle, lf_amp):
     ''' Set synthesizer LF Amplitude.
         Arguments
             lf_amp: float (V)
-        Returns communication status
-            0: safe
-            1: fatal
+        Returns visaCode
     '''
 
     try:
-        synHandle.write('LFO:AMPL {.3f}VP'.format(lf_amp))
-        return 0
+        num, vcode = synHandle.write('LFO:AMPL {.3f}VP'.format(lf_amp))
+        return vcode
     except:
-        return 1
+        return 'IOError'

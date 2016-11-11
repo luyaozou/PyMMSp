@@ -21,7 +21,10 @@ class MainWindow(QtGui.QMainWindow):
         self.setMinimumHeight(800)
 
         # Initiate pyvisa instrument objects
-        self.synHandle, self.lcHandle, self.pciHandle, self.motorHandle = apigen.load_inst('api/inst.cfg')
+        self.synHandle = None
+        self.lcHandle = None
+        self.pciHandle = None
+        self.motorHandle = None
 
         # Set menu bar actions
         exitAction = QtGui.QAction('Exit', self)
@@ -118,9 +121,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def on_sel_inst(self):
         d = Dialogs.SelInstDialog(self, self)
-        d.exec_()
-        # Refresh instrument handles
-        self.synHandle, self.lcHandle, self.pciHandle, self.motorHandle = apigen.load_inst('api/inst.cfg')
+        d.show()
 
     def on_view_inst_stat(self):
         d = Dialogs.ViewInstDialog(self, self)

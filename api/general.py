@@ -2,7 +2,6 @@
 
 import pyvisa
 import os.path
-import re
 
 def list_inst():
     '''
@@ -36,38 +35,12 @@ def list_inst():
 
     inst_str = 'Detected Instrument:\n'
     if inst_dict:
-        for key, value in inst_dict.items():
-            inst_str = inst_str + '{:s}\t{:s}\n'.format(key,value)
+        for key in list(inst_dict.keys()).sort():
+            inst_str = inst_str + '{:s}\t{:s}\n'.format(key, inst_dict[key])
     else:
         inst_str = 'No instrument available. Check your connection/driver.'
 
     return inst_dict, inst_str
-
-
-def load_inst(inst_cfg_file):
-    '''
-        Load instruments from the internal instrument config file
-        Returns
-            synHandle:    pyvisa object for the synthesizer
-            lcHandle:     pyvisa object for the lockin
-            pciHandle:    pyvisa object for the PCI card
-            motorHandle:  pyvisa object for the step motor
-    '''
-
-    # first check if configure file exists
-    if os.path.exists(inst_cfg_file):
-        with open(inst_cfg_file, 'r') as f:
-            address = f.readline()
-            synHandle = open_inst(address.strip())
-            address = f.readline()
-            lcHandle = open_inst(address.strip())
-            address = f.readline()
-            pciHandle = open_inst(address.strip())
-            address = f.readline()
-            motorHandle = open_inst(address.strip())
-        return synHandle, lcHandle, pciHandle, motorHandle
-    else:
-        return None, None, None, None
 
 
 def open_inst(inst_address):
@@ -78,16 +51,15 @@ def open_inst(inst_address):
             None:        if cannot open the instrument
     '''
 
-    if re.match('\w+::\w+', inst_address):
+    if inst_address == 'N.A.':
+        return None
+    else:
         try:
             rm = pyvisa.highlevel.ResourceManager()
             inst_handle = rm.open_resource(inst_address)
+            return inst_handle
         except:
-            inst_handle = None
-    else:
-        inst_handle = None
-
-    return inst_handle
+            return None
 
 
 def close_inst(*inst_handle):
