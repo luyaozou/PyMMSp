@@ -357,8 +357,12 @@ class SynCtrl(QtGui.QGroupBox):
 
         if not status:  # if status is safe
             # call syn api and return communication status
-            status = apisyn.set_syn_freq(self.synHandle, synfreq)
-
+            vCode = apisyn.set_syn_freq(self.synHandle, synfreq)
+            if vCode == pyvisa.constants.StatusCode.success:
+                self.parent.synStatus.update()
+            else:
+                msg = InstStatus(self, vCode)
+                msg.exec_()
         # update synthesizer frequency
         self.synfreq.setText('{:.12f}'.format(apisyn.read_syn_freq()))
 
@@ -374,19 +378,30 @@ class SynCtrl(QtGui.QGroupBox):
         # Grab manual input power
         set_power, stat = QtGui.QInputDialog.getInt(self, 'Synthesizer RF Power',
                                 'Manual Input (-20 to 0)', current_power, -20, 0, 1)
-        stat = apisyn.set_syn_power(set_power)
         if not stat:    # hopefully no error occurs
-            self.synPowerToggle.setCheckState(True)
+            vCode = apisyn.set_syn_power(set_power)
+            if vCode == pyvisa.constants.StatusCode.success:
+                self.parent.synStatus.update()
+                self.synPowerToggle.setCheckState(True)
+            else:
+                msg = InstStatus(self, vCode)
+                msg.exec_()
         else:
-            QtGui.QMessageBox.warning(self, 'Dangerous Input!', 'Input power exceed safety range!', QtGui.QMessageBox.Ok)
+            MsgWarning(self, 'Dangerous Input!', 'Input power exceed safety range!')
 
     def synPowerDialog(self, toggle_stat):
         '''
             Pop-up warning window when user trigger the synthesizer toggle
         '''
 
-        stat = apisyn.syn_power_toggle(self.synHandle, toggle_stat)
-        self.synPowerToggle.setCheckState(stat)
+        vCode = apisyn.syn_power_toggle(self.synHandle, toggle_stat)
+        if vCode == pyvisa.constants.StatusCode.success:
+            self.synPowerToggle.setCheckState(toggle_stat)
+            self.parent.synStatus.update()
+        else:
+            msg = InstStatus(self, vcode)
+            msg.exec_()
+
 
     def modModeComm(self):
         '''
@@ -402,7 +417,12 @@ class SynCtrl(QtGui.QGroupBox):
             self.modFreq.hide()     # No modulation. Hide modulation widget
             self.modDepth.hide()
 
-        comm_stat = apisyn.set_mod_mode(self.synHandle, mod_index)
+        vCode = apisyn.set_mod_mode(self.synHandle, mod_index)
+        if vCode == pyvisa.constants.StatusCode.success:
+            self.parent.synStatus.update()
+        else:
+            msg = InstStatus(self, vCode)
+            msg.exec_()
 
         if mod_index == 1:
             if self.modDepthUnit.count() == 1:  # it is set to AM
@@ -444,19 +464,29 @@ class SynCtrl(QtGui.QGroupBox):
         self.modDepthFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(depth_status)))
 
         if mod_index == 1:      # AM
-            status = apisyn.set_am(self.synHandle, mod_freq, mod_depth, toggle)
+            vCode = apisyn.set_am(self.synHandle, mod_freq, mod_depth, toggle)
         elif mod_index == 2:    # FM
-            status = apisyn.set_fm(self.synHandle, mod_freq, mod_depth, toggle)
+            vCode = apisyn.set_fm(self.synHandle, mod_freq, mod_depth, toggle)
         else:
             pass
 
+        if vCode == pyvisa.constants.StatusCode.success:
+            self.parent.synStatus.update()
+        else:
+            msg = InstStatus(self, vCode)
+            msg.exec_()
 
     def modToggleComm(self):
         '''
             Communicate with the synthesizer and update modulation on/off toggle
         '''
 
-        apisyn.set_mod_toggle(self.synHandle, self.modToggle.isChecked())
+        vcode = apisyn.set_mod_toggle(self.synHandle, self.modToggle.isChecked())
+        if vCode == pyvisa.constants.StatusCode.success:
+            self.parent.synStatus.update()
+        else:
+            msg = InstStatus(self, vCode)
+            msg.exec_()
 
 
     def modLFToggleComm(self):
@@ -464,7 +494,12 @@ class SynCtrl(QtGui.QGroupBox):
             Communicate with the synthesizer and update LF on/off toggle
         '''
 
-        apisyn.set_lf_toggle(self.synHandle, self.modLFToggle.isChecked())
+        vcode = apisyn.set_lf_toggle(self.synHandle, self.modLFToggle.isChecked())
+        if vCode == pyvisa.constants.StatusCode.success:
+            self.parent.synStatus.update()
+        else:
+            msg = InstStatus(self, vCode)
+            msg.exec_()
 
 
 class LockinCtrl(QtGui.QGroupBox):
@@ -529,9 +564,9 @@ class LockinCtrl(QtGui.QGroupBox):
         if status!= 1:
             vCode = apilc.set_phase(self.lcHandle, phase)
             if vCode == pyvisa.constants.StatusCode.success:
-                pass
+                self.parent.lcStatus.update()
             else:
-                msg = InstStatus(self, vcode)
+                msg = InstStatus(self, vCode)
                 msg.exec_()
         else:
             pass
@@ -545,11 +580,11 @@ class LockinCtrl(QtGui.QGroupBox):
         status, harm = apival.val_lc_harm(harm_text, lc_freq)
 
         if not status:
-            vcode = apilc.set_harm(self.lcHandle, harm)
-            if vcode == pyvisa.constants.StatusCode.success:
-                pass
+            vCode = apilc.set_harm(self.lcHandle, harm)
+            if vCode == pyvisa.constants.StatusCode.success:
+                self.parent.lcStatus.update()
             else:
-                msg = InstStatus(self, vcode)
+                msg = InstStatus(self, vCode)
                 msg.exec_()
         else:
             msg = MsgError(self, 'Out of Range!', 'Input harmonics exceed legal range!')
@@ -560,12 +595,12 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set sensitivity
         '''
 
-        vcode = apilc.set_sens(self.lcHandle, sens_index)
+        vCode = apilc.set_sens(self.lcHandle, sens_index)
 
-        if vcode == pyvisa.constants.StatusCode.success:
-            pass
+        if vCode == pyvisa.constants.StatusCode.success:
+            self.parent.lcStatus.update()
         else:
-            msg = InstStatus(self, vcode)
+            msg = InstStatus(self, vCode)
             msg.exec_()
 
     def tcComm(self, tc_index):
@@ -573,12 +608,12 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set sensitivity
         '''
 
-        vcode = apilc.set_tc(self.lcHandle, tc_index)
+        vCode = apilc.set_tc(self.lcHandle, tc_index)
 
-        if vcode == pyvisa.constants.StatusCode.success:
-            pass
+        if vCode == pyvisa.constants.StatusCode.success:
+            self.parent.lcStatus.update()
         else:
-            msg = InstStatus(self, vcode)
+            msg = InstStatus(self, vCode)
             msg.exec_()
 
     def coupleComm(self, couple_text):
@@ -586,12 +621,12 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set couple mode
         '''
 
-        vcode = apilc.set_couple(self.lcHandle, couple_text)
+        vCode = apilc.set_couple(self.lcHandle, couple_text)
 
-        if vcode == pyvisa.constants.StatusCode.success:
-            pass
+        if vCode == pyvisa.constants.StatusCode.success:
+            self.parent.lcStatus.update()
         else:
-            msg = InstStatus(self, vcode)
+            msg = InstStatus(self, vCode)
             msg.exec_()
 
     def reserveComm(self, reserve_text):
@@ -599,12 +634,12 @@ class LockinCtrl(QtGui.QGroupBox):
             Communicate with the lockin and set reserve
         '''
 
-        vcode = apilc.set_reserve(self.lcHandle, reserve_text)
+        vCode = apilc.set_reserve(self.lcHandle, reserve_text)
 
-        if vcode == pyvisa.constants.StatusCode.success:
-            pass
+        if vCode == pyvisa.constants.StatusCode.success:
+            self.parent.lcStatus.update()
         else:
-            msg = InstStatus(self, vcode)
+            msg = InstStatus(self, vCode)
             msg.exec_()
 
 
