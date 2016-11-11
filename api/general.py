@@ -2,6 +2,7 @@
 
 import pyvisa
 import os.path
+import re
 
 def list_inst():
     '''
@@ -24,8 +25,10 @@ def list_inst():
             # open each instrument and get instrument information
             temp = rm.open_resource(inst)
             # If the instrument is GPIB, query for the instrument name
-            if int(temp.interface_type) == 4:
+            if int(temp.interface_type) == 1:
                 inst_dict[inst] = temp.query('*IDN?')
+            else:
+                inst_dict[inst] = inst
             # close instrument right way in case of unexpected crashes
             temp.close()
         except:
@@ -75,10 +78,13 @@ def open_inst(inst_address):
             None:        if cannot open the instrument
     '''
 
-    try:
-        rm = pyvisa.highlevel.ResourceManager()
-        inst_handle = rm.open_resource(inst_address)
-    except:
+    if re.match('\w+::\w+', inst_address):
+        try:
+            rm = pyvisa.highlevel.ResourceManager()
+            inst_handle = rm.open_resource(inst_address)
+        except:
+            inst_handle = None
+    else:
         inst_handle = None
 
     return inst_handle
