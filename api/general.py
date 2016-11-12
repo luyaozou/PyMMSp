@@ -7,17 +7,18 @@ def list_inst():
     '''
         List current available instruments.
         Returns
-            inst_dict: directory of instrument address and description
-            inst_str: formated text for GUI display
+            inst_list: a sorted list of available instrument addresses, list
+            inst_str: formated text for GUI display, str
     '''
 
     # open pyvisa resource manager
     try:
         rm = pyvisa.highlevel.ResourceManager()
     except OSError:
-        return {}, 'Cannot open VISA library!'
+        return [], 'Cannot open VISA library!'
     # get available instrument address list
     inst_list = rm.list_resources()
+    inst_list.sort()
     inst_dict = {}
     for inst in inst_list:
         try:
@@ -35,12 +36,12 @@ def list_inst():
 
     inst_str = 'Detected Instrument:\n'
     if inst_dict:
-        for key in list(inst_dict.keys()).sort():
-            inst_str = inst_str + '{:s}\t{:s}\n'.format(key, inst_dict[key])
+        for key, value in inst_dict.items():
+            inst_str = inst_str + '{:s}\t{:s}\n'.format(key, value)
     else:
         inst_str = 'No instrument available. Check your connection/driver.'
 
-    return inst_dict, inst_str
+    return inst_list, inst_str
 
 
 def open_inst(inst_address):

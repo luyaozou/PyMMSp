@@ -11,7 +11,7 @@ class SelInstDialog(QtGui.QDialog):
 
     def __init__(self, parent, main):
         QtGui.QDialog.__init__(self, parent)
-
+        self.parent = parent
         self.setMinimumWidth(400)
         self.setMinimumHeight(400)
 
@@ -19,23 +19,23 @@ class SelInstDialog(QtGui.QDialog):
         acceptButton = QtGui.QPushButton('Ok')
 
         self.availableInst = QtGui.QLabel()
-        instDict, instStr = apigen.list_inst()
+        instList, instStr = apigen.list_inst()
         self.availableInst.setText(instStr)
 
         selInst = QtGui.QWidget()
         selInstLayout = QtGui.QFormLayout()
         self.selSyn = QtGui.QComboBox()
         self.selSyn.addItems(['N.A.'])
-        self.selSyn.addItems(list(instDict.keys()))
+        self.selSyn.addItems(instList)
         self.selLockin = QtGui.QComboBox()
         self.selLockin.addItems(['N.A.'])
-        self.selLockin.addItems(list(instDict.keys()))
+        self.selLockin.addItems(instList)
         self.selScope = QtGui.QComboBox()
         self.selScope.addItems(['N.A.'])
-        self.selScope.addItems(list(instDict.keys()))
+        self.selScope.addItems(instList)
         self.selMotor = QtGui.QComboBox()
         self.selMotor.addItems(['N.A.'])
-        self.selMotor.addItems(list(instDict.keys()))
+        self.selMotor.addItems(instList)
         selInstLayout.addRow(QtGui.QLabel('Synthesizer'), self.selSyn)
         selInstLayout.addRow(QtGui.QLabel('Lock-in'), self.selLockin)
         selInstLayout.addRow(QtGui.QLabel('Oscilloscope'), self.selScope)
@@ -59,7 +59,7 @@ class SelInstDialog(QtGui.QDialog):
 
         # refresh avaiable instrument list
         self.availableInst = QtGui.QLabel()
-        instDict, instStr = apigen.list_inst()
+        instList, instStr = apigen.list_inst()
         self.availableInst.setText(instStr)
 
         # refresh QComboBoxes
@@ -72,18 +72,24 @@ class SelInstDialog(QtGui.QDialog):
             self.selLockin.removeItem(1)
             self.selScope.removeItem(1)
             self.selMotor.removeItem(1)
-        self.selSyn.addItems(list(instDict.keys()))
-        self.selLockin.addItems(list(instDict.keys()))
-        self.selScope.addItems(list(instDict.keys()))
-        self.selMotor.addItems(list(instDict.keys()))
+        self.selSyn.addItems(instList)
+        self.selLockin.addItems(instList)
+        self.selScope.addItems(instList)
+        self.selMotor.addItems(instList)
 
     def accept(self):
 
-        with open('api/inst.cfg', 'w') as f:
-            f.write(self.selSyn.currentText() + '\n')
-            f.write(self.selLockin.currentText() + '\n')
-            f.write(self.selScope.currentText() + '\n')
-            f.write(self.selMotor.currentText() + '\n')
+        # close old instrument handles
+        apigen.close_inst(self.parent.synHandle,
+                          self.parent.lcHandle,
+                          self.parent.pciHandle,
+                          self.parent.motorHandle)
+
+        # open new instrument handles
+        self.parent.synHandle = apigen.open_inst(self.selSyn.currentText())
+        self.parent.lcHandle = apigen.open_inst(self.selLockin.currentText())
+        self.parent.pciHandle = apigen.open_inst(self.selScope.currentText())
+        self.parent.motorHandle = apigen.open_inst(self.selMotor.currentText())
 
         self.close()
 

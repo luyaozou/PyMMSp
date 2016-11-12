@@ -71,13 +71,13 @@ class MainWindow(QtGui.QMainWindow):
         menuScan.addAction(scanCavityAction)
 
         # Set main window widgets
-        self.synStatus = Panels.SynStatus(self, self.synHandle)
-        self.lcStatus = Panels.LockinStatus(self, self.lcHandle)
-        self.scopeStatus = Panels.ScopeStatus(self, self.pciHandle)
-        self.synCtrl = Panels.SynCtrl(self, self.synHandle)
-        self.lcCtrl = Panels.LockinCtrl(self, self.lcHandle)
-        self.scopeCtrl = Panels.ScopeCtrl(self, self.pciHandle)
-        self.motorCtrl = Panels.MotorCtrl(self, self.motorHandle)
+        self.synStatus = Panels.SynStatus(self)
+        self.lcStatus = Panels.LockinStatus(self)
+        self.scopeStatus = Panels.ScopeStatus(self)
+        self.synCtrl = Panels.SynCtrl(self)
+        self.lcCtrl = Panels.LockinCtrl(self)
+        self.scopeCtrl = Panels.ScopeCtrl(self)
+        self.motorCtrl = Panels.MotorCtrl(self)
 
         # Set main window layout
         self.mainLayout = QtGui.QGridLayout()
@@ -98,6 +98,32 @@ class MainWindow(QtGui.QMainWindow):
         self.mainWidget.setLayout(self.mainLayout)
         self.setCentralWidget(self.mainWidget)
 
+    def refresh_syn(self):
+        if self.synHandle:
+            self.synStatus.update()
+            self.synCtrl.check()
+        else:
+            pass
+
+    def refresh_lockin(self):
+        if self.lcHandle:
+            self.lcStatus.update()
+            self.lcCtrl.check()
+        else:
+            pass
+
+    def refresh_scope(self):
+        if self.pciHandle:
+            self.scopeStatus.update()
+            self.scopeCtrl.check()
+        else:
+            pass
+
+    def refresh_motor(self):
+        if self.motorHandle:
+            self.motorCtrl.check()
+        else:
+            pass
 
     def on_exit(self):
         q = QtGui.QMessageBox.question(self, 'Quit?',
@@ -121,7 +147,11 @@ class MainWindow(QtGui.QMainWindow):
 
     def on_sel_inst(self):
         d = Dialogs.SelInstDialog(self, self)
-        d.show()
+        if d.exec_():
+            self.refresh_syn()
+            self.refresh_lockin()
+            self.refresh_scope()
+            self.refresh_motor()
 
     def on_view_inst_stat(self):
         d = Dialogs.ViewInstDialog(self, self)
