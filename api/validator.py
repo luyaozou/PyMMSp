@@ -86,9 +86,9 @@ def val_syn_freq(probf_text, band_index):
     '''
 
     try:
-        probf = float(probfreqtext)
+        probf = float(probf_text)
         syn_freq = calc_syn_freq(probf, band_index)
-        if syn_freq > 0 and synfreq < 50000:
+        if syn_freq > 0 and syn_freq < 50000:
             return 0, syn_freq
         else:
             return 1, syn_freq

@@ -27,7 +27,7 @@ def init_syn(synHandle):
     '''
 
     try:
-        num, vcode = synHandle.write('AM1:SOUR INT1; FM1:SOUR INT1; LFO:SOUR INT1; LFO:AMPL 0.1VP; POW:MODE FIX; FREQ:MODE CW')
+        num, vcode = synHandle.write(':AM1:SOUR INT1; :FM1:SOUR INT1; :LFO:SOUR INT1; :LFO:AMPL 0.1VP; :POW:MODE FIX; :FREQ:MODE CW')
         return vcode
     except:
         return 'IOError'
@@ -39,7 +39,7 @@ def read_power_toggle(synHandle):
     '''
 
     try:
-        text = synHandle.query('OUTP?')
+        text = synHandle.query(':OUTP?')
         status = bool(int(text.strip()))
         return status
     except:
@@ -52,11 +52,15 @@ def set_power_toggle(synHandle, toggle_stat):
     '''
 
     if toggle_stat:     # user want to turn on RF
-        synHandle.write('OUTP 1')
-        vcode = set_syn_power(synHandle, 0)
+        num, vcode = synHandle.write(':OUTP 1')
+        # only ramp up power if the RF is successfully turned on
+        if vcode == pyvisa.constants.StatusCode.success:
+            vcode = set_syn_power(synHandle, 0)
     else:               # user want to turn off RF
-        set_syn_power(synHandle, -20)
-        vcode = synHandle.write('OUTP 0')
+        vcode = set_syn_power(synHandle, -20)
+        # only turn off RF if power is successfully ramped down
+        if vcode == pyvisa.constants.StatusCode.success:
+            num, vcode = synHandle.write(':OUTP 0')
 
     return vcode
 
@@ -67,7 +71,7 @@ def read_syn_power(synHandle):
     '''
 
     try:
-        text = synHandle.query('POW?')
+        text = synHandle.query(':POW?')
         current_power = float(text.strip())
         return current_power
     except:
@@ -85,11 +89,11 @@ def set_syn_power(synHandle, set_power):
         if set_power > current_power:
             # turn on RF
             for n in ramp_up(current_power, set_power):
-                num, vcode = synHandle.write(':POW {:d}DBM'.format(n))
+                num, vcode = synHandle.write(':POW {:g}DBM'.format(n))
                 time.sleep(0.5)   # pause 0.5 second
         elif set_power < current_power:
             for n in ramp_down(current_power, set_power):
-                num, vcode = synHandle.write(':POW {:d}DBM'.format(n))
+                num, vcode = synHandle.write(':POW {:g}DBM'.format(n))
                 time.sleep(0.5)   # pause 0.5 second
         else:
             vcode = pyvisa.constants.StatusCode.success
@@ -104,7 +108,7 @@ def read_syn_freq(synHandle):
     '''
 
     try:
-        text = synHandle.query('FREQ:CW?')
+        text = synHandle.query(':FREQ:CW?')
         current_freq = float(text.strip()) * 1e-6
         return current_freq
     except:
@@ -120,7 +124,7 @@ def set_syn_freq(synHandle, freq):
     '''
 
     try:
-        num, vcode = synHandle.write('FREQ:CW {:.9f}MHZ'.format(freq))
+        num, vcode = synHandle.write(':FREQ:CW {:.9f}MHZ'.format(freq))
         return vcode
     except:
         return 'IOError'
@@ -135,9 +139,9 @@ def set_mod_mode(synHandle, mod_index):
         Returns visaCode
     '''
 
-    a_dict = {0: 'AM1:STAT 0; FM1:STAT 0',
-              1: 'FM1:STAT 0; AM:STAT 1',
-              2: 'AM1:STAT 0; FM1:STAT1'}
+    a_dict = {0: ':AM1:STAT 0; :FM1:STAT 0',
+              1: ':FM1:STAT 0; :AM1:STAT 1',
+              2: ':AM1:STAT 0; :FM1:STAT 1'}
 
     try:
         num, vcode = synHandle.write(a_dict[mod_index])
@@ -152,7 +156,7 @@ def read_mod_toggle(synHandle):
     '''
 
     try:
-        text = synHandle.query('OUTP:MOD?')
+        text = synHandle.query(':OUTP:MOD?')
         return bool(int(text.strip()))
     except:
         return False
@@ -166,7 +170,7 @@ def set_mod_toggle(synHandle, toggle_stat):
     '''
 
     try:
-        num, vcode = synHandle.write('OUTP:MOD {:d}'.format(toggle_stat))
+        num, vcode = synHandle.write(':OUTP:MOD {:d}'.format(toggle_stat))
         return vcode
     except:
         return 'IOError'
@@ -181,11 +185,11 @@ def read_am_par(synHandle):
     '''
 
     try:
-        text = synHandle.query('AM1:INT1:FREQ?')
+        text = synHandle.query(':AM1:INT1:FREQ?')
         freq = float(text.strip())
-        text = synHandle.query('AM1:DEPT?')
+        text = synHandle.query(':AM1:DEPT?')
         depth = float(text.strip())
-        text = synHandle.query('AM1:STAT?')
+        text = synHandle.query(':AM1:STAT?')
         status = bool(int(text.strip()))
         return freq, depth, status
     except:
@@ -203,8 +207,8 @@ def set_am(synHandle, freq, depth, toggle_stat):
 
     try:
         # set up AM freq and depth
-        mod_toggle(toggle_stat)
-        num, vcode = synHandle.write('AM1:INT1:FREQ {:.6f}KHZ; AM1 {:.2f}'.format(freq, depth))
+        set_mod_toggle(synHandle, toggle_stat)
+        num, vcode = synHandle.write(':AM1:INT1:FREQ {:.6f}KHZ; :AM1 {:.2f}'.format(freq, depth))
     except:
         vcode = 'IOError'
 
@@ -220,11 +224,11 @@ def read_fm_par(synHandle):
     '''
 
     try:
-        text = synHandle.query('FM1:INT1:FREQ?')
+        text = synHandle.query(':FM1:INT1:FREQ?')
         freq = float(text.strip()) * 1e-3
-        text = synHandle.query('FM1:DEV?')
+        text = synHandle.query(':FM1:DEV?')
         depth = float(text.strip()) * 1e-3
-        text = synHandle.query('FM1:STAT?')
+        text = synHandle.query(':FM1:STAT?')
         status = bool(int(text.strip()))
         return freq, depth, status
     except:
@@ -242,8 +246,8 @@ def set_fm(synHandle, freq, depth, toggle_stat):
 
     try:
         # set up FM freq and depth
-        mod_toggle(toggle_stat)
-        num, vcode = synHandle.write('FM1:INT1:FREQ {:.6f}KHZ; FM1:DEV {:.6f}KHZ'.format(freq, depth))
+        set_mod_toggle(synHandle, toggle_stat)
+        num, vcode = synHandle.write(':FM1:INT1:FREQ {:.6f}KHZ; :FM1:DEV {:.6f}KHZ'.format(freq, depth))
     except:
         vcode = 'IOError'
 
@@ -258,9 +262,9 @@ def read_lf(synHandle):
     '''
 
     try:
-        text = synHandle.query('LFO:AMPL?')
+        text = synHandle.query(':LFO:AMPL?')
         vol = float(text.strip())
-        text = synHandle.query('LFO:STAT?')
+        text = synHandle.query(':LFO:STAT?')
         status = bool(int(text.strip()))
         return vol, status
     except:
@@ -275,7 +279,7 @@ def set_lf_toggle(synHandle, toggle_stat):
     '''
 
     try:
-        num, vcode = synHandle.write('LFO:STAT {:d}'.format(toggle_stat))
+        num, vcode = synHandle.write(':LFO:STAT {:d}'.format(toggle_stat))
         return vcode
     except:
         return 'IOError'
@@ -289,7 +293,7 @@ def set_lf_amp(synHandle, lf_amp):
     '''
 
     try:
-        num, vcode = synHandle.write('LFO:AMPL {.3f}VP'.format(lf_amp))
+        num, vcode = synHandle.write(':LFO:AMPL {.3f}VP'.format(lf_amp))
         return vcode
     except:
         return 'IOError'

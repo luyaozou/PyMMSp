@@ -36,8 +36,8 @@ def list_inst():
 
     inst_str = 'Detected Instrument:\n'
     if inst_dict:
-        for key, value in inst_dict.items():
-            inst_str = inst_str + '{:s}\t{:s}\n'.format(key, value)
+        for inst in inst_list:
+            inst_str = inst_str + '{:s}\t{:s}\n'.format(inst, inst_dict[inst])
     else:
         inst_str = 'No instrument available. Check your connection/driver.'
 

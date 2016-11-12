@@ -104,15 +104,25 @@ class SynStatus(QtGui.QGroupBox):
         self.update()
 
     def update(self):
+        ''' Update instrument information '''
+        if self.parent.synHandle:
+            self.addressText.setText(str(self.parent.synHandle.primary_address))
+            self.synRF.setText('On' if apisyn.read_power_toggle(self.parent.synHandle) else 'Off')
+            self.synPower.setText('{:.1f} dbm'.format(apisyn.read_syn_power(self.parent.synHandle)))
+            self.synFreq.setText('{:.9f} MHz'.format(apisyn.read_syn_freq(self.parent.synHandle)))
+            self.synMod.setText('On' if apisyn.read_mod_toggle(self.parent.synHandle) else 'Off')
+            lf_vol, lf_status = apisyn.read_lf(self.parent.synHandle)
+            self.synLF.setText('On' if lf_status else 'Off')
+            self.synLFV.setText('{:.3f} V'.format(lf_vol))
+        else:
+            self.addressText.setText('N.A.')
+            self.synRF.setText('N.A.')
+            self.synPower.setText('N.A.')
+            self.synFreq.setText('N.A.')
+            self.synMod.setText('N.A.')
+            self.synLF.setText('N.A.')
+            self.synLFV.setText('N.A.')
 
-        self.addressText.setText('N.A.' if not self.parent.synHandle else self.parent.synHandle.primary_address)
-        self.synRF.setText('On' if apisyn.read_power_toggle(self.parent.synHandle) else 'Off')
-        self.synPower.setText('{:.1f} dbm'.format(apisyn.read_syn_power(self.parent.synHandle)))
-        self.synFreq.setText('{:.9f} MHz'.format(apisyn.read_syn_freq(self.parent.synHandle)))
-        self.synMod.setText('On' if apisyn.read_mod_toggle(self.parent.synHandle) else 'Off')
-        lf_vol, lf_status = apisyn.read_lf(self.parent.synHandle)
-        self.synLF.setText('On' if lf_status else 'Off')
-        self.synLFV.setText('{:.3f} V'.format(lf_vol))
 
 
 class LockinStatus(QtGui.QGroupBox):
@@ -170,15 +180,25 @@ class LockinStatus(QtGui.QGroupBox):
         self.update()
 
     def update(self):
-
-        self.addressText.setText('N.A.' if not self.parent.lcHandle else self.parent.lcHandle.primary_address)
-        self.lcHarm.setText(apilc.read_harm(self.parent.lcHandle))
-        self.lcPhase.setText('{:s} deg'.format(apilc.read_phase(self.parent.lcHandle)))
-        self.lcFreq.setText('{:.3f} kHz'.format(apilc.read_freq(self.parent.lcHandle)))
-        self.lcSens.setText(LIASENSLIST[apilc.read_sens(self.parent.lcHandle)])
-        self.lcTC.setText(LIATCLIST[apilc.read_tc(self.parent.lcHandle)])
-        self.lcCouple.setText(apilc.read_couple(self.parent.lcHandle))
-        self.lcReserve.setText(apilc.read_reserve(self.parent.lcHandle))
+        ''' Update instrument information '''
+        if self.parent.lcHandle:
+            self.addressText.setText(str(self.parent.lcHandle.primary_address))
+            self.lcHarm.setText(apilc.read_harm(self.parent.lcHandle))
+            self.lcPhase.setText('{:s} deg'.format(apilc.read_phase(self.parent.lcHandle)))
+            self.lcFreq.setText('{:.3f} kHz'.format(apilc.read_freq(self.parent.lcHandle)))
+            self.lcSens.setText(LIASENSLIST[apilc.read_sens(self.parent.lcHandle)])
+            self.lcTC.setText(LIATCLIST[apilc.read_tc(self.parent.lcHandle)])
+            self.lcCouple.setText(apilc.read_couple(self.parent.lcHandle))
+            self.lcReserve.setText(apilc.read_reserve(self.parent.lcHandle))
+        else:
+            self.addressText.setText('N.A.')
+            self.lcHarm.setText('N.A.')
+            self.lcPhase.setText('N.A.')
+            self.lcFreq.setText('N.A.')
+            self.lcSens.setText('N.A.')
+            self.lcTC.setText('N.A.')
+            self.lcCouple.setText('N.A.')
+            self.lcReserve.setText('N.A.')
 
 
 class ScopeStatus(QtGui.QGroupBox):
@@ -345,7 +365,7 @@ class SynCtrl(QtGui.QGroupBox):
 
     def check(self):
         ''' Enable/disable this groupbox '''
-        if self.parent.lcHandle:
+        if self.parent.synHandle:
             self.setChecked(True)
         else:
             self.setChecked(False)
@@ -370,7 +390,7 @@ class SynCtrl(QtGui.QGroupBox):
                 msg = InstStatus(self, vCode)
                 msg.exec_()
         # update synthesizer frequency
-        self.synfreq.setText('{:.12f}'.format(apisyn.read_syn_freq()))
+        self.synfreq.setText('{:.12f}'.format(apisyn.read_syn_freq(self.parent.synHandle)))
 
 
     def synPowerComm(self):
@@ -400,12 +420,12 @@ class SynCtrl(QtGui.QGroupBox):
             Pop-up warning window when user trigger the synthesizer toggle
         '''
 
-        vCode = apisyn.syn_power_toggle(self.parent.synHandle, toggle_stat)
+        vCode = apisyn.set_power_toggle(self.parent.synHandle, toggle_stat)
         if vCode == pyvisa.constants.StatusCode.success:
             self.synPowerToggle.setCheckState(toggle_stat)
             self.parent.synStatus.update()
         else:
-            msg = InstStatus(self, vcode)
+            msg = InstStatus(self, vCode)
             msg.exec_()
 
 
@@ -440,7 +460,7 @@ class SynCtrl(QtGui.QGroupBox):
             freq, depth, status = apisyn.read_am_par(self.parent.synHandle)
             # update parameters
             self.modFreqFill.setText('{:.3f} kHz'.format(freq))
-            self.modDepthFill.setText('{:.1f} %'.foramt(depth))
+            self.modDepthFill.setText('{:.1f} %'.format(depth))
         elif mod_index == 2:
             if self.modDepthUnit.count() == 2:  # it is set to AM
                 pass
@@ -451,7 +471,7 @@ class SynCtrl(QtGui.QGroupBox):
             freq, depth, status = apisyn.read_fm_par(self.parent.synHandle)
             # update parameters
             self.modFreqFill.setText('{:.3f} kHz'.format(freq))
-            self.modDepthFill.setText('{:.3f} kHz'.foramt(depth))
+            self.modDepthFill.setText('{:.3f} kHz'.format(depth))
         else:
             pass
 
@@ -490,7 +510,7 @@ class SynCtrl(QtGui.QGroupBox):
             Communicate with the synthesizer and update modulation on/off toggle
         '''
 
-        vcode = apisyn.set_mod_toggle(self.parent.synHandle, self.modToggle.isChecked())
+        vCode = apisyn.set_mod_toggle(self.parent.synHandle, self.modToggle.isChecked())
         if vCode == pyvisa.constants.StatusCode.success:
             self.parent.synStatus.update()
         else:
@@ -503,7 +523,7 @@ class SynCtrl(QtGui.QGroupBox):
             Communicate with the synthesizer and update LF on/off toggle
         '''
 
-        vcode = apisyn.set_lf_toggle(self.parent.synHandle, self.modLFToggle.isChecked())
+        vCode = apisyn.set_lf_toggle(self.parent.synHandle, self.modLFToggle.isChecked())
         if vCode == pyvisa.constants.StatusCode.success:
             self.parent.synStatus.update()
         else:

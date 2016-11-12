@@ -99,31 +99,19 @@ class MainWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.mainWidget)
 
     def refresh_syn(self):
-        if self.synHandle:
-            self.synStatus.update()
-            self.synCtrl.check()
-        else:
-            pass
+        self.synStatus.update()
+        self.synCtrl.check()
 
     def refresh_lockin(self):
-        if self.lcHandle:
-            self.lcStatus.update()
-            self.lcCtrl.check()
-        else:
-            pass
+        self.lcStatus.update()
+        self.lcCtrl.check()
 
     def refresh_scope(self):
-        if self.pciHandle:
-            self.scopeStatus.update()
-            self.scopeCtrl.check()
-        else:
-            pass
+        self.scopeStatus.update()
+        self.scopeCtrl.check()
 
     def refresh_motor(self):
-        if self.motorHandle:
-            self.motorCtrl.check()
-        else:
-            pass
+        self.motorCtrl.check()
 
     def on_exit(self):
         q = QtGui.QMessageBox.question(self, 'Quit?',
@@ -147,11 +135,12 @@ class MainWindow(QtGui.QMainWindow):
 
     def on_sel_inst(self):
         d = Dialogs.SelInstDialog(self, self)
-        if d.exec_():
-            self.refresh_syn()
-            self.refresh_lockin()
-            self.refresh_scope()
-            self.refresh_motor()
+        d.exec_()
+
+        self.refresh_syn()
+        self.refresh_lockin()
+        self.refresh_scope()
+        self.refresh_motor()
 
     def on_view_inst_stat(self):
         d = Dialogs.ViewInstDialog(self, self)
@@ -165,3 +154,6 @@ class MainWindow(QtGui.QMainWindow):
 
     def on_scan_cavity(self):
         pass
+
+    def closeEvent(self, event):
+        self.on_exit()
