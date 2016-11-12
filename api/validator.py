@@ -196,3 +196,22 @@ def val_syn_mod_depth(depth_text, depth_unit):
             return 2, depth
         else:                       # invalid
             return 1, 0
+
+
+def val_syn_lf_vol(vol_text):
+    ''' Validate synthesizer LF output voltage.
+        Arguments
+            vol_text: str, LF voltage user input
+        Returns
+            status: int (0: safe; 1: error)
+            vol: float (V)
+    '''
+
+    try:
+        vol = float(vol_text)
+        if vol >=0 and vol < 3.5:
+            return 0, vol
+        else:
+            return 1, 0
+    except ValueError:
+        return 1, 0

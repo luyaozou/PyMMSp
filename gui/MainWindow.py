@@ -99,39 +99,34 @@ class MainWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.mainWidget)
 
     def refresh_syn(self):
-        self.synStatus.update()
-        self.synCtrl.check()
-
-    def refresh_lockin(self):
-        self.lcStatus.update()
-        self.lcCtrl.check()
-
-    def refresh_scope(self):
-        self.scopeStatus.update()
-        self.scopeCtrl.check()
-
-    def refresh_motor(self):
-        self.motorCtrl.check()
-
-    def on_exit(self):
-        q = QtGui.QMessageBox.question(self, 'Quit?',
-                       'Are you sure to quit?', QtGui.QMessageBox.Yes |
-                       QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
-        if q == QtGui.QMessageBox.Yes:
-            status = apigen.close_inst(self.synHandle, self.lcHandle, self.pciHandle, self.motorHandle)
-            if not status:    # safe to close
-                self.close()
-            else:
-                qq = QtGui.QMessageBox.question(self, 'Error',
-                               '''Error in disconnecting instruments.
-                               Are you sure to force quit?''', QtGui.QMessageBox.Yes |
-                               QtGui.QMessageBox.No, QtGui.QMessageBox.No)
-                if qq == QtGui.QMessageBox.Yes:
-                    self.close()
-                else:
-                    pass
+        if self.synHandle:
+            self.synStatus.update()
+            self.synCtrl.check()
         else:
             pass
+
+    def refresh_lockin(self):
+        if self.lcHandle:
+            self.lcStatus.update()
+            self.lcCtrl.check()
+        else:
+            pass
+
+    def refresh_scope(self):
+        if self.pciHandle:
+            self.scopeStatus.update()
+            self.scopeCtrl.check()
+        else:
+            pass
+
+    def refresh_motor(self):
+        if self.motorHandle:
+            self.motorCtrl.check()
+        else:
+            pass
+
+    def on_exit(self):
+        self.close()
 
     def on_sel_inst(self):
         d = Dialogs.SelInstDialog(self, self)
@@ -156,4 +151,21 @@ class MainWindow(QtGui.QMainWindow):
         pass
 
     def closeEvent(self, event):
-        self.on_exit()
+        q = QtGui.QMessageBox.question(self, 'Quit?',
+                       'Are you sure to quit?', QtGui.QMessageBox.Yes |
+                       QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
+        if q == QtGui.QMessageBox.Yes:
+            status = apigen.close_inst(self.synHandle, self.lcHandle, self.pciHandle, self.motorHandle)
+            if not status:    # safe to close
+                self.close()
+            else:
+                qq = QtGui.QMessageBox.question(self, 'Error',
+                               '''Error in disconnecting instruments.
+                               Are you sure to force quit?''', QtGui.QMessageBox.Yes |
+                               QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+                if qq == QtGui.QMessageBox.Yes:
+                    self.close()
+                else:
+                    event.ignore()
+        else:
+            event.ignore()

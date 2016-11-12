@@ -311,6 +311,14 @@ class SynCtrl(QtGui.QGroupBox):
         modDepthLayout.addWidget(self.modDepthUnit)
         self.modDepth.setLayout(modDepthLayout)
 
+        self.lfVol = QtGui.QWidget()
+        self.lfVolFill = QtGui.QLineEdit()
+        lfLayout = QtGui.QHBoxLayout()
+        lfLayout.addWidget(QtGui.QLabel('LF Voltage'))
+        lfLayout.addWidget(self.lfVolFill)
+        lfLayout.addWidget(QtGui.QLabel('V'))
+        self.lfVol.setLayout(lfLayout)
+
         self.modToggle = QtGui.QCheckBox()
         self.modToggle.setCheckState(False)
         self.modLFToggle = QtGui.QCheckBox()
@@ -324,9 +332,11 @@ class SynCtrl(QtGui.QGroupBox):
         modLayout.addWidget(self.modModeSelect, 0, 5, 1, 1)
         modLayout.addWidget(self.modFreq, 1, 0, 1, 6)
         modLayout.addWidget(self.modDepth, 2, 0, 1, 6)
+        modLayout.addWidget(self.lfVol, 3, 0, 1, 6)
         modGBox.setLayout(modLayout)
         self.modFreq.hide()
         self.modDepth.hide()
+        self.lfVol.hide()
 
         ## -- Define synthesizer power switch
         self.synPowerToggle = QtGui.QCheckBox()
@@ -358,6 +368,7 @@ class SynCtrl(QtGui.QGroupBox):
         QObject.connect(self.modDepthFill, QtCore.SIGNAL("textChanged(const QString)"), self.modParComm)
         QObject.connect(self.modToggle, QtCore.SIGNAL("stateChanged(int)"), self.modToggleComm)
         QObject.connect(self.modLFToggle, QtCore.SIGNAL("stateChanged(int)"), self.modLFToggleComm)
+        QObject.connect(self.lfVolFill, QtCore.SIGNAL("textChanged(const QString)"), self.modLFVolComm)
 
         # Trigger synthesizer power toggle and communication
         QObject.connect(synPowerManualInput, QtCore.SIGNAL("clicked()"), self.synPowerComm)
@@ -439,9 +450,11 @@ class SynCtrl(QtGui.QGroupBox):
         if mod_index:
             self.modFreq.show()     # Modulation selected. Show modulation widget
             self.modDepth.show()
+            self.lfVol.show()
         else:
             self.modFreq.hide()     # No modulation. Hide modulation widget
             self.modDepth.hide()
+            self.lfVol.hide()
 
         vCode = apisyn.set_mod_mode(self.parent.synHandle, mod_index)
         if vCode == pyvisa.constants.StatusCode.success:
@@ -459,8 +472,8 @@ class SynCtrl(QtGui.QGroupBox):
                 self.modDepthUnit.addItems(['%'])
             freq, depth, status = apisyn.read_am_par(self.parent.synHandle)
             # update parameters
-            self.modFreqFill.setText('{:.3f} kHz'.format(freq))
-            self.modDepthFill.setText('{:.1f} %'.format(depth))
+            self.modFreqFill.setText('{:.3f}'.format(freq))
+            self.modDepthFill.setText('{:.1f}'.format(depth))
         elif mod_index == 2:
             if self.modDepthUnit.count() == 2:  # it is set to AM
                 pass
@@ -470,8 +483,8 @@ class SynCtrl(QtGui.QGroupBox):
                 self.modDepthUnit.addItems(['kHz', 'MHz'])
             freq, depth, status = apisyn.read_fm_par(self.parent.synHandle)
             # update parameters
-            self.modFreqFill.setText('{:.3f} kHz'.format(freq))
-            self.modDepthFill.setText('{:.3f} kHz'.format(depth))
+            self.modFreqFill.setText('{:.3f}'.format(freq))
+            self.modDepthFill.setText('{:.3f}'.format(depth))
         else:
             pass
 
@@ -529,6 +542,26 @@ class SynCtrl(QtGui.QGroupBox):
         else:
             msg = InstStatus(self, vCode)
             msg.exec_()
+
+    def modLFVolComm(self, vol_text):
+        '''
+            Communicate with the synthesizer and update LF voltage
+        '''
+
+        if self.modLFToggle.isChecked():
+            status, lf_vol = api.val_syn_lf_vol(vol_text)
+            self.lfVolFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+            if status:
+                vCode = apisyn.set_lf_amp(self.parent.synHandle, lf_vol)
+                if vCode == pyvisa.constants.StatusCode.success:
+                    self.parent.synStatus.update()
+                else:
+                    msg = InstStatus(self, vCode)
+                    msg.exec_()
+            else:
+                pass
+        else:
+            pass
 
 
 class LockinCtrl(QtGui.QGroupBox):
