@@ -196,3 +196,24 @@ def val_syn_mod_depth(depth_text, depth_unit):
             return 2, depth
         else:                       # invalid
             return 1, 0
+
+
+def val_monitor_sample_len(len_text):
+    ''' Validate sample length for real-time monitor.
+        Arguments
+            len_text: str, samplen length user input
+        Returns
+            status: int (0: safe; 1: error; 2: warning)
+            slen: int
+    '''
+
+    try:
+        slen = int(len_text)
+        if slen>10 and slen<=1000:
+            return 0, slen
+        elif slen>1000 or (slen>0 and slen<=10):
+            return 2, slen
+        else:
+            return 1, 1
+    except ValueError:
+        return 1, 1
