@@ -261,7 +261,7 @@ class SynCtrl(QtGui.QGroupBox):
         syn = QtGui.QWidget()
         self.synfreq = QtGui.QLabel('30000')
         self.probfreqFill = QtGui.QLineEdit()
-        self.probfreqFill.setText('30000')
+        self.probfreqFill.setText('180000')
         self.bandSelect = QtGui.QComboBox()
         bandList = ['1 (x1): 0-50 GHz',
                     '2 (x2): GHz',
@@ -274,6 +274,7 @@ class SynCtrl(QtGui.QGroupBox):
                     '8b (x27): 600-850 GHz',
                     '9 (x27): 700-1000 GHz']
         self.bandSelect.addItems(bandList)
+        self.bandSelect.setCurrentIndex(4)
 
         ## -- Set up synthesizer control layout --
         synLayout = QtGui.QGridLayout()
@@ -302,6 +303,7 @@ class SynCtrl(QtGui.QGroupBox):
         self.modFreqFill = QtGui.QLineEdit()
         self.modFreqUnit = QtGui.QComboBox()
         self.modFreqUnit.addItems(['Hz', 'kHz', 'MHz'])
+        self.modFreqUnit.setCurrentIndex(1)
         modFreqLayout = QtGui.QHBoxLayout()
         modFreqLayout.addWidget(QtGui.QLabel('Mod Frequency'))
         modFreqLayout.addWidget(self.modFreqFill)
@@ -585,15 +587,20 @@ class LockinCtrl(QtGui.QGroupBox):
         ## -- Define layout elements --
         harmSelect = QtGui.QComboBox()
         harmSelect.addItems(['1', '2', '3', '4'])
+        harmSelect.setCurrentIndex(1)
         self.phaseFill = QtGui.QLineEdit()
         sensSelect = QtGui.QComboBox()
         sensSelect.addItems(LIASENSLIST)
+        sensSelect.setCurrentIndex(26)
         tcSelect = QtGui.QComboBox()
         tcSelect.addItems(LIATCLIST)
+        tcSelect.setCurrentIndex(5)
         coupleSelect = QtGui.QComboBox()
         coupleSelect.addItems(['AC', 'DC'])
+        coupleSelect.setCurrentIndex(1)
         reserveSelect = QtGui.QComboBox()
         reserveSelect.addItems(['High Reserve', 'Normal', 'Low Noise'])
+        reserveSelect.setCurrentIndex(1)
 
         ## -- Set up main layout --
         mainLayout = QtGui.QGridLayout()
