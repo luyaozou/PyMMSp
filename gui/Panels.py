@@ -413,9 +413,9 @@ class SynCtrl(QtGui.QGroupBox):
         # Get current syn power
         current_power = apisyn.read_syn_power(self.parent.synHandle)
         # Grab manual input power
-        set_power, stat = QtGui.QInputDialog.getInt(self, 'Synthesizer RF Power',
+        set_power, status = QtGui.QInputDialog.getInt(self, 'Synthesizer RF Power',
                                 'Manual Input (-20 to 0)', current_power, -20, 0, 1)
-        if not stat:    # hopefully no error occurs
+        if not status:    # hopefully no error occurs
             vCode = apisyn.set_syn_power(set_power)
             if vCode == pyvisa.constants.StatusCode.success:
                 self.parent.synStatus.update()
@@ -750,22 +750,22 @@ class ScopeCtrl(QtGui.QGroupBox):
 
     def rateComm(self, rate_text):
 
-        stat = apipci.set_sampling_rate(rate_text)
-        self.srateFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(stat)))
+        status = apipci.set_sampling_rate(rate_text)
+        self.srateFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
     def lenComm(self, len_text):
 
-        stat = apipci.set_sampling_len(len_text)
-        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(stat)))
+        status = apipci.set_sampling_len(len_text)
+        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
     def sensComm(self, sens_index):
 
-        stat = apipci.set_sens(sens_index)
+        status = apipci.set_sens(sens_index)
 
     def avgComm(self, avg_text):
 
-        stat = apipci.set_osc_avg(avg_text)
-        self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(stat)))
+        status = apipci.set_osc_avg(avg_text)
+        self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
 
 
@@ -797,29 +797,83 @@ class MotorCtrl(QtGui.QGroupBox):
 
     def tune_cavity(self):
 
-        stat = apimotor.move(self.parent.motorHandle, 1)
+        status = apimotor.move(self.parent.motorHandle, 1)
 
 
-class ScopeMonitor(pg.PlotWidget):
-
-    def __init__(self, parent):
-        pg.PlotWidget.__init__(self, parent, title='Oscilloscope Monitor')
-
-        self.getPlotItem()
-
-
-
-class LockinMonitor(pg.PlotWidget):
+class ScopeMonitor(QtGui.QWidget):
 
     def __init__(self, parent):
-        pg.PlotWidget.__init__(self, parent, title='Lockin Monitor')
+        QtGui.QWidget.__init__(self, parent)
+        self.parent = parent
 
-        self.getPlotItem()
+        self.pgPlot = pg.PlotWidget(title='Oscilloscope Monitor')
+        mainLayout = QtGui.QGridLayout()
+        mainLayout.addWidget(self.pgPlot, 0, 0)
+        self.setLayout(mainLayout)
+
+    def plot(self):
+        pass
 
 
-class SpectrumMonitor(pg.PlotWidget):
+class LockinMonitor(QtGui.QWidget):
 
     def __init__(self, parent):
-        pg.PlotWidget.__init__(self, parent, title='Spectrum Plotter')
+        QtGui.QWidget.__init__(self, parent)
+        self.parent = parent
 
-        self.getPlotItem()
+
+        self.lenFill = QtGui.QLineEdit()
+        self.updateSpeed = QtGui.QComboBox()
+        self.updateSpeed.addItems(['16 s', '8 s', '4 s', '2 s', '1 s',
+                                   '1/2 s', '1/4 s', '1/8 s'])
+        self.startButton = QtGui.QPushButton('Start')
+        self.stopButton = QtGui.QPushButton('Stop')
+        panelLayout = QtGui.QHBoxLayout()
+        panelLayout.addWidget(QtGui.QLabel('Trace Length'))
+        panelLayout.addWidget(self.lenFill)
+        panelLayout.addWidget(QtGui.QLabel('Points'))
+        panelLayout.addWidget(QtGui.QLabel('Update Speed'))
+        panelLayout.addWidget(self.updateSpeed)
+        panelLayout.addWidget(self.startButton)
+        panelLayout.addWidget(self.stopButton)
+        settingPanel = QtGui.QWidget()
+        settingPanel.setLayout(panelLayout)
+
+        self.pgPlot = pg.PlotWidget(title='Lockin Monitor')
+        mainLayout = QtGui.QVBoxLayout()
+        mainLayout.addWidget(self.pgPlot)
+        mainLayout.addWidget(settingPanel)
+        self.setLayout(mainLayout)
+
+        # trigger settings
+        QObject.connect(self.lenFill, QtCore.SIGNAL("textChanged(const QString"), self.set_len)
+        QObject.connect(self.updateSpeed, QtCore.SIGNAL("currentIndexChanged(int)"), self.plot)
+        QObject.connect(self.startButton, QtCore.SIGNAL("clicked()"), self.start)
+        QObject.connect(self.stopButton, QtCore.SIGNAL("clicked()"), self.stop)
+
+    def plot(self):
+        pass
+
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def set_len(self, text):
+        status, slen = apival.val_monitor_sample_len(text)
+        self.lenFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+
+class SpectrumMonitor(QtGui.QWidget):
+
+    def __init__(self, parent):
+        QtGui.QWidget.__init__(self, parent)
+        self.parent = parent
+
+        self.pgPlot = pg.PlotWidget(title='Spectrum Monitor')
+        mainLayout = QtGui.QGridLayout()
+        mainLayout.addWidget(self.pgPlot, 0, 0)
+        self.setLayout(mainLayout)
+
+    def plot(self):
+        pass

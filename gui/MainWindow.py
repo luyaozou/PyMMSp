@@ -78,6 +78,9 @@ class MainWindow(QtGui.QMainWindow):
         self.lcCtrl = Panels.LockinCtrl(self)
         self.scopeCtrl = Panels.ScopeCtrl(self)
         self.motorCtrl = Panels.MotorCtrl(self)
+        self.scopeMonitor = Panels.ScopeMonitor(self)
+        self.lcMonitor = Panels.LockinMonitor(self)
+        self.specMonitor = Panels.SpectrumMonitor(self)
 
         # Set main window layout
         self.mainLayout = QtGui.QGridLayout()
@@ -89,9 +92,9 @@ class MainWindow(QtGui.QMainWindow):
         self.mainLayout.addWidget(self.lcCtrl, 1, 2, 1, 2)
         self.mainLayout.addWidget(self.scopeCtrl, 2, 2, 1, 2)
         self.mainLayout.addWidget(self.motorCtrl, 3, 2, 1, 2)
-        self.mainLayout.addWidget(Panels.ScopeMonitor(self), 0, 4, 1, 4)
-        self.mainLayout.addWidget(Panels.LockinMonitor(self), 1, 4, 1, 4)
-        self.mainLayout.addWidget(Panels.SpectrumMonitor(self), 2, 4, 1, 4)
+        self.mainLayout.addWidget(self.scopeMonitor, 0, 4, 1, 4)
+        self.mainLayout.addWidget(self.lcMonitor, 1, 4, 1, 4)
+        self.mainLayout.addWidget(self.specMonitor, 2, 4, 1, 4)
 
         # Enable main window
         self.mainWidget = QtGui.QWidget()
