@@ -6,7 +6,7 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import QObject
 import pyqtgraph as pg
 import pyvisa
-import time
+import numpy as np
 # import shared gui widgets
 from gui.SharedWidgets import *
 # import instrument api
@@ -836,7 +836,10 @@ class LockinMonitor(QtGui.QWidget):
         self.parent = parent
         self.counter = 0        # data points counter
 
-        self.lenFill = QtGui.QLineEdit()
+        self.slenFill = QtGui.QLineEdit()
+        self.slenFill.setText('100')
+        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(0)))
+        self.data = np.empty(100)
         self.updateRate = QtGui.QComboBox()
         self.updateRate.addItems(['10 Hz', '5 Hz', '2 Hz', '1 Hz',
                                    '0.5 Hz', '0.2 Hz', '0.1 Hz'])
@@ -847,7 +850,7 @@ class LockinMonitor(QtGui.QWidget):
         self.stopButton = QtGui.QPushButton('Stop')
         panelLayout = QtGui.QHBoxLayout()
         panelLayout.addWidget(QtGui.QLabel('Trace Length'))
-        panelLayout.addWidget(self.lenFill)
+        panelLayout.addWidget(self.slenFill)
         panelLayout.addWidget(QtGui.QLabel('Update Rate'))
         panelLayout.addWidget(self.updateRate)
         panelLayout.addWidget(self.startButton)
@@ -862,48 +865,45 @@ class LockinMonitor(QtGui.QWidget):
         mainLayout.addWidget(settingPanel)
         self.setLayout(mainLayout)
 
+        # set up timer
+        self.timer = QtCore.QTimer()
+        self.timer.setInterval(1000)        # default interval 1 second
+
         # trigger settings
-        QObject.connect(self.lenFill, QtCore.SIGNAL("textChanged(const QString"), self.set_len)
-        QObject.connect(self.startButton, QtCore.SIGNAL("clicked(bool)"), self.start_btn_text)
+        QObject.connect(self.slenFill, QtCore.SIGNAL("textChanged(const QString"), self.set_len)
+        QObject.connect(self.startButton, QtCore.SIGNAL("clicked(bool)"), self.start)
         QObject.connect(self.restartButton, QtCore.SIGNAL("clicked()"), self.restart)
         QObject.connect(self.stopButton, QtCore.SIGNAL("clicked()"), self.stop)
+        QObject.connect(self.updateRate, QtCore.SIGNAL("currentIndexChanged(int)"), self.set_waittime)
+        QObject.connect(self.timer, QtCore.SIGNAL("timeout()"), self.update_plot)
 
-    def start_btn_text(self, btn_pressed):
-        # change button text
+    def start(self, btn_pressed):
+
         if btn_pressed:
             self.startButton.setText('Pause')
         else:
             self.startButton.setText('Continue')
 
-    def start(self):
-
-        status, slen = apival.val_monitor_sample_len(text)
-        waittime = self.set_waittime(self.updateRate.currentIndex())
-        if not status:  # if sample length is valid, start daq
-            data = np.empty(slen)
-            while self.startButton.isChecked():
-                data = self.daq(data, slen)
-                self.update_plot(data, slen)
-                time.sleep(waittime)
-                print(self.counter)
-        else:
-            self.counter = 0
+        self.timer.start()
 
     def restart(self):
 
         self.counter = 0    # reset counter
         self.startButton.setChecked(True)   # retrigger start button
-        self.start_btn_text(True)
+        self.startButton.setText('Pause')
+        self.timer.start()
 
     def stop(self):
 
         self.startButton.setChecked(False)  # reset start button
         self.startButton.setText('Start')
+        self.timer.stop()
 
     def set_len(self, text):
         status, slen = apival.val_monitor_sample_len(text)
-        self.lenFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
         if not status:
+            self.data = np.empty(slen)
             self.restart()
         else:
             self.stop()
@@ -911,25 +911,28 @@ class LockinMonitor(QtGui.QWidget):
     def set_waittime(self, srate_index):
         ''' Set wait time according to self.updateRate '''
 
-        waittime_list = [0.1, 0.2, 0.5, 1, 2, 5, 10]    # seconds
-        return waittime_list(srate_index)
+        waittime_list = [100, 200, 500, 1000, 2000, 5000, 10000]    # milliseconds
+        self.timer.setInterval(waittime_list[srate_index])
 
-    def daq(self, data, slen):
+    def daq(self):
+        ''' If sampled points are less than the set length, fill up the array
+            If sampled points are more than the set length, roll the array
+            forward and fill the last array element with new data
+        '''
 
-        if self.counter <= slen:
-            data[self.counter] = apilc.query_single_x(self.parent.lcHandle)
+        if self.counter <= len(self.data):
+            self.data[self.counter]
             self.counter += 1
         else:
-            data = np.roll(data, len(data)-1)
-            data[-1] = apilc.query_single_x(self.parent.lcHandle)
+            self.data = np.roll(self.data, slen-1)
+            self.data[-1] = apilc.query_single_x(self.parent.lcHandle)
 
-        return data
-
-    def update_plot(self, data, slen):
-        if self.counter <= slen:
-            self.pgPlot.plot(data[0:self.counter])
+    def update_plot(self):
+        self.daq()
+        if self.counter < len(self.data):
+            self.pgPlot.plot(self.data[0:self.counter])
         else:
-            self.pgPlot.plot(data)
+            self.pgPlot.plot(self.data)
 
 
 class SpectrumMonitor(QtGui.QWidget):

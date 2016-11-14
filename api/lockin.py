@@ -226,4 +226,4 @@ def query_single_x(lcHandle):
         x = lcHandle.query('OUTP?1')
         return x
     except:
-        return 'IOError'
+        return 0

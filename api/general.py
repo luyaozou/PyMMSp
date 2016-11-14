@@ -17,7 +17,7 @@ def list_inst():
     except OSError:
         return [], 'Cannot open VISA library!'
     # get available instrument address list
-    inst_list = rm.list_resources()
+    inst_list = list(rm.list_resources())
     inst_list.sort()
     inst_dict = {}
     for inst in inst_list:
