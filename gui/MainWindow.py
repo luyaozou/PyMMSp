@@ -1,10 +1,12 @@
 #! encoding = utf-8
+''' Main GUI Window '''
 
 from PyQt4 import QtCore, QtGui
 import time
 from gui import Panels
 from gui import Dialogs
 from api import general as apigen
+
 
 class MainWindow(QtGui.QMainWindow):
     '''

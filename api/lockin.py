@@ -215,3 +215,15 @@ def set_reserve(lcHandle, reserve_text):
         return vcode
     except:
         return 'IOError'
+
+
+def query_single_x(lcHandle):
+    ''' Query single x reading from lockin.
+        Returns x (float)
+    '''
+
+    try:
+        x = lcHandle.query('OUTP?1')
+        return x
+    except:
+        return 'IOError'
