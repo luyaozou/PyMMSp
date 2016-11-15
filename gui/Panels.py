@@ -870,7 +870,7 @@ class LockinMonitor(QtGui.QWidget):
         self.timer.setInterval(1000)        # default interval 1 second
 
         # trigger settings
-        QObject.connect(self.slenFill, QtCore.SIGNAL("textChanged(const QString"), self.set_len)
+        QObject.connect(self.slenFill, QtCore.SIGNAL("textChanged(const QString)"), self.set_len)
         QObject.connect(self.startButton, QtCore.SIGNAL("clicked(bool)"), self.start)
         QObject.connect(self.restartButton, QtCore.SIGNAL("clicked()"), self.restart)
         QObject.connect(self.stopButton, QtCore.SIGNAL("clicked()"), self.stop)
@@ -891,18 +891,23 @@ class LockinMonitor(QtGui.QWidget):
         self.counter = 0    # reset counter
         self.startButton.setChecked(True)   # retrigger start button
         self.startButton.setText('Pause')
+        self.pgPlot.clear()
         self.timer.start()
 
     def stop(self):
 
+        self.timer.stop()
+        self.pgPlot.clear()
+        self.counter = 0
         self.startButton.setChecked(False)  # reset start button
         self.startButton.setText('Start')
-        self.timer.stop()
 
     def set_len(self, text):
         status, slen = apival.val_monitor_sample_len(text)
         self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
-        if not status:
+        if status == 1:
+            self.stop()
+        elif slen > 0:
             self.data = np.empty(slen)
             self.restart()
         else:
@@ -920,18 +925,19 @@ class LockinMonitor(QtGui.QWidget):
             forward and fill the last array element with new data
         '''
 
-        if self.counter <= len(self.data):
-            self.data[self.counter]
+        if self.counter < len(self.data):
+            self.data[self.counter] = apilc.query_single_x(self.parent.lcHandle)
             self.counter += 1
         else:
-            self.data = np.roll(self.data, slen-1)
+            self.data = np.roll(self.data, len(self.data)-1)
             self.data[-1] = apilc.query_single_x(self.parent.lcHandle)
 
     def update_plot(self):
         self.daq()
         if self.counter < len(self.data):
-            self.pgPlot.plot(self.data[0:self.counter])
+            self.pgPlot.plot(self.data[self.counter])
         else:
+            self.pgPlot.clear()
             self.pgPlot.plot(self.data)
 
 
