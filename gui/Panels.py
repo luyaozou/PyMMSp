@@ -916,8 +916,14 @@ class LockinMonitor(QtGui.QWidget):
     def set_waittime(self, srate_index):
         ''' Set wait time according to self.updateRate '''
 
-        waittime_list = [100, 200, 500, 1000, 2000, 5000, 10000]    # milliseconds
-        self.timer.setInterval(waittime_list[srate_index])
+        status, waittime = apival.val_lc_monitor_srate(srate_index, apilc.read_tc(self.parent.lcHandle))
+        self.timer.setInterval(waittime)
+        if status:
+            MsgWarning('Update speed warning!',
+                       '''The picked update speed is faster than the lockin time constant.
+                          Automatically reset the update speed to 2pi * time_constant ''')
+        else:
+            pass
 
     def daq(self):
         ''' If sampled points are less than the set length, fill up the array

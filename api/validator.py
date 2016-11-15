@@ -3,7 +3,19 @@
     Always returns input status first, and converted  values, if possible.
 '''
 
-MULTIPLIER = [1, 3, 3, 6, 9, 12, 18, 27, 27]    # VDI multiplication factor
+from math import pi
+
+
+# VDI MULTIPLICATION FACTOR
+MULTIPLIER = [1, 3, 3, 6, 9, 12, 18, 27, 27]
+# LOCKIN AMPLIFIER SENSTIVITY LIST (IN VOLTS)
+LIASENSLIST = [2e-9, 5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7,
+               1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4,
+               1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1, 5e-1, 1
+               ]
+# LOCKIN AMPLIFIER TIME CONSTANT LIST (IN MILLISECONDS)
+LIATCLIST = [1e-2, 3e-2, 1e-1, 3e-1, 1, 3, 10, 30, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4]
+
 
 def wrap_phase(phase):
     ''' Wrap phase into the range of [-180, 180] degrees.
@@ -236,3 +248,22 @@ def val_monitor_sample_len(len_text):
             return 1, 1
     except ValueError:
         return 1, 1
+
+
+def val_lc_monitor_srate(srate_index, tc_index):
+    ''' Validate screen update speed of the lockin monitor.
+        Arguments
+            srate_index: lc sample rate index, int
+            tc_index: lc time constant index, int
+        Returns
+            status: int (0: safe; 1: error)
+            waittime: screen update waittime in milliseconds, float
+    '''
+
+    waittime_list = [100, 200, 500, 1000, 2000, 5000, 10000]    # milliseconds
+    waittime = waittime_list[srate_index]
+    tc = LIATCLIST[tc_index]
+    if tc*2*pi < waittime:
+        return 0, waittime
+    else:
+        return 1, tc*2*pi
