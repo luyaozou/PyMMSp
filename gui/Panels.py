@@ -935,10 +935,9 @@ class LockinMonitor(QtGui.QWidget):
     def update_plot(self):
         self.daq()
         if self.counter < len(self.data):
-            self.pgPlot.plot(self.data[self.counter])
+            self.curve = self.pgPlot.plot(self.data[0:self.counter])
         else:
-            self.pgPlot.clear()
-            self.pgPlot.plot(self.data)
+            self.curve.setData(self.data)
 
 
 class SpectrumMonitor(QtGui.QWidget):
