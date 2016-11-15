@@ -36,13 +36,17 @@ class MainWindow(QtGui.QMainWindow):
 
         instSelAction = QtGui.QAction('Select Instrument', self)
         instSelAction.setShortcut('Ctrl+Shift+I')
-        instSelAction.setStatusTip('Select Instrument')
+        instSelAction.setStatusTip('Select instrument')
         instSelAction.triggered.connect(self.on_sel_inst)
 
         instStatViewAction = QtGui.QAction('View Instrument Status', self)
         instStatViewAction.setShortcut('Ctrl+Shift+V')
         instStatViewAction.setStatusTip('View status of currently connected instrument')
         instStatViewAction.triggered.connect(self.on_view_inst_stat)
+
+        instCloseAction = QtGui.QAction('Close Instrument', self)
+        instCloseAction.setStatusTip('Close individual instrument')
+        instCloseAction.triggered.connect(self.on_close_sel_inst)
 
         scanJPLAction = QtGui.QAction('JPL Scanning Routine', self)
         scanJPLAction.setShortcut('Ctrl+Shift+J')
@@ -67,6 +71,7 @@ class MainWindow(QtGui.QMainWindow):
         menuInst = self.menuBar().addMenu('&Instrument')
         menuInst.addAction(instSelAction)
         menuInst.addAction(instStatViewAction)
+        menuInst.addAction(instCloseAction)
         menuScan = self.menuBar().addMenu('&Scan')
         menuScan.addAction(scanJPLAction)
         menuScan.addAction(scanPCIAction)
@@ -145,6 +150,15 @@ class MainWindow(QtGui.QMainWindow):
     def on_view_inst_stat(self):
         d = Dialogs.ViewInstDialog(self, self)
         d.show()
+
+    def on_close_sel_inst(self):
+        d = Dialogs.CloseSelInstDialog(self, self)
+        d.exec_()
+
+        self.refresh_syn()
+        self.refresh_lockin()
+        self.refresh_scope()
+        self.refresh_motor()
 
     def on_scan_jpl(self):
         pass

@@ -104,3 +104,86 @@ class ViewInstDialog(QtGui.QDialog):
 
         self.setMinimumWidth(400)
         self.setMinimumHeight(400)
+
+
+class CloseSelInstDialog(QtGui.QDialog):
+    '''
+        Dialog window for closing selected instrument.
+    '''
+
+    def __init__(self, parent, main):
+        QtGui.QDialog.__init__(self, parent)
+        self.parent = parent
+        self.setMinimumWidth(400)
+        self.setMinimumHeight(400)
+
+        inst = QtGui.QWidget()
+        synToggle = QtGui.QCheckBox()
+        lcToggle = QtGui.QCheckBox()
+        pciToggle = QtGui.QCheckBox()
+        motorToggle = QtGui.QCheckBox()
+
+        instLayout = QtGui.QFormLayout()
+        instLayout.addRow(QtGui.QLabel('Instrument'), QtGui.QLabel('Status'))
+        # only list currently connected instruments
+        if self.parent.synHandle:
+            synToggle.setCheckState(True)
+            instLayout.addRow(QtGui.QLabel('Synthesizer'), synToggle)
+        else:
+            pass
+        if self.parent.lcHandle:
+            lcToggle.setCheckState(True)
+            instLayout.addRow(QtGui.QLabel('Lockin'), lcToggle)
+        else:
+            pass
+        if self.parent.pciHandle:
+            pciToggle.setCheckState(True)
+            instLayout.addRow(QtGui.QLabel('Oscilloscope'), pciToggle)
+        else:
+            pass
+        if self.parent.motorHandle:
+            motorToggle.setCheckState(True)
+            instLayout.addRow(QtGui.QLabel('Motor'), motorToggle)
+        else:
+            pass
+        inst.setLayout(instLayout)
+
+        okButton = QtGui.QPushButton('Done')
+        mainLayout = QtGui.QVBoxLayout()
+        mainLayout.addWidget(inst)
+        mainLayout.addWidget(okButton)
+        self.setLayout(mainLayout)
+
+        QObject.connect(synToggle, QtCore.SIGNAL("clicked(bool)"), self.close_syn)
+        QObject.connect(lcToggle, QtCore.SIGNAL("clicked(bool)"), self.close_lc)
+        QObject.connect(pciToggle, QtCore.SIGNAL("clicked(bool)"), self.close_scope)
+        QObject.connect(motorToggle, QtCore.SIGNAL("clicked(bool)"), self.close_motor)
+        QObject.connect(okButton, QtCore.SIGNAL("clicked()"), self.close)
+
+    def close_syn(self, check_state):
+        if check_state:
+            pass
+        else:
+            status = apigen.close_inst(self.parent.synHandle)
+            self.parent.synHandle = None
+
+    def close_lc(self, check_state):
+        if check_state:
+            pass
+        else:
+            status = apigen.close_inst(self.parent.lcHandle)
+            self.parent.lcHandle = None
+
+    def close_scope(self, check_state):
+        if check_state:
+            pass
+        else:
+            status = apigen.close_inst(self.parent.pciHandle)
+            self.parent.pciHandle = None
+
+    def close_motor(self, check_state):
+        if check_state:
+            pass
+        else:
+            status = apigen.close_inst(self.parent.motorHandle)
+            self.parent.motorHandle = None
