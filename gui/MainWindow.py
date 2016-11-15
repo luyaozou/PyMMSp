@@ -5,6 +5,7 @@ from PyQt4 import QtCore, QtGui
 import time
 from gui import Panels
 from gui import Dialogs
+from gui import ScanJPL
 from api import general as apigen
 
 
@@ -161,8 +162,9 @@ class MainWindow(QtGui.QMainWindow):
         self.refresh_motor()
 
     def on_scan_jpl(self):
-        pass
-
+        d = ScanJPL.JPLScanConfig(self, self)
+        d.exec_()
+        
     def on_scan_pci(self):
         pass
 

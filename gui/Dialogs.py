@@ -1,8 +1,11 @@
 #! encoding = utf-8
+''' Dialog windows for system menues '''
+
 
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import QObject
 from api import general as apigen
+
 
 class SelInstDialog(QtGui.QDialog):
     '''
