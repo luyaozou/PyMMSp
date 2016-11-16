@@ -2,7 +2,6 @@
 ''' Main GUI Window '''
 
 from PyQt4 import QtCore, QtGui
-import time
 from gui import Panels
 from gui import Dialogs
 from gui import ScanJPL
@@ -140,7 +139,7 @@ class MainWindow(QtGui.QMainWindow):
         self.close()
 
     def on_sel_inst(self):
-        d = Dialogs.SelInstDialog(self, self)
+        d = Dialogs.SelInstDialog(self)
         d.exec_()
 
         self.refresh_syn()
@@ -149,11 +148,11 @@ class MainWindow(QtGui.QMainWindow):
         self.refresh_motor()
 
     def on_view_inst_stat(self):
-        d = Dialogs.ViewInstDialog(self, self)
+        d = Dialogs.ViewInstDialog(self)
         d.show()
 
     def on_close_sel_inst(self):
-        d = Dialogs.CloseSelInstDialog(self, self)
+        d = Dialogs.CloseSelInstDialog(self)
         d.exec_()
 
         self.refresh_syn()
@@ -162,9 +161,14 @@ class MainWindow(QtGui.QMainWindow):
         self.refresh_motor()
 
     def on_scan_jpl(self):
-        d = ScanJPL.JPLScanConfig(self, self)
-        d.exec_()
-        
+        d = ScanJPL.JPLScanConfig(self)
+        result = d.exec_()
+        if result:
+            d = ScanJPL.JPLScanWindow(self)
+            d.exec_()
+        else:
+            pass
+
     def on_scan_pci(self):
         pass
 

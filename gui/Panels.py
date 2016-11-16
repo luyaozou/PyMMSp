@@ -8,7 +8,7 @@ import pyqtgraph as pg
 import pyvisa
 import numpy as np
 # import shared gui widgets
-from gui.SharedWidgets import *
+from gui import SharedWidgets as Shared
 # import instrument api
 from api import synthesizer as apisyn
 from api import lockin as apilc
@@ -16,20 +16,6 @@ from api import pci as apipci
 from api import validator as apival
 # import data acquisition module
 from daq import lockin as daqlc
-
-
-# LOCKIN AMPLIFIER SENSTIVITY LIST
-LIASENSLIST = ['2 nV', '5 nV', '10 nV', '20 nV', '50 nV', '100 nV',
-               '200 nV', '500 nV', '1 uV', '2 uV', '5 uV', '10 uV',
-               '20 uV', '50 uV', '100 uV', '200 uV', '500 uV', '1 mV',
-               '2 mV', '5 mV', '10 mV', '20 mV', '50 mV', '100 mV',
-               '200 mV', '500 mV', '1 V'
-               ]
-
-# LOCKIN AMPLIFIER TIME CONSTANT LIST
-LIATCLIST = ['10 us', '30 us', '100 us', '300 us', '1 ms', '3 ms', '10 ms',
-             '30 ms', '100 ms', '300 ms', '1 s', '3 s', '10 s', '30 s'
-             ]
 
 
 def msgcolor(status_code):
@@ -193,8 +179,8 @@ class LockinStatus(QtGui.QGroupBox):
             self.lcHarm.setText(apilc.read_harm(self.parent.lcHandle))
             self.lcPhase.setText('{:s} deg'.format(apilc.read_phase(self.parent.lcHandle)))
             self.lcFreq.setText('{:.3f} kHz'.format(apilc.read_freq(self.parent.lcHandle)))
-            self.lcSens.setText(LIASENSLIST[apilc.read_sens(self.parent.lcHandle)])
-            self.lcTC.setText(LIATCLIST[apilc.read_tc(self.parent.lcHandle)])
+            self.lcSens.setText(Shared.LIASENSLIST[apilc.read_sens(self.parent.lcHandle)])
+            self.lcTC.setText(Shared.LIATCLIST[apilc.read_tc(self.parent.lcHandle)])
             self.lcCouple.setText(apilc.read_couple(self.parent.lcHandle))
             self.lcReserve.setText(apilc.read_reserve(self.parent.lcHandle))
         else:
@@ -262,19 +248,7 @@ class SynCtrl(QtGui.QGroupBox):
         self.synfreq = QtGui.QLabel('30000')
         self.probfreqFill = QtGui.QLineEdit()
         self.probfreqFill.setText('180000')
-        self.bandSelect = QtGui.QComboBox()
-        bandList = ['1 (x1): 0-50 GHz',
-                    '2 (x2): GHz',
-                    '3 (x3): 70-110 GHz',
-                    '4 (x3): 110-140 GHz',
-                    '5 (x6): 140-220 GHz',
-                    '6 (x9): 220-330 GHz',
-                    '7 (x12): 325-430 GHz',
-                    '8a (x18): 430-700 GHz',
-                    '8b (x27): 600-850 GHz',
-                    '9 (x27): 700-1000 GHz']
-        self.bandSelect.addItems(bandList)
-        self.bandSelect.setCurrentIndex(4)
+        self.bandSelect = Shared.VDIBandComboBox()
 
         ## -- Set up synthesizer control layout --
         synLayout = QtGui.QGridLayout()
@@ -407,7 +381,7 @@ class SynCtrl(QtGui.QGroupBox):
             if vCode == pyvisa.constants.StatusCode.success:
                 self.parent.synStatus.update()
             else:
-                msg = InstStatus(self, vCode)
+                msg = Shared.InstStatus(self, vCode)
                 msg.exec_()
         # update synthesizer frequency
         self.synfreq.setText('{:.12f}'.format(apisyn.read_syn_freq(self.parent.synHandle)))
@@ -430,10 +404,11 @@ class SynCtrl(QtGui.QGroupBox):
                 self.parent.synStatus.update()
                 self.synPowerToggle.setCheckState(True)
             else:
-                msg = InstStatus(self, vCode)
+                msg = Shared.InstStatus(self, vCode)
                 msg.exec_()
         else:
-            MsgWarning(self, 'Dangerous Input!', 'Input power exceed safety range!')
+            msg = Shared.MsgWarning(self, 'Dangerous Input!', 'Input power exceed safety range!')
+            msg.exec_()
 
     def synPowerDialog(self, toggle_stat):
         '''
@@ -445,7 +420,7 @@ class SynCtrl(QtGui.QGroupBox):
             self.synPowerToggle.setCheckState(toggle_stat)
             self.parent.synStatus.update()
         else:
-            msg = InstStatus(self, vCode)
+            msg = Shared.InstStatus(self, vCode)
             msg.exec_()
 
 
@@ -469,7 +444,7 @@ class SynCtrl(QtGui.QGroupBox):
         if vCode == pyvisa.constants.StatusCode.success:
             self.parent.synStatus.update()
         else:
-            msg = InstStatus(self, vCode)
+            msg = Shared.InstStatus(self, vCode)
             msg.exec_()
 
         if mod_index == 1:
@@ -524,7 +499,7 @@ class SynCtrl(QtGui.QGroupBox):
         if vCode == pyvisa.constants.StatusCode.success:
             self.parent.synStatus.update()
         else:
-            msg = InstStatus(self, vCode)
+            msg = Shared.InstStatus(self, vCode)
             msg.exec_()
 
     def modToggleComm(self):
@@ -536,7 +511,7 @@ class SynCtrl(QtGui.QGroupBox):
         if vCode == pyvisa.constants.StatusCode.success:
             self.parent.synStatus.update()
         else:
-            msg = InstStatus(self, vCode)
+            msg = Shared.InstStatus(self, vCode)
             msg.exec_()
 
 
@@ -549,7 +524,7 @@ class SynCtrl(QtGui.QGroupBox):
         if vCode == pyvisa.constants.StatusCode.success:
             self.parent.synStatus.update()
         else:
-            msg = InstStatus(self, vCode)
+            msg = Shared.InstStatus(self, vCode)
             msg.exec_()
 
     def modLFVolComm(self, vol_text):
@@ -565,7 +540,7 @@ class SynCtrl(QtGui.QGroupBox):
                 if vCode == pyvisa.constants.StatusCode.success:
                     self.parent.synStatus.update()
                 else:
-                    msg = InstStatus(self, vCode)
+                    msg = Shared.InstStatus(self, vCode)
                     msg.exec_()
             else:
                 pass
@@ -589,12 +564,8 @@ class LockinCtrl(QtGui.QGroupBox):
         harmSelect.addItems(['1', '2', '3', '4'])
         harmSelect.setCurrentIndex(1)
         self.phaseFill = QtGui.QLineEdit()
-        sensSelect = QtGui.QComboBox()
-        sensSelect.addItems(LIASENSLIST)
-        sensSelect.setCurrentIndex(26)
-        tcSelect = QtGui.QComboBox()
-        tcSelect.addItems(LIATCLIST)
-        tcSelect.setCurrentIndex(5)
+        sensSelect = Shared.lcSensBox()
+        tcSelect = Shared.lcTcBox()
         coupleSelect = QtGui.QComboBox()
         coupleSelect.addItems(['AC', 'DC'])
         coupleSelect.setCurrentIndex(1)
@@ -645,7 +616,7 @@ class LockinCtrl(QtGui.QGroupBox):
             if vCode == pyvisa.constants.StatusCode.success:
                 self.parent.lcStatus.update()
             else:
-                msg = InstStatus(self, vCode)
+                msg = Shared.InstStatus(self, vCode)
                 msg.exec_()
         else:
             pass
@@ -663,10 +634,10 @@ class LockinCtrl(QtGui.QGroupBox):
             if vCode == pyvisa.constants.StatusCode.success:
                 self.parent.lcStatus.update()
             else:
-                msg = InstStatus(self, vCode)
+                msg = Shared.InstStatus(self, vCode)
                 msg.exec_()
         else:
-            msg = MsgError(self, 'Out of Range!', 'Input harmonics exceed legal range!')
+            msg = Shared.MsgError(self, 'Out of Range!', 'Input harmonics exceed legal range!')
             msg.exec_()
 
     def sensComm(self, sens_index):
@@ -679,7 +650,7 @@ class LockinCtrl(QtGui.QGroupBox):
         if vCode == pyvisa.constants.StatusCode.success:
             self.parent.lcStatus.update()
         else:
-            msg = InstStatus(self, vCode)
+            msg = Shared.InstStatus(self, vCode)
             msg.exec_()
 
     def tcComm(self, tc_index):
@@ -692,7 +663,7 @@ class LockinCtrl(QtGui.QGroupBox):
         if vCode == pyvisa.constants.StatusCode.success:
             self.parent.lcStatus.update()
         else:
-            msg = InstStatus(self, vCode)
+            msg = Shared.InstStatus(self, vCode)
             msg.exec_()
 
     def coupleComm(self, couple_text):
@@ -705,7 +676,7 @@ class LockinCtrl(QtGui.QGroupBox):
         if vCode == pyvisa.constants.StatusCode.success:
             self.parent.lcStatus.update()
         else:
-            msg = InstStatus(self, vCode)
+            msg = Shared.InstStatus(self, vCode)
             msg.exec_()
 
     def reserveComm(self, reserve_text):
@@ -718,7 +689,7 @@ class LockinCtrl(QtGui.QGroupBox):
         if vCode == pyvisa.constants.StatusCode.success:
             self.parent.lcStatus.update()
         else:
-            msg = InstStatus(self, vCode)
+            msg = Shared.InstStatus(self, vCode)
             msg.exec_()
 
 
@@ -919,9 +890,10 @@ class LockinMonitor(QtGui.QWidget):
         status, waittime = apival.val_lc_monitor_srate(srate_index, apilc.read_tc(self.parent.lcHandle))
         self.timer.setInterval(waittime)
         if status:
-            MsgWarning('Update speed warning!',
+            msg = Shared.MsgWarning('Update speed warning!',
                        '''The picked update speed is faster than the lockin time constant.
                           Automatically reset the update speed to 2pi * time_constant ''')
+            msg.exec_()
         else:
             pass
 

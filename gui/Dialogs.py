@@ -12,7 +12,7 @@ class SelInstDialog(QtGui.QDialog):
         Dialog window for instrument selection.
     '''
 
-    def __init__(self, parent, main):
+    def __init__(self, parent):
         QtGui.QDialog.__init__(self, parent)
         self.parent = parent
         self.setMinimumWidth(400)
@@ -102,7 +102,7 @@ class ViewInstDialog(QtGui.QDialog):
         Dialog window for instrument status view
     '''
 
-    def __init__(self, parent, main):
+    def __init__(self, parent):
         QtGui.QDialog.__init__(self, parent)
 
         self.setMinimumWidth(400)
@@ -114,7 +114,7 @@ class CloseSelInstDialog(QtGui.QDialog):
         Dialog window for closing selected instrument.
     '''
 
-    def __init__(self, parent, main):
+    def __init__(self, parent):
         QtGui.QDialog.__init__(self, parent)
         self.parent = parent
         self.setMinimumWidth(400)
