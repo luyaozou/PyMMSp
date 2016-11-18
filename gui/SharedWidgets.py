@@ -1,6 +1,8 @@
 #! encoding = utf-8
 
 from PyQt4 import QtGui, QtCore
+from api import validator as apival
+
 
 # LOCKIN AMPLIFIER SENSTIVITY LIST
 LIASENSLIST = ['2 nV', '5 nV', '10 nV', '20 nV', '50 nV', '100 nV',
@@ -101,11 +103,13 @@ class lcTcBox(QtGui.QComboBox):
 class FreqWinEntryCaption(QtGui.QWidget):
     ''' Frequency window entry for scanning job configuration with captions '''
 
-    def __init__(self):
-        QtGui.QWidget.__init__(self)
+    def __init__(self, main):
+        QtGui.QWidget.__init__(self, parent=None)
+        self.main = main
 
         self.startFreqFill = QtGui.QLineEdit()
         self.stopFreqFill = QtGui.QLineEdit()
+        self.stepFill = QtGui.QLineEdit()
         self.avgFill = QtGui.QLineEdit()
         self.sensSel = lcSensBox()
 
@@ -120,6 +124,12 @@ class FreqWinEntryCaption(QtGui.QWidget):
         stopFreqLayout.setRowWrapPolicy(2)
         stopFreqLayout.addRow(QtGui.QLabel('Stop Freq (MHz)'), self.stopFreqFill)
         stopFreq.setLayout(stopFreqLayout)
+
+        step = QtGui.QWidget()
+        stepLayout = QtGui.QFormLayout()
+        stepLayout.setRowWrapPolicy(2)
+        stepLayout.addRow(QtGui.QLabel('Step Size (MHz)'), self.stepFill)
+        step.setLayout(stepLayout)
 
         avg = QtGui.QWidget()
         avgLayout = QtGui.QFormLayout()
@@ -136,18 +146,51 @@ class FreqWinEntryCaption(QtGui.QWidget):
         mainLayout = QtGui.QHBoxLayout()
         mainLayout.addWidget(startFreq)
         mainLayout.addWidget(stopFreq)
+        mainLayout.addWidget(step)
         mainLayout.addWidget(avg)
         mainLayout.addWidget(sens)
         self.setLayout(mainLayout)
 
+        self.connect(self.startFreqFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_start_freq)
+        self.connect(self.stopFreqFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_stop_freq)
+        self.connect(self.stepFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_step)
+        self.connect(self.avgFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_avg)
+
+    def val_start_freq(self, text):
+
+        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
+        status, freq = apival.val_syn_freq(text, vdi_index)
+        self.startFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+
+    def val_stop_freq(self, text):
+
+        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
+        status, freq = apival.val_syn_freq(text, vdi_index)
+        self.stopFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+
+    def val_step(self, text):
+
+        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
+        status, number = apival.val_float(text)
+        self.stepFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+
+    def val_avg(self, text):
+
+        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
+        status, number = apival.val_int(text)
+        self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+
+
 class FreqWinEntryNoCaption(QtGui.QWidget):
     ''' Frequency window entry for scanning job configuration without captions '''
 
-    def __init__(self):
-        QtGui.QWidget.__init__(self)
+    def __init__(self, main):
+        QtGui.QWidget.__init__(self, parent=None)
+        self.main = main
 
         self.startFreqFill = QtGui.QLineEdit()
         self.stopFreqFill = QtGui.QLineEdit()
+        self.stepFill = QtGui.QLineEdit()
         self.avgFill = QtGui.QLineEdit()
         self.sensSel = lcSensBox()
 
@@ -155,9 +198,39 @@ class FreqWinEntryNoCaption(QtGui.QWidget):
         mainLayout.setSpacing(25)
         mainLayout.addWidget(self.startFreqFill)
         mainLayout.addWidget(self.stopFreqFill)
+        mainLayout.addWidget(self.stepFill)
         mainLayout.addWidget(self.avgFill)
         mainLayout.addWidget(self.sensSel)
         self.setLayout(mainLayout)
+
+        self.connect(self.startFreqFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_start_freq)
+        self.connect(self.stopFreqFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_stop_freq)
+        self.connect(self.stepFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_step)
+        self.connect(self.avgFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_avg)
+
+    def val_start_freq(self, text):
+
+        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
+        status, freq = apival.val_syn_freq(text, vdi_index)
+        self.startFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+
+    def val_stop_freq(self, text):
+
+        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
+        status, freq = apival.val_syn_freq(text, vdi_index)
+        self.stopFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+
+    def val_step(self, text):
+
+        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
+        status, number = apival.val_float(text)
+        self.stepFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+
+    def val_avg(self, text):
+
+        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
+        status, number = apival.val_int(text)
+        self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
 
 def msgcolor(status_code):

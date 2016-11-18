@@ -19,7 +19,7 @@ class JPLScanConfig(QtGui.QDialog):
     def __init__(self, parent):
         QtGui.QDialog.__init__(self, parent)
         self.parent = parent
-        self.setMinimumSize(600, 600)
+        self.setMinimumSize(800, 600)
 
         # Add top buttons
         addBatchButton = QtGui.QPushButton('Add batch')
@@ -44,7 +44,7 @@ class JPLScanConfig(QtGui.QDialog):
 
         # Add freq config entries
         self.entryList = []
-        self.entryList.append(Shared.FreqWinEntryCaption())
+        self.entryList.append(Shared.FreqWinEntryCaption(self.parent))
 
         self.entryLayout = QtGui.QVBoxLayout()
         self.entryLayout.setSpacing(0)
