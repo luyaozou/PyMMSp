@@ -161,10 +161,13 @@ class MainWindow(QtGui.QMainWindow):
         self.refresh_motor()
 
     def on_scan_jpl(self):
-        settings, result = ScanJPL.JPLScanConfig.proceed(self)
-        if result and settings:
-            d = ScanJPL.JPLScanWindow(self)
-            d.exec_()
+        dconfig = ScanJPL.JPLScanConfig(self)
+        result = dconfig.exec_()
+
+        if result:  # if dialog accepted
+            settings = dconfig.get_settings()
+            dscan = ScanJPL.JPLScanWindow(self, settings)
+            dscan.exec_()
         else:
             pass
 

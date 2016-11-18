@@ -18,7 +18,7 @@ class JPLScanConfig(QtGui.QDialog):
     def __init__(self, parent):
         QtGui.QDialog.__init__(self, parent)
         self.parent = parent
-        self.setMinimumSize(800, 600)
+        self.setMinimumSize(800, 250)
 
         # Add top buttons
         addBatchButton = QtGui.QPushButton('Add batch')
@@ -66,7 +66,7 @@ class JPLScanConfig(QtGui.QDialog):
         self.setLayout(mainLayout)
 
         cancelButton.clicked.connect(self.reject)
-        acceptButton.clicked.connect(self.accept)
+        acceptButton.clicked.connect(self.get_settings)
         addBatchButton.clicked.connect(self.add_entry)
         removeBatchButton.clicked.connect(self.remove_entry)
 
@@ -74,7 +74,7 @@ class JPLScanConfig(QtGui.QDialog):
         ''' Add batch entry to this dialog window '''
 
         # generate a new batch entry
-        entry = Shared.FreqWinEntryNoCaption()
+        entry = Shared.FreqWinEntryNoCaption(self.parent)
         # add this entry to the layout and to the filler list
         self.entryList.append(entry)
         self.entryLayout.addWidget(entry)
@@ -93,46 +93,44 @@ class JPLScanConfig(QtGui.QDialog):
             self.entryLayout.removeWidget(entry)
             entry.deleteLater()
 
-    # you need the static method that is not bound to the class object to return
-    # variables.
-    @staticmethod
-    def proceed(parent):
+    def get_settings(self):
         ''' Read batch settings from entries and proceed.
             Returns a list of seting tuples in the format of
-            (start_rf_freq MHz, stop_rf_freq MHz, averages, lockin sens_index)
+            (start_rf_freq MHz, stop_rf_freq MHz, step MHz, averages, lockin sens_index)
         '''
 
-        d = JPLScanConfig(parent)
-        result = d.exec_()
-
-        vdi_index = d.parent.synCtrl.bandSelect.currentIndex()
+        vdi_index = self.parent.synCtrl.bandSelect.currentIndex()
         settings = []
 
-        if result:
-            for entry in d.entryList:
-                # read settings
-                status1, start_rf_freq = apival.val_syn_freq(entry.startFreqFill.text(), vdi_index)
-                status2, stop_rf_freq = apival.val_syn_freq(entry.stopFreqFill.text(), vdi_index)
-                status3, average = apival.val_int(entry.avgFill.text())
-                sens_index = entry.sensSel.currentIndex()
+        no_error = True
+        for entry in self.entryList:
+            # read settings
+            status1, start_rf_freq = apival.val_syn_freq(entry.startFreqFill.text(), vdi_index)
+            status2, stop_rf_freq = apival.val_syn_freq(entry.stopFreqFill.text(), vdi_index)
+            status3, step = apival.val_float(entry.stepFill.text())
+            status4, average = apival.val_int(entry.avgFill.text())
+            sens_index = entry.sensSel.currentIndex()
             # put them into a setting tuple
-            if not (status1 or status2 or status3):
-                setting_entry = (start_rf_freq, stop_rf_freq, average, sens_index)
+            if not (status1 or status2 or status3 or status4):
+                no_error *= True
+                setting_entry = (start_rf_freq, stop_rf_freq, step, average, sens_index)
                 # put the setting tuple into a list
                 settings.append(setting_entry)
             else:
-                msg = Shared.MsgError(d, 'Invalid input!', 'Please fix invalid inputs before proceed.')
-                msg.exec_()
-        else:
-            pass
+                no_error *= False
 
-        return settings, result
+        if no_error:
+            self.accept()
+            return settings
+        else:
+            msg = Shared.MsgError(self.parent, 'Invalid input!', 'Please fix invalid inputs before proceed.')
+            msg.exec_()
 
 
 class JPLScanWindow(QtGui.QDialog):
     ''' Scanning window '''
 
-    def __init__(self, parent):
+    def __init__(self, parent, settings):
         QtGui.QWidget.__init__(self, parent)
         self.parent = parent
 

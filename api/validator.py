@@ -7,7 +7,7 @@ from math import pi
 
 
 # VDI MULTIPLICATION FACTOR
-MULTIPLIER = [1, 3, 3, 6, 9, 12, 18, 27, 27]
+MULTIPLIER = [1, 3, 3, 3, 6, 9, 12, 18, 27, 27]
 # LOCKIN AMPLIFIER SENSTIVITY LIST (IN VOLTS)
 LIASENSLIST = [2e-9, 5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7,
                1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4,
