@@ -37,6 +37,26 @@ def wrap_phase(phase):
     return phase
 
 
+def val_int(text):
+    ''' General validator for int number '''
+
+    try:
+        number = int(text)
+        return 0, number
+    except ValueError:
+        return 1, 0
+
+
+def val_float(text):
+    ''' General validator for float number '''
+
+    try:
+        number = float(text)
+        return 0, number
+    except ValueError:
+        return 1, 0.
+
+
 def val_lc_phase(text):
     ''' Validate locking phase input.
         Arguments: text: str
@@ -103,9 +123,9 @@ def val_syn_freq(probf_text, band_index):
         if syn_freq > 0 and syn_freq < 50000:
             return 0, syn_freq
         else:
-            return 1, syn_freq
+            return 1, 50000
     except ValueError:
-        return 1, syn_freq
+        return 1, 50000
 
 
 def val_syn_power(power):

@@ -158,3 +158,21 @@ class FreqWinEntryNoCaption(QtGui.QWidget):
         mainLayout.addWidget(self.avgFill)
         mainLayout.addWidget(self.sensSel)
         self.setLayout(mainLayout)
+
+
+def msgcolor(status_code):
+    ''' Return message color based on status_code.
+        0: safe, green
+        1: fatal, red
+        2: warning, gold
+        else: black
+    '''
+
+    if not status_code:
+        return '#00A352'
+    elif status_code == 1:
+        return '#D63333'
+    elif status_code == 2:
+        return '#FF9933'
+    else:
+        return '#000000'

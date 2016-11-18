@@ -161,9 +161,8 @@ class MainWindow(QtGui.QMainWindow):
         self.refresh_motor()
 
     def on_scan_jpl(self):
-        d = ScanJPL.JPLScanConfig(self)
-        result = d.exec_()
-        if result:
+        settings, result = ScanJPL.JPLScanConfig.proceed(self)
+        if result and settings:
             d = ScanJPL.JPLScanWindow(self)
             d.exec_()
         else:

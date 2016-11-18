@@ -6,8 +6,9 @@
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import QObject
 import pyqtgraph as pg
-from gui.SharedWidgets import FreqWinEntryCaption, FreqWinEntryNoCaption, MsgWarning
+from gui import SharedWidgets as Shared
 from api import general as apigen
+from api import validator as apival
 
 
 class JPLScanConfig(QtGui.QDialog):
@@ -19,7 +20,7 @@ class JPLScanConfig(QtGui.QDialog):
         QtGui.QDialog.__init__(self, parent)
         self.parent = parent
         self.setMinimumSize(600, 600)
-        
+
         # Add top buttons
         addBatchButton = QtGui.QPushButton('Add batch')
         removeBatchButton = QtGui.QPushButton('Remove last batch')
@@ -43,7 +44,7 @@ class JPLScanConfig(QtGui.QDialog):
 
         # Add freq config entries
         self.entryList = []
-        self.entryList.append(FreqWinEntryCaption())
+        self.entryList.append(Shared.FreqWinEntryCaption())
 
         self.entryLayout = QtGui.QVBoxLayout()
         self.entryLayout.setSpacing(0)
@@ -74,7 +75,7 @@ class JPLScanConfig(QtGui.QDialog):
         ''' Add batch entry to this dialog window '''
 
         # generate a new batch entry
-        entry = FreqWinEntryNoCaption()
+        entry = Shared.FreqWinEntryNoCaption()
         # add this entry to the layout and to the filler list
         self.entryList.append(entry)
         self.entryLayout.addWidget(entry)
@@ -84,7 +85,7 @@ class JPLScanConfig(QtGui.QDialog):
 
         # if there is only one entry, skip and pop up warning
         if len(self.entryList) == 1:
-            msg = MsgWarning(self.parent, 'Cannot remove batch!',
+            msg = Shared.MsgWarning(self.parent, 'Cannot remove batch!',
                              'At least one batch entry is required!')
             msg.exec_()
         else:
@@ -92,6 +93,41 @@ class JPLScanConfig(QtGui.QDialog):
             entry = self.entryList.pop()
             self.entryLayout.removeWidget(entry)
             entry.deleteLater()
+
+    # you need the static method that is not bound to the class object to return
+    # variables.
+    @staticmethod
+    def proceed(parent):
+        ''' Read batch settings from entries and proceed.
+            Returns a list of seting tuples in the format of
+            (start_rf_freq MHz, stop_rf_freq MHz, averages, lockin sens_index)
+        '''
+
+        d = JPLScanConfig(parent)
+        result = d.exec_()
+
+        vdi_index = d.parent.synCtrl.bandSelect.currentIndex()
+        settings = []
+
+        if result:
+            for entry in d.entryList:
+                # read settings
+                status1, start_rf_freq = apival.val_syn_freq(entry.startFreqFill.text(), vdi_index)
+                status2, stop_rf_freq = apival.val_syn_freq(entry.stopFreqFill.text(), vdi_index)
+                status3, average = apival.val_int(entry.avgFill.text())
+                sens_index = entry.sensSel.currentIndex()
+            # put them into a setting tuple
+            if not (status1 or status2 or status3):
+                setting_entry = (start_rf_freq, stop_rf_freq, average, sens_index)
+                # put the setting tuple into a list
+                settings.append(setting_entry)
+            else:
+                msg = Shared.MsgError(d, 'Invalid input!', 'Please fix invalid inputs before proceed.')
+                msg.exec_()
+        else:
+            pass
+
+        return settings, result
 
 
 class JPLScanWindow(QtGui.QDialog):

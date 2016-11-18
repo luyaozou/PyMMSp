@@ -18,24 +18,6 @@ from api import validator as apival
 from daq import lockin as daqlc
 
 
-def msgcolor(status_code):
-    ''' Return message color based on status_code.
-        0: safe, green
-        1: fatal, red
-        2: warning, gold
-        else: black
-    '''
-
-    if not status_code:
-        return '#00A352'
-    elif status_code == 1:
-        return '#D63333'
-    elif status_code == 2:
-        return '#FF9933'
-    else:
-        return '#000000'
-
-
 class SynStatus(QtGui.QGroupBox):
     '''
         Synthesizer status display
@@ -373,7 +355,7 @@ class SynCtrl(QtGui.QGroupBox):
         status, synfreq = apival.val_syn_freq(self.probfreqFill.text(),
                                               self.bandSelect.currentIndex())
         # set sheet border color by syn_stat
-        self.probfreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.probfreqFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
 
         if not status:  # if status is safe
             # call syn api and return communication status
@@ -484,10 +466,10 @@ class SynCtrl(QtGui.QGroupBox):
         # convert input and set sheet border color by status
         freq_status, mod_freq = apival.val_syn_mod_freq(self.modFreqFill.text(),
                                        self.modFreqUnit.currentText())
-        self.modFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(freq_status)))
+        self.modFreqFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(freq_status)))
         depth_status, mod_depth = apival.val_syn_mod_depth(self.modDepthFill.text(),
                                          self.modDepthUnit.currentText())
-        self.modDepthFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(depth_status)))
+        self.modDepthFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(depth_status)))
 
         if mod_index == 1:      # AM
             vCode = apisyn.set_am(self.parent.synHandle, mod_freq, mod_depth, toggle)
@@ -534,7 +516,7 @@ class SynCtrl(QtGui.QGroupBox):
 
         if self.modLFToggle.isChecked():
             status, lf_vol = api.val_syn_lf_vol(vol_text)
-            self.lfVolFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+            self.lfVolFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
             if status:
                 vCode = apisyn.set_lf_amp(self.parent.synHandle, lf_vol)
                 if vCode == pyvisa.constants.StatusCode.success:
@@ -610,7 +592,7 @@ class LockinCtrl(QtGui.QGroupBox):
         '''
 
         status, phase = apival.val_lc_phase(phase_text)
-        self.phaseFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.phaseFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
         if status!= 1:
             vCode = apilc.set_phase(self.parent.lcHandle, phase)
             if vCode == pyvisa.constants.StatusCode.success:
@@ -736,12 +718,12 @@ class ScopeCtrl(QtGui.QGroupBox):
     def rateComm(self, rate_text):
 
         status = apipci.set_sampling_rate(rate_text)
-        self.srateFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.srateFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
 
     def lenComm(self, len_text):
 
         status = apipci.set_sampling_len(len_text)
-        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
 
     def sensComm(self, sens_index):
 
@@ -750,7 +732,7 @@ class ScopeCtrl(QtGui.QGroupBox):
     def avgComm(self, avg_text):
 
         status = apipci.set_osc_avg(avg_text)
-        self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
 
 
 
@@ -809,7 +791,7 @@ class LockinMonitor(QtGui.QWidget):
 
         self.slenFill = QtGui.QLineEdit()
         self.slenFill.setText('100')
-        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(0)))
+        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(0)))
         self.data = np.empty(100)
         self.updateRate = QtGui.QComboBox()
         self.updateRate.addItems(['10 Hz', '5 Hz', '2 Hz', '1 Hz',
@@ -875,7 +857,7 @@ class LockinMonitor(QtGui.QWidget):
 
     def set_len(self, text):
         status, slen = apival.val_monitor_sample_len(text)
-        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
         if status == 1:
             self.stop()
         elif slen > 0:
