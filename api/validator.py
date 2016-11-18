@@ -287,3 +287,28 @@ def val_lc_monitor_srate(srate_index, tc_index):
         return 0, waittime
     else:
         return 1, tc*2*pi
+
+
+def val_lc_itg_time(text, unit_text, tc_index):
+    ''' Validate the integration time setting for lockin scans. The integration
+        time must be longer than 2pi*time_const.
+        Arguments
+            text: integration time user input, str
+            unit_index: integration time unit user selection, str
+            tc_index: lc time constant index, int
+        Returns
+            status: int (0: safe; 1: error)
+            itg_time: integration time, float in ms
+    '''
+
+    unit = {'ms':1, 's':1e3}
+    time_const = LIATCLIST[tc_index]
+
+    try:
+        itg_time = float(text) * unit[unit_text]
+        if itg_time > time_const * 2 * pi:
+            return 0, itg_time
+        else:
+            return 1, 0
+    except ValueError:
+        return 1, 0

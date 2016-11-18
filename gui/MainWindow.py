@@ -165,8 +165,8 @@ class MainWindow(QtGui.QMainWindow):
         result = dconfig.exec_()
 
         if result:  # if dialog accepted
-            settings = dconfig.get_settings()
-            dscan = ScanJPL.JPLScanWindow(self, settings)
+            shared_settings, entry_settings = dconfig.get_settings()
+            dscan = ScanJPL.JPLScanWindow(self, shared_settings, entry_settings)
             dscan.exec_()
         else:
             pass
