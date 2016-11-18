@@ -151,10 +151,10 @@ class FreqWinEntryCaption(QtGui.QWidget):
         mainLayout.addWidget(sens)
         self.setLayout(mainLayout)
 
-        self.connect(self.startFreqFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_start_freq)
-        self.connect(self.stopFreqFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_stop_freq)
-        self.connect(self.stepFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_step)
-        self.connect(self.avgFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_avg)
+        self.startFreqFill.textChanged.connect(self.val_start_freq)
+        self.stopFreqFill.textChanged.connect(self.val_stop_freq)
+        self.stepFill.textChanged.connect(self.val_step)
+        self.avgFill.textChanged.connect(self.val_avg)
 
     def val_start_freq(self, text):
 
@@ -203,10 +203,10 @@ class FreqWinEntryNoCaption(QtGui.QWidget):
         mainLayout.addWidget(self.sensSel)
         self.setLayout(mainLayout)
 
-        self.connect(self.startFreqFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_start_freq)
-        self.connect(self.stopFreqFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_stop_freq)
-        self.connect(self.stepFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_step)
-        self.connect(self.avgFill, QtCore.SIGNAL("textChanged(const QString)"), self.val_avg)
+        self.startFreqFill.textChanged.connect(self.val_start_freq)
+        self.stopFreqFill.textChanged.connect(self.val_stop_freq)
+        self.stepFill.textChanged.connect(self.val_step)
+        self.avgFill.textChanged.connect(self.val_avg)
 
     def val_start_freq(self, text):
 

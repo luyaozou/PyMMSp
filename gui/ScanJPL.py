@@ -4,7 +4,6 @@
 
 
 from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import QObject
 import pyqtgraph as pg
 from gui import SharedWidgets as Shared
 from api import general as apigen
@@ -66,10 +65,10 @@ class JPLScanConfig(QtGui.QDialog):
         mainLayout.addWidget(bottomButtons)
         self.setLayout(mainLayout)
 
-        QObject.connect(cancelButton, QtCore.SIGNAL("clicked()"), self.reject)
-        QObject.connect(acceptButton, QtCore.SIGNAL("clicked()"), self.accept)
-        QObject.connect(addBatchButton, QtCore.SIGNAL("clicked()"), self.add_entry)
-        QObject.connect(removeBatchButton, QtCore.SIGNAL("clicked()"), self.remove_entry)
+        cancelButton.clicked.connect(self.reject)
+        acceptButton.clicked.connect(self.accept)
+        addBatchButton.clicked.connect(self.add_entry)
+        removeBatchButton.clicked.connect(self.remove_entry)
 
     def add_entry(self):
         ''' Add batch entry to this dialog window '''

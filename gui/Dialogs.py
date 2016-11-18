@@ -3,7 +3,6 @@
 
 
 from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import QObject
 from api import general as apigen
 
 
@@ -54,8 +53,8 @@ class SelInstDialog(QtGui.QDialog):
 
         self.setLayout(mainLayout)
 
-        QObject.connect(refreshButton, QtCore.SIGNAL("clicked()"), self.refresh)
-        QObject.connect(acceptButton, QtCore.SIGNAL("clicked()"), self.accept)
+        refreshButton.clicked.connect(self.refresh)
+        acceptButton.clicked.connect(self.accept)
 
     def refresh(self):
         ''' Refresh instrument list '''
@@ -157,11 +156,11 @@ class CloseSelInstDialog(QtGui.QDialog):
         mainLayout.addWidget(okButton)
         self.setLayout(mainLayout)
 
-        QObject.connect(synToggle, QtCore.SIGNAL("clicked(bool)"), self.close_syn)
-        QObject.connect(lcToggle, QtCore.SIGNAL("clicked(bool)"), self.close_lc)
-        QObject.connect(pciToggle, QtCore.SIGNAL("clicked(bool)"), self.close_scope)
-        QObject.connect(motorToggle, QtCore.SIGNAL("clicked(bool)"), self.close_motor)
-        QObject.connect(okButton, QtCore.SIGNAL("clicked()"), self.close)
+        synToggle.clicked["bool"].connect(self.close_syn)
+        lcToggle.clicked["bool"].connect(self.close_lc)
+        pciToggle.clicked["bool"].connect(self.close_scope)
+        motorToggle.clicked["bool"].connect(self.close_motor)
+        okButton.clicked.connect(self.accept)
 
     def close_syn(self, check_state):
         if check_state:

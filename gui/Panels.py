@@ -74,7 +74,7 @@ class SynStatus(QtGui.QGroupBox):
         mainLayout.addWidget(self.synModDepth, 6, 3)
 
         ## -- Trigger status updates
-        QObject.connect(self.refreshButton, QtCore.SIGNAL("clicked()"), self.update)
+        self.refreshButton.clicked.connect(self.update)
         # initial status
         self.update()
 
@@ -150,7 +150,7 @@ class LockinStatus(QtGui.QGroupBox):
         self.setLayout(mainLayout)
 
         ## -- Trigger status updates
-        QObject.connect(self.refreshButton, QtCore.SIGNAL("clicked()"), self.update)
+        self.refreshButton.clicked.connect(self.update)
         # initial status
         self.update()
 
@@ -203,7 +203,7 @@ class ScopeStatus(QtGui.QGroupBox):
         self.setLayout(mainLayout)
 
         ## -- Trigger status updates
-        QObject.connect(self.refreshButton, QtCore.SIGNAL("clicked()"), self.update)
+        self.refreshButton.clicked.connect(self.update)
         # initial status
         self.update()
 
@@ -323,21 +323,21 @@ class SynCtrl(QtGui.QGroupBox):
         self.setLayout(mainLayout)
 
         # Trigger frequency update and communication
-        QObject.connect(self.probfreqFill, QtCore.SIGNAL("textChanged(const QString)"), self.freqComm)
-        QObject.connect(self.bandSelect, QtCore.SIGNAL("currentIndexChanged(int)"), self.freqComm)
+        self.probfreqFill.textChanged.connect(self.freqComm)
+        self.bandSelect.currentIndexChanged.connect(self.freqComm)
 
         # Trigger modulation status update and communication
-        QObject.connect(self.modModeSelect, QtCore.SIGNAL("currentIndexChanged(int)"), self.modModeComm)
-        QObject.connect(self.modFreqFill, QtCore.SIGNAL("textChanged(const QString)"), self.modParComm)
-        QObject.connect(self.modFreqUnit, QtCore.SIGNAL("currentIndexChanged(int)"), self.modParComm)
-        QObject.connect(self.modDepthFill, QtCore.SIGNAL("textChanged(const QString)"), self.modParComm)
-        QObject.connect(self.modToggle, QtCore.SIGNAL("stateChanged(int)"), self.modToggleComm)
-        QObject.connect(self.modLFToggle, QtCore.SIGNAL("stateChanged(int)"), self.modLFToggleComm)
-        QObject.connect(self.lfVolFill, QtCore.SIGNAL("textChanged(const QString)"), self.modLFVolComm)
+        self.modModeSelect.currentIndexChanged.connect(self.modModeComm)
+        self.modFreqFill.textChanged.connect(self.modParComm)
+        self.modFreqUnit.currentIndexChanged.connect(self.modParComm)
+        self.modDepthFill.textChanged.connect(self.modParComm)
+        self.modToggle.stateChanged.connect(self.modToggleComm)
+        self.modLFToggle.stateChanged.connect(self.modLFToggleComm)
+        self.lfVolFill.textChanged.connect(self.modLFVolComm)
 
         # Trigger synthesizer power toggle and communication
-        QObject.connect(synPowerManualInput, QtCore.SIGNAL("clicked()"), self.synPowerComm)
-        QObject.connect(self.synPowerToggle, QtCore.SIGNAL("stateChanged(int)"), self.synPowerDialog)
+        synPowerManualInput.clicked.connect(self.synPowerComm)
+        self.synPowerToggle.stateChanged[int].connect(self.synPowerDialog)
 
     def check(self):
         ''' Enable/disable this groupbox '''
@@ -572,12 +572,12 @@ class LockinCtrl(QtGui.QGroupBox):
         self.setLayout(mainLayout)
 
         ## -- Trigger setting status and communication
-        QObject.connect(self.phaseFill, QtCore.SIGNAL("textChanged(const QString)"), self.phaseComm)
-        QObject.connect(harmSelect, QtCore.SIGNAL("currentIndexChanged(const QString)"), self.harmComm)
-        QObject.connect(tcSelect, QtCore.SIGNAL("currentIndexChanged(int)"), self.tcComm)
-        QObject.connect(sensSelect, QtCore.SIGNAL("currentIndexChanged(int)"), self.sensComm)
-        QObject.connect(coupleSelect, QtCore.SIGNAL("currentIndexChanged(const QString)"), self.coupleComm)
-        QObject.connect(reserveSelect, QtCore.SIGNAL("currentIndexChanged(const QString)"), self.reserveComm)
+        self.phaseFill.textChanged.connect(self.phaseComm)
+        harmSelect.currentIndexChanged[int].connect(self.harmComm)
+        tcSelect.currentIndexChanged[int].connect(self.tcComm)
+        sensSelect.currentIndexChanged[int].connect(self.sensComm)
+        coupleSelect.currentIndexChanged[str].connect(self.coupleComm)
+        reserveSelect.currentIndexChanged[str].connect(self.reserveComm)
 
     def check(self):
         ''' Enable/disable this groupbox '''
@@ -703,10 +703,10 @@ class ScopeCtrl(QtGui.QGroupBox):
         self.setLayout(mainLayout)
 
         ## -- Trigger setting status and communication
-        QObject.connect(self.srateFill, QtCore.SIGNAL("textChanged(const QString)"), self.rateComm)
-        QObject.connect(self.slenFill, QtCore.SIGNAL("textChanged(const QString)"), self.lenComm)
-        QObject.connect(sensSelect, QtCore.SIGNAL("currentIndexChanged(int)"), self.sensComm)
-        QObject.connect(self.avgFill, QtCore.SIGNAL("textChanged(const QString)"), self.avgComm)
+        self.srateFill.textChanged.connect(self.rateComm)
+        self.slenFill.textChanged.connect(self.lenComm)
+        sensSelect.textChanged.connect(self.sensComm)
+        self.avgFill.textChanged.connect(self.avgComm)
 
     def check(self):
         ''' Enable/disable this groupbox '''
@@ -753,7 +753,7 @@ class MotorCtrl(QtGui.QGroupBox):
         self.setLayout(mainLayout)
 
         ## -- Trigger settings and motor communication
-        QObject.connect(tuneButton, QtCore.SIGNAL("clicked()"), self.tune_cavity)
+        tuneButton.clicked.connect(self.tune_cavity)
 
     def check(self):
         ''' Enable/disable this groupbox '''
@@ -823,12 +823,12 @@ class LockinMonitor(QtGui.QWidget):
         self.timer.setInterval(1000)        # default interval 1 second
 
         # trigger settings
-        QObject.connect(self.slenFill, QtCore.SIGNAL("textChanged(const QString)"), self.set_len)
-        QObject.connect(self.startButton, QtCore.SIGNAL("clicked(bool)"), self.start)
-        QObject.connect(self.restartButton, QtCore.SIGNAL("clicked()"), self.restart)
-        QObject.connect(self.stopButton, QtCore.SIGNAL("clicked()"), self.stop)
-        QObject.connect(self.updateRate, QtCore.SIGNAL("currentIndexChanged(int)"), self.set_waittime)
-        QObject.connect(self.timer, QtCore.SIGNAL("timeout()"), self.update_plot)
+        self.slenFill.textChanged.connect(self.set_len)
+        self.startButton.clicked.connect(self.start)
+        self.restartButton.clicked.connect(self.restart)
+        self.stopButton.clicked.connect(self.stop)
+        self.updateRate.currentIndexChanged[int].connect(self.set_waittime)
+        self.timer.timeout.connect(self.update_plot)
 
     def start(self, btn_pressed):
 
