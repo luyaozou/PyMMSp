@@ -4,7 +4,7 @@
 from PyQt4 import QtCore, QtGui
 from gui import Panels
 from gui import Dialogs
-from gui import ScanJPL
+from daq import ScanLockin
 from api import general as apigen
 
 
@@ -63,6 +63,10 @@ class MainWindow(QtGui.QMainWindow):
         scanCavityAction.setStatusTip('Use cavity enhanced spectroscopy')
         scanCavityAction.triggered.connect(self.on_scan_cavity)
 
+        testAction = QtGui.QAction('Test Widget', self)
+        testAction.setShortcut('Ctrl+T')
+        testAction.triggered.connect(self.on_test)
+
         # Set menu bar
         self.statusBar()
 
@@ -76,6 +80,8 @@ class MainWindow(QtGui.QMainWindow):
         menuScan.addAction(scanJPLAction)
         menuScan.addAction(scanPCIAction)
         menuScan.addAction(scanCavityAction)
+        menuTest = self.menuBar().addMenu('&Test')
+        menuTest.addAction(testAction)
 
         # Set main window widgets
         self.synStatus = Panels.SynStatus(self)
@@ -161,12 +167,13 @@ class MainWindow(QtGui.QMainWindow):
         self.refresh_motor()
 
     def on_scan_jpl(self):
-        dconfig = ScanJPL.JPLScanConfig(self)
+        dconfig = ScanLockin.JPLScanConfig(self)
         result = dconfig.exec_()
 
         if result:  # if dialog accepted
-            shared_settings, entry_settings = dconfig.get_settings()
-            dscan = ScanJPL.JPLScanWindow(self, shared_settings, entry_settings)
+            shared_settings, entry_settings, filename = dconfig.get_settings()
+            dscan = ScanLockin.JPLScanWindow(self,
+                                shared_settings, entry_settings, filename)
             dscan.exec_()
         else:
             pass
@@ -177,19 +184,28 @@ class MainWindow(QtGui.QMainWindow):
     def on_scan_cavity(self):
         pass
 
+    def on_test(self):
+        ''' Test developing widget. Modify the widget when necessary '''
+
+        shared_settings = (100, 10)
+        entry_settings = [(1, 2, 1, 1, 0), (3, 5, 5, 5, 2)]
+        dscan = ScanLockin.JPLScanWindow(self, shared_settings, entry_settings, '')
+        dscan.exec_()
+
     def closeEvent(self, event):
         q = QtGui.QMessageBox.question(self, 'Quit?',
                        'Are you sure to quit?', QtGui.QMessageBox.Yes |
                        QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
         if q == QtGui.QMessageBox.Yes:
-            status = apigen.close_inst(self.synHandle, self.lcHandle, self.pciHandle, self.motorHandle)
+            status = apigen.close_inst(self.synHandle, self.lcHandle,
+                                       self.pciHandle, self.motorHandle)
             if not status:    # safe to close
                 self.close()
             else:
                 qq = QtGui.QMessageBox.question(self, 'Error',
-                               '''Error in disconnecting instruments.
-                               Are you sure to force quit?''', QtGui.QMessageBox.Yes |
-                               QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+                        '''Error in disconnecting instruments.
+                        Are you sure to force quit?''', QtGui.QMessageBox.Yes |
+                        QtGui.QMessageBox.No, QtGui.QMessageBox.No)
                 if qq == QtGui.QMessageBox.Yes:
                     self.close()
                 else:

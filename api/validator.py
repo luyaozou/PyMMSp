@@ -128,6 +128,27 @@ def val_syn_freq(probf_text, band_index):
         return 1, 50000
 
 
+def val_prob_freq(probf_text, band_index):
+    ''' Validate prob frequency input.
+        Arguments
+            probf_text: str, prob frequency input text
+            band_index: int, VDI band index
+        Returns
+            status: int (0: safe; 1: error)
+            probf: float, probing frequency
+    '''
+
+    try:
+        probf = float(probf_text)
+        syn_freq = calc_syn_freq(probf, band_index)
+        if syn_freq > 0 and syn_freq < 50000:
+            return 0, probf
+        else:
+            return 1, 50000
+    except ValueError:
+        return 1, 50000
+
+
 def val_syn_power(power):
     ''' Validate synthesizer power input.
         Arguments
@@ -289,7 +310,7 @@ def val_lc_monitor_srate(srate_index, tc_index):
         return 1, tc*2*pi
 
 
-def val_lc_itg_time(text, unit_text, tc_index):
+def val_lc_itgtime(text, unit_text, tc_index):
     ''' Validate the integration time setting for lockin scans. The integration
         time must be longer than 2pi*time_const.
         Arguments
@@ -298,16 +319,16 @@ def val_lc_itg_time(text, unit_text, tc_index):
             tc_index: lc time constant index, int
         Returns
             status: int (0: safe; 1: error)
-            itg_time: integration time, float in ms
+            itgtime: integration time, float in ms
     '''
 
     unit = {'ms':1, 's':1e3}
     time_const = LIATCLIST[tc_index]
 
     try:
-        itg_time = float(text) * unit[unit_text]
-        if itg_time > time_const * 2 * pi:
-            return 0, itg_time
+        itgtime = float(text) * unit[unit_text]
+        if (itgtime > time_const * 2 * pi) and (itgtime < 16383./512):
+            return 0, itgtime
         else:
             return 1, 0
     except ValueError:

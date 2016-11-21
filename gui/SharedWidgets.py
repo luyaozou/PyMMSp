@@ -1,6 +1,7 @@
 #! encoding = utf-8
 
 from PyQt4 import QtGui, QtCore
+import numpy as np
 from api import validator as apival
 
 
@@ -32,9 +33,7 @@ class InstStatus(QtGui.QMessageBox):
 
 
 class MsgError(QtGui.QMessageBox):
-    ''' Message box of instrument communication status. Silent if communication
-        is successful. Pop up error message in pyvisa.constants.StatusCode
-    '''
+    ''' Error message box '''
 
     def __init__(self, parent, text, moretext=''):
         QtGui.QWidget.__init__(self, parent)
@@ -46,14 +45,24 @@ class MsgError(QtGui.QMessageBox):
 
 
 class MsgWarning(QtGui.QMessageBox):
-    ''' Message box of instrument communication status. Silent if communication
-        is successful. Pop up error message in pyvisa.constants.StatusCode
-    '''
+    ''' Warning message box '''
 
     def __init__(self, parent, text, moretext=''):
         QtGui.QWidget.__init__(self, parent)
 
         self.setIcon(QtGui.QMessageBox.Warning)
+        self.addButton(QtGui.QMessageBox.Ok)
+        self.setText(text)
+        self.setInformativeText(moretext)
+
+
+class MsgInfo(QtGui.QMessageBox):
+    ''' Information message box '''
+
+    def __init__(self, parent, text, moretext=''):
+        QtGui.QWidget.__init__(self, parent)
+
+        self.setIcon(QtGui.QMessageBox.Information)
         self.addButton(QtGui.QMessageBox.Ok)
         self.setText(text)
         self.setInformativeText(moretext)
@@ -249,3 +258,27 @@ def msgcolor(status_code):
         return '#FF9933'
     else:
         return '#000000'
+
+
+def gen_x_array(multiplier, start_freq, stop_freq, step):
+    ''' Generate an RF freq array for DAQ.
+        Arguments
+            start_freq: start mm frequency (MHz), float
+            stop_freq: stop mm frequency (MHz), float
+            step: step size (MHz), float
+            multiplier: VDI multiplier factor
+        Returns:
+            x: synthesizer RF frequency array, np.array
+    '''
+
+    st_rf = start_freq / multiplier
+    sp_rf = stop_freq / multiplier
+    # if start freq > stop freq, switch
+    if st_rf > sp_rf:
+        sp_rf, st_rf = st_rf, sp_rf
+    else:
+        pass
+    step_rf = step / multiplier
+    x = np.arange(st_rf, sp_rf, step_rf, dtype=float)
+
+    return x

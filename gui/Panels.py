@@ -14,8 +14,6 @@ from api import synthesizer as apisyn
 from api import lockin as apilc
 from api import pci as apipci
 from api import validator as apival
-# import data acquisition module
-from daq import lockin as daqlc
 
 
 class SynStatus(QtGui.QGroupBox):
