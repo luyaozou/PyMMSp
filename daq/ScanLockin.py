@@ -6,6 +6,7 @@
 from PyQt4 import QtGui, QtCore
 import numpy as np
 import pyqtgraph as pg
+import datetime
 from gui import SharedWidgets as Shared
 from api import general as apigen
 from api import validator as apival
@@ -28,8 +29,9 @@ class JPLScanConfig(QtGui.QDialog):
         # Add top buttons
         addBatchButton = QtGui.QPushButton('Add batch')
         removeBatchButton = QtGui.QPushButton('Remove last batch')
-        saveButton = QtGui.QPushButton('Save File Destination')
+        saveButton = QtGui.QPushButton('Set File Directory')
         self.fileLabel = QtGui.QLabel('Save Data to: ')
+        self.filename = ''
         topButtonLayout = QtGui.QGridLayout()
         topButtonLayout.addWidget(addBatchButton, 0, 0)
         topButtonLayout.addWidget(removeBatchButton, 0, 1)
@@ -73,7 +75,7 @@ class JPLScanConfig(QtGui.QDialog):
         self.setLayout(mainLayout)
 
         cancelButton.clicked.connect(self.reject)
-        acceptButton.clicked.connect(self.get_settings)
+        acceptButton.clicked.connect(self.do_it)
         saveButton.clicked.connect(self.set_file_directory)
         addBatchButton.clicked.connect(self.add_entry)
         removeBatchButton.clicked.connect(self.remove_entry)
@@ -125,34 +127,70 @@ class JPLScanConfig(QtGui.QDialog):
 
         no_error = True
 
-        # get settings from entry
-        for entry in self.entryWidgetList:
-            # read settings
-            status1, start_freq = apival.val_prob_freq(entry.startFreqFill.text(), vdi_index)
-            status2, stop_freq = apival.val_prob_freq(entry.stopFreqFill.text(), vdi_index)
-            status3, step = apival.val_float(entry.stepFill.text())
-            status4, average = apival.val_int(entry.avgFill.text())
-            sens_index = entry.sensSel.currentIndex()
-            tc_index = entry.tcSel.currentIndex()
-            status5, itgtime = apival.val_itgtime(entry.itgTimeFill.text(), tc_index)
-            status6, waittime = apival.val_waittime(entry.waitTimeFill.text())
-            # put them into a setting tuple
-            if not (status1 or status2 or status3 or status4 or status5 or status6):
-                no_error *= True
-                setting_entry = (start_freq, stop_freq, step, average,
-                                 sens_index, tc_index, itgtime, waittime)
-                # put the setting tuple into a list
-                entry_settings.append(setting_entry)
-            else:
-                no_error *= False
+        if self.filename == '':
+            no_error = False
+        else:
+            # get settings from entry
+            for entry in self.entryWidgetList:
+                # read settings
+                status1, start_freq = apival.val_prob_freq(entry.startFreqFill.text(), vdi_index)
+                status2, stop_freq = apival.val_prob_freq(entry.stopFreqFill.text(), vdi_index)
+                status3, step = apival.val_float(entry.stepFill.text())
+                status4, average = apival.val_int(entry.avgFill.text())
+                sens_index = entry.sensSel.currentIndex()
+                tc_index = entry.tcSel.currentIndex()
+                status5, itgtime = apival.val_lc_itgtime(entry.itgTimeFill.text(), tc_index)
+                status6, waittime = apival.val_float(entry.waitTimeFill.text())
+                # put them into a setting tuple
+                if not (status1 or status2 or status3 or status4 or status5 or status6):
+                    no_error *= True
+                    setting_entry = (start_freq, stop_freq, step, average,
+                                     sens_index, tc_index, itgtime, waittime)
+                    # put the setting tuple into a list
+                    entry_settings.append(setting_entry)
+                else:
+                    no_error *= False
 
         if no_error:
-            self.accept()
             return entry_settings, self.filename
         else:
             msg = Shared.MsgError(self.parent, 'Invalid input!', 'Please fix invalid inputs before proceeding.')
             msg.exec_()
+            return None, None
 
+    def time_estimation(self, entry_settings):
+        ''' Estimate the time expense of this batch job '''
+
+        total_time = 0
+        for entry in entry_settings:
+            # estimate total data points to be taken
+            data_points = int(abs(entry[1] - entry[0])/entry[2]) * entry[3]
+            # time expense for this entry in seconds
+            total_time += data_points * (entry[6] + entry[7]) * 1e-3
+
+        now = datetime.datetime.today()
+        length = datetime.timedelta(seconds=total_time)
+        then = now + length
+
+        text = 'This batch job is estimated to take {:s}.\nIt is expected to finish at {:s}.'.format(str(length), then.strftime('%I:%M %p, %m-%d-%Y (%a)'))
+
+        return text
+
+    def do_it(self):
+
+        entry_settings, filename = self.get_settings()
+        if entry_settings:
+            info = self.time_estimation(entry_settings)
+            q = Shared.MsgInfo(self, 'Time Estimation', info)
+            q.addButton(QtGui.QMessageBox.Cancel)
+            result = q.exec_()
+
+            if result == QtGui.QMessageBox.Ok:
+                self.accept()
+            else:
+                pass
+        else:
+            pass
 
 class JPLScanWindow(QtGui.QDialog):
     ''' Scanning window '''
