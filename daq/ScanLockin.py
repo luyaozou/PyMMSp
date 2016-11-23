@@ -239,7 +239,7 @@ class JPLScanWindow(QtGui.QDialog):
     def reject(self):
 
         q = QtGui.QMessageBox.question(self, 'Scan In Progress!',
-                       'The batch scan is still in progress. Are you SURE to abort the process?', QtGui.QMessageBox.Yes |
+                       'The batch scan is still in progress. Aborting the project will discard all unsaved data! \n Are you SURE to proceed?', QtGui.QMessageBox.Yes |
                        QtGui.QMessageBox.No, QtGui.QMessageBox.No)
 
         if q == QtGui.QMessageBox.Yes:
@@ -268,7 +268,7 @@ class SingleScan(QtGui.QWidget):
         self.start_rf_freq = 0
         self.stop_rf_freq = 0
         self.current_rf_freq = 0
-        self.current_avg = 0
+        self.aquired_avg = 0
         self.step = 0
         self.sens_index = 0
         self.itgtime = 60
@@ -287,16 +287,20 @@ class SingleScan(QtGui.QWidget):
 
         # set up main layout
         buttons = QtGui.QWidget()
+        jumpButton = QtGui.QPushButton('Abort Current Window')
+        abortAllButton = QtGui.QPushButton('Abort Batch Project')
         self.pauseButton = QtGui.QPushButton('Pause Current Scan')
         self.pauseButton.setCheckable(True)
-        self.redoButton = QtGui.QPushButton('Redo Current Scan')
-        self.abortCurrentButton = QtGui.QPushButton('Abort Current Scan')
-        self.abortAllButton = QtGui.QPushButton('Abort Batch Project')
-        buttonLayout = QtGui.QHBoxLayout()
-        buttonLayout.addWidget(self.pauseButton)
-        buttonLayout.addWidget(self.redoButton)
-        buttonLayout.addWidget(self.abortCurrentButton)
-        buttonLayout.addWidget(self.abortAllButton)
+        redoButton = QtGui.QPushButton('Redo Current Scan')
+        restartWinButton = QtGui.QPushButton('Restart Current Window')
+        saveButton = QtGui.QPushButton('Save & Continue')
+        buttonLayout = QtGui.QGridLayout()
+        buttonLayout.addWidget(self.pauseButton, 0, 0)
+        buttonLayout.addWidget(redoButton, 0, 1)
+        buttonLayout.addWidget(restartWinButton, 0, 2)
+        buttonLayout.addWidget(saveButton, 1, 0)
+        buttonLayout.addWidget(jumpButton, 1, 1)
+        buttonLayout.addWidget(abortAllButton, 1, 2)
         buttons.setLayout(buttonLayout)
 
         pgWin = pg.GraphicsWindow(title='Live Monitor')
@@ -315,7 +319,13 @@ class SingleScan(QtGui.QWidget):
         mainLayout.addWidget(buttons)
         self.setLayout(mainLayout)
 
-        self.pauseButton.clicked.connect(self.pause_scan)
+        self.pauseButton.clicked.connect(self.pause_current)
+        redoButton.clicked.connect(self.redo_current)
+        restartWinButton.clicked.connect(self.restart_avg)
+        saveButton.clicked.connect(self.save_current)
+        jumpButton.clicked.connect(self.jump)
+        abortAllButton.clicked.connect(self.abort_all)
+
 
     def update_setting(self, entry_setting):
         ''' Update scan entry setting. Starts a scan after setting update.
@@ -325,8 +335,8 @@ class SingleScan(QtGui.QWidget):
 
         self.x = Shared.gen_x_array(*entry_setting[0:3])
         self.current_x_index = 0
-        self.avg = entry_setting[3]
-        self.current_avg = 0
+        self.target_avg = entry_setting[3]
+        self.aquired_avg = 0
         self.sens_index = entry_setting[4]
         self.tc_index = entry_setting[5]
         self.itgtime = entry_setting[6]
@@ -382,27 +392,31 @@ class SingleScan(QtGui.QWidget):
         # move to the next frequency, update freq index and average counter
         self.next_freq()
         # if done
-        if self.current_avg > self.avg:
+        if self.aquired_avg == self.target_avg:
             self.save_data()
+            self.parent.move_to_next_entry.emit()
         else:
             self.tune_syn()
 
     def next_freq(self):
         ''' move to the next frequency point '''
 
-        # odd average, increase index
-        if self.current_avg % 2:
-            if self.current_x_index < len(self.x)-1:
-                self.current_x_index += 1
-            else:
-                self.current_avg += 1
-                self.update_ysum()
-        else:   # even average, decrease index (sweep back)
+        # current sweep is even average, decrease index (sweep backward)
+        if self.aquired_avg % 2:
             if self.current_x_index > 0:
                 self.current_x_index -= 1
             else:
-                self.current_avg += 1
+                self.aquired_avg += 1
                 self.update_ysum()
+                self.y = np.zeros_like(self.x)
+        # current sweep is odd average, increase index (sweep forward)
+        else:
+            if self.current_x_index < len(self.x)-1:
+                self.current_x_index += 1
+            else:
+                self.aquired_avg += 1
+                self.update_ysum()
+                self.y = np.zeros_like(self.x)
 
     def update_ysum(self):
         ''' Update sum plot '''
@@ -420,19 +434,92 @@ class SingleScan(QtGui.QWidget):
         h_info = (self.itgtime, apival.LIASENSLIST[self.sens_index],
                   apival.LIATCLIST[tc]*1e-3, 15, 75)
 
-        save.save_lwa(self.filename, self.y_sum / self.current_avg, h_info)
-        self.parent.move_to_next_entry.emit()
+        # if already finishes at least one sweep
+        if self.aquired_avg > 0:
+            save.save_lwa(self.filename, self.y_sum / self.aquired_avg, h_info)
+        else:
+            save.save_lwa(self.filename, self.y, h_info)
 
-    def pause_scan(self, btn_pressed):
+    def pause_current(self, btn_pressed):
+        ''' Pause/resume data acquisition '''
 
         if btn_pressed:
             self.pauseButton.setText('Resume Current Scan')
-            self.waitTimer.timeout.disconnect(self.tune_syn)
+            print('pause')
+            self.waitTimer.stop()
+            self.itgTimer.stop()
         else:
             self.pauseButton.setText('Pause Current Scan')
-            self.waitTimer.timeout.connect(self.tune_syn)
+            print('resume')
             self.waitTimer.start()
 
+    def redo_current(self):
+        ''' Erase current y array and restart a scan '''
+
+        print('redo current')
+        self.waitTimer.stop()
+        self.itgTimer.stop()
+
+        if self.aquired_avg % 2:
+            self.current_x_index = len(self.x) - 1
+        else:
+            self.current_x_index = 0
+
+        self.y = np.zeros_like(self.x)
+        self.tune_syn()
+
+    def restart_avg(self):
+        ''' Erase all current averages and start over '''
+
+        q = QtGui.QMessageBox.question(self, 'Scan In Progress!',
+                       'Restart will erase all cached averages.\n Are you sure to proceed?', QtGui.QMessageBox.Yes |
+                       QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+
+        if q == QtGui.QMessageBox.Yes:
+            print('restart average')
+            self.waitTimer.stop()
+            self.itgTimer.stop()
+            self.aquired_avg = 0
+            self.current_x_index = 0
+            self.y = np.zeros_like(self.x)
+            self.y_sum = np.zeros_like(self.x)
+            self.ySumCurve.setData(self.x, self.y_sum)
+            self.tune_syn()
+        else:
+            pass
+
+    def save_current(self):
+        ''' Save what's got so far and continue '''
+
+        self.waitTimer.stop()
+        self.itgTimer.stop()
+        self.save_data()
+        self.waitTimer.start()
+
+    def jump(self):
+        ''' Jump to next batch item '''
+
+        q = QtGui.QMessageBox.question(self, 'Jump To Next',
+                       'Save aquired data for the current scan window?', QtGui.QMessageBox.Yes |
+                       QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Yes)
+
+        if q == QtGui.QMessageBox.Yes:
+            print('abort current')
+            self.waitTimer.stop()
+            self.itgTimer.stop()
+            self.save_data()
+            self.parent.move_to_next_entry.emit()
+        elif q == QtGui.QMessageBox.No:
+            print('abort current')
+            self.waitTimer.stop()
+            self.itgTimer.stop()
+            self.parent.move_to_next_entry.emit()
+        else:
+            pass
+
+    def abort_all(self):
+
+        self.parent.reject()
 
 
 class TestClass(QtGui.QWidget):
@@ -451,7 +538,7 @@ class TestClass(QtGui.QWidget):
         self.start_rf_freq = 0
         self.stop_rf_freq = 0
         self.current_rf_freq = 0
-        self.current_avg = 0
+        self.aquired_avg = 0
         self.step = 0
         self.sens_index = 0
         self.itgtime = 60
@@ -470,16 +557,20 @@ class TestClass(QtGui.QWidget):
 
         # set up main layout
         buttons = QtGui.QWidget()
-        self.abortCurrentButton = QtGui.QPushButton('Abort Current Scan')
-        self.abortAllButton = QtGui.QPushButton('Abort Batch Project')
+        jumpButton = QtGui.QPushButton('Jump to Next Window')
+        abortAllButton = QtGui.QPushButton('Abort Batch Project')
         self.pauseButton = QtGui.QPushButton('Pause Current Scan')
         self.pauseButton.setCheckable(True)
-        self.redoButton = QtGui.QPushButton('Redo Current Scan')
-        buttonLayout = QtGui.QHBoxLayout()
-        buttonLayout.addWidget(self.pauseButton)
-        buttonLayout.addWidget(self.redoButton)
-        buttonLayout.addWidget(self.abortCurrentButton)
-        buttonLayout.addWidget(self.abortAllButton)
+        redoButton = QtGui.QPushButton('Redo Current Scan')
+        restartWinButton = QtGui.QPushButton('Restart Current Window')
+        saveButton = QtGui.QPushButton('Save & Continue')
+        buttonLayout = QtGui.QGridLayout()
+        buttonLayout.addWidget(self.pauseButton, 0, 0)
+        buttonLayout.addWidget(redoButton, 0, 1)
+        buttonLayout.addWidget(restartWinButton, 0, 2)
+        buttonLayout.addWidget(saveButton, 1, 0)
+        buttonLayout.addWidget(jumpButton, 1, 1)
+        buttonLayout.addWidget(abortAllButton, 1, 2)
         buttons.setLayout(buttonLayout)
 
         pgWin = pg.GraphicsWindow(title='Live Monitor')
@@ -498,7 +589,12 @@ class TestClass(QtGui.QWidget):
         mainLayout.addWidget(buttons)
         self.setLayout(mainLayout)
 
-        self.pauseButton.clicked.connect(self.pause_scan)
+        self.pauseButton.clicked.connect(self.pause_current)
+        redoButton.clicked.connect(self.redo_current)
+        restartWinButton.clicked.connect(self.restart_avg)
+        saveButton.clicked.connect(self.save_current)
+        jumpButton.clicked.connect(self.jump)
+        abortAllButton.clicked.connect(self.abort_all)
 
     def update_setting(self, entry_setting):
         ''' Update scan entry setting. Starts a scan after setting update.
@@ -508,8 +604,8 @@ class TestClass(QtGui.QWidget):
 
         self.x = Shared.gen_x_array(*entry_setting[0:3])
         self.current_x_index = 0
-        self.avg = entry_setting[3]
-        self.current_avg = 0
+        self.target_avg = entry_setting[3]
+        self.aquired_avg = 0
         self.sens_index = entry_setting[4]
         self.tc_index = entry_setting[5]
         self.itgtime = entry_setting[6]
@@ -542,27 +638,31 @@ class TestClass(QtGui.QWidget):
         # move to the next frequency, update freq index and average counter
         self.next_freq()
         # if done
-        if self.current_avg > self.avg:
+        if self.aquired_avg == self.target_avg:
             self.save_data()
+            self.parent.move_to_next_entry.emit()
         else:
             self.tune_syn()
 
     def next_freq(self):
         ''' move to the next frequency point '''
 
-        # odd average, increase index
-        if self.current_avg % 2:
-            if self.current_x_index < len(self.x)-1:
-                self.current_x_index += 1
-            else:
-                self.current_avg += 1
-                self.update_ysum()
-        else:   # even average, decrease index (sweep back)
+        # current sweep is even average, decrease index (sweep backward)
+        if self.aquired_avg % 2:
             if self.current_x_index > 0:
                 self.current_x_index -= 1
             else:
-                self.current_avg += 1
+                self.aquired_avg += 1
                 self.update_ysum()
+                self.y = np.zeros_like(self.x)
+        # current sweep is odd average, increase index (sweep forward)
+        else:
+            if self.current_x_index < len(self.x)-1:
+                self.current_x_index += 1
+            else:
+                self.aquired_avg += 1
+                self.update_ysum()
+                self.y = np.zeros_like(self.x)
 
     def update_ysum(self):
         ''' Update sum plot '''
@@ -574,14 +674,83 @@ class TestClass(QtGui.QWidget):
 
     def save_data(self):
         print('save data')
-        self.parent.move_to_next_entry.emit()
 
-    def pause_scan(self, btn_pressed):
+    def pause_current(self, btn_pressed):
+        ''' Pause/resume data acquisition '''
 
         if btn_pressed:
             self.pauseButton.setText('Resume Current Scan')
-            self.waitTimer.timeout.disconnect()
+            print('pause')
+            self.waitTimer.stop()
+            self.itgTimer.stop()
         else:
             self.pauseButton.setText('Pause Current Scan')
-            self.waitTimer.timeout.connect(self.set_lockin_buffer)
+            print('resume')
             self.waitTimer.start()
+
+    def redo_current(self):
+        ''' Erase current y array and restart a scan '''
+
+        print('redo current')
+        self.waitTimer.stop()
+        self.itgTimer.stop()
+
+        if self.aquired_avg % 2:
+            self.current_x_index = len(self.x) - 1
+        else:
+            self.current_x_index = 0
+
+        self.y = np.zeros_like(self.x)
+        self.tune_syn()
+
+    def restart_avg(self):
+        ''' Erase all current averages and start over '''
+
+        q = QtGui.QMessageBox.question(self, 'Scan In Progress!',
+                       'Restart will erase all cached averages.\n Are you sure to proceed?', QtGui.QMessageBox.Yes |
+                       QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+
+        if q == QtGui.QMessageBox.Yes:
+            print('restart average')
+            self.waitTimer.stop()
+            self.itgTimer.stop()
+            self.aquired_avg = 0
+            self.current_x_index = 0
+            self.y = np.zeros_like(self.x)
+            self.y_sum = np.zeros_like(self.x)
+            self.ySumCurve.setData(self.x, self.y_sum)
+            self.tune_syn()
+        else:
+            pass
+
+    def save_current(self):
+        ''' Save what's got so far and continue '''
+
+        self.waitTimer.stop()
+        self.itgTimer.stop()
+        self.save_data()
+        self.waitTimer.start()
+
+    def jump(self):
+        ''' Jump to next batch item '''
+
+        q = QtGui.QMessageBox.question(self, 'Jump To Next',
+                       'Save aquired data for the current scan window?', QtGui.QMessageBox.Yes |
+                       QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Yes)
+
+        if q == QtGui.QMessageBox.Yes:
+            print('abort current')
+            self.waitTimer.stop()
+            self.itgTimer.stop()
+            self.save_data()
+        elif q == QtGui.QMessageBox.No:
+            print('abort current')
+            self.waitTimer.stop()
+            self.itgTimer.stop()
+            self.parent.move_to_next_entry.emit()
+        else:
+            pass
+
+    def abort_all(self):
+
+        self.parent.reject()

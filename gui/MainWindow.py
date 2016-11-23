@@ -187,7 +187,7 @@ class MainWindow(QtGui.QMainWindow):
     def on_test(self):
         ''' Test developing widget. Modify the widget when necessary '''
 
-        entry_settings = [(6, 12, 1, 3, 0, 0, 100, 100), (30, 50, 3, 1, 2, 2, 100, 100)]
+        entry_settings = [(6, 12, 1, 3, 0, 0, 1000, 1000), (30, 50, 3, 1, 2, 2, 1000, 1000)]
         dscan = ScanLockin.JPLScanWindow(self, entry_settings, '')
         dscan.exec_()
 

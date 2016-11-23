@@ -27,45 +27,47 @@ class InstStatus(QtGui.QMessageBox):
     def __init__(self, parent, code):
         QtGui.QWidget.__init__(self, parent)
 
-        self.setIcon(QtGui.QMessageBox.Warning)
+        self.setIcon(QtGui.QMessageBox.Critical)
         self.addButton(QtGui.QMessageBox.Ok)
         self.setText(str(code))
+        self.setWindowTitle('Instrument Communication Failure!')
 
 
 class MsgError(QtGui.QMessageBox):
     ''' Error message box '''
 
-    def __init__(self, parent, text, moretext=''):
+    def __init__(self, parent, title_text, moretext=''):
         QtGui.QWidget.__init__(self, parent)
 
         self.setIcon(QtGui.QMessageBox.Critical)
         self.addButton(QtGui.QMessageBox.Ok)
-        self.setText(text)
-        self.setInformativeText(moretext)
+        self.setWindowTitle(title_text)
+        self.setText(moretext)
 
 
 class MsgWarning(QtGui.QMessageBox):
     ''' Warning message box '''
 
-    def __init__(self, parent, text, moretext=''):
+    def __init__(self, parent, title_text, moretext=''):
         QtGui.QWidget.__init__(self, parent)
 
         self.setIcon(QtGui.QMessageBox.Warning)
         self.addButton(QtGui.QMessageBox.Ok)
-        self.setText(text)
-        self.setInformativeText(moretext)
+        self.setWindowTitle(title_text)
+        self.setText(moretext)
 
 
 class MsgInfo(QtGui.QMessageBox):
     ''' Information message box '''
 
-    def __init__(self, parent, text, moretext=''):
+    def __init__(self, parent, title_text, moretext=''):
         QtGui.QWidget.__init__(self, parent)
 
         self.setIcon(QtGui.QMessageBox.Information)
         self.addButton(QtGui.QMessageBox.Ok)
-        self.setText(text)
-        self.setInformativeText(moretext)
+        self.setWindowTitle(title_text)
+        self.setText(moretext)
+        self.setWindowModality(0)
 
 
 class VDIBandComboBox(QtGui.QComboBox):
