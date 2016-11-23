@@ -23,25 +23,7 @@ class JPLScanConfig(QtGui.QDialog):
         QtGui.QDialog.__init__(self, parent)
         self.parent = parent
         self.setWindowTitle('Lockin scan configuration (JPL style)')
-        self.setMinimumSize(800, 350)
-
-        # Add shared setting panel
-        self.itgTimeFill = QtGui.QLineEdit()
-        self.itgTimeUnit = QtGui.QComboBox()
-        self.itgTimeUnit.addItems(['ms', 's'])
-        self.waitTimeFill = QtGui.QLineEdit()
-        self.waitTimeFill.setText('10')
-
-        sharedSetting = QtGui.QWidget()
-        sharedSettingLayout = QtGui.QHBoxLayout()
-        sharedSettingLayout.setSpacing(0)
-        sharedSettingLayout.addWidget(QtGui.QLabel('Integration Time (> 2pi * time constant)'))
-        sharedSettingLayout.addWidget(self.itgTimeFill)
-        sharedSettingLayout.addWidget(self.itgTimeUnit)
-        sharedSettingLayout.addWidget(QtGui.QLabel('Wait Time'))
-        sharedSettingLayout.addWidget(self.waitTimeFill)
-        sharedSettingLayout.addWidget(QtGui.QLabel('ms'))
-        sharedSetting.setLayout(sharedSettingLayout)
+        self.setMinimumSize(900, 350)
 
         # Add top buttons
         addBatchButton = QtGui.QPushButton('Add batch')
@@ -67,13 +49,12 @@ class JPLScanConfig(QtGui.QDialog):
         bottomButtons.setLayout(bottomButtonLayout)
 
         # Add freq config entries
-        self.entryList = []
-        self.entryList.append(Shared.FreqWinEntryCaption(self.parent))
+        self.entryWidgetList = []
+        self.entryWidgetList.append(Shared.FreqWinEntryCaption(self.parent))
 
         self.entryLayout = QtGui.QVBoxLayout()
         self.entryLayout.setSpacing(0)
-        self.entryLayout.addWidget(sharedSetting)
-        for freqEntry in self.entryList:
+        for freqEntry in self.entryWidgetList:
             self.entryLayout.addWidget(freqEntry)
 
         entryWidgets = QtGui.QWidget()
@@ -103,20 +84,20 @@ class JPLScanConfig(QtGui.QDialog):
         # generate a new batch entry
         entry = Shared.FreqWinEntryNoCaption(self.parent)
         # add this entry to the layout and to the entry list
-        self.entryList.append(entry)
+        self.entryWidgetList.append(entry)
         self.entryLayout.addWidget(entry)
 
     def remove_entry(self):
         ''' Remove last batch entry in this dialog window '''
 
         # if there is only one entry, skip and pop up warning
-        if len(self.entryList) == 1:
+        if len(self.entryWidgetList) == 1:
             msg = Shared.MsgWarning(self.parent, 'Cannot remove batch!',
                              'At least one batch entry is required!')
             msg.exec_()
         else:
             # remove this entry
-            entry = self.entryList.pop()
+            entry = self.entryWidgetList.pop()
             self.entryLayout.removeWidget(entry)
             entry.deleteLater()
 
@@ -134,7 +115,8 @@ class JPLScanConfig(QtGui.QDialog):
     def get_settings(self):
         ''' Read batch settings from entries and proceed.
             Returns a list of seting tuples in the format of
-            (start_freq MHz, stop_freq MHz, step MHz, averages, lockin sens_index)
+            (start_freq <MHz>, stop_freq <MHz>, step <MHz>, averages <int>,
+             itgtime <ms>, waittime <ms>, lockin sens_index <int>)
         '''
 
         vdi_index = self.parent.synCtrl.bandSelect.currentIndex()
@@ -143,36 +125,22 @@ class JPLScanConfig(QtGui.QDialog):
 
         no_error = True
 
-        # get shared settings from shared panel
-        status, itgtime = apival.val_lc_itgtime(self.itgTimeFill.text(),
-                                                self.itgTimeUnit.currentText(),
-                                                tc_index)
-        self.itgTimeFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
-
-        if status:
-            no_error *= False
-        else:
-            pass
-
-        status, waittime = apival.val_float(self.waitTimeFill.text())
-        self.waitTimeFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
-        if status:
-            no_error *= False
-        else:
-            pass
-
         # get settings from entry
-        for entry in self.entryList:
+        for entry in self.entryWidgetList:
             # read settings
             status1, start_freq = apival.val_prob_freq(entry.startFreqFill.text(), vdi_index)
             status2, stop_freq = apival.val_prob_freq(entry.stopFreqFill.text(), vdi_index)
             status3, step = apival.val_float(entry.stepFill.text())
             status4, average = apival.val_int(entry.avgFill.text())
             sens_index = entry.sensSel.currentIndex()
+            tc_index = entry.tcSel.currentIndex()
+            status5, itgtime = apival.val_itgtime(entry.itgTimeFill.text(), tc_index)
+            status6, waittime = apival.val_waittime(entry.waitTimeFill.text())
             # put them into a setting tuple
-            if not (status1 or status2 or status3 or status4):
+            if not (status1 or status2 or status3 or status4 or status5 or status6):
                 no_error *= True
-                setting_entry = (start_freq, stop_freq, step, average, sens_index)
+                setting_entry = (start_freq, stop_freq, step, average,
+                                 sens_index, tc_index, itgtime, waittime)
                 # put the setting tuple into a list
                 entry_settings.append(setting_entry)
             else:
@@ -180,7 +148,7 @@ class JPLScanConfig(QtGui.QDialog):
 
         if no_error:
             self.accept()
-            return (itgtime, waittime), entry_settings, self.filename
+            return entry_settings, self.filename
         else:
             msg = Shared.MsgError(self.parent, 'Invalid input!', 'Please fix invalid inputs before proceeding.')
             msg.exec_()
@@ -192,7 +160,7 @@ class JPLScanWindow(QtGui.QDialog):
     # define a pyqt signal to control batch scans
     move_to_next_entry = QtCore.pyqtSignal()
 
-    def __init__(self, parent, shared_settings, entry_settings, filename):
+    def __init__(self, parent, entry_settings, filename):
         QtGui.QWidget.__init__(self, parent)
         self.parent = parent
         self.setWindowTitle('Lockin scan monitor')
@@ -202,8 +170,10 @@ class JPLScanWindow(QtGui.QDialog):
         self.entry_settings = entry_settings
         entry_setting_list = []
         for entry in entry_settings:
-            entry_str = '{:.3f} -- {:.3f} MHz;\n    step={:.3f} MHz; avg={:d}; '.format(*entry)
-            entry_str += 'sens={:s}'.format(Shared.LIASENSLIST[entry[-1]])
+            entry_str = '{:.3f} -- {:.3f} MHz;\n    step={:.3f} MHz; avg={:d}; '.format(*entry[:4])
+            entry_str += 'sens={:s}; '.format(Shared.LIASENSLIST[entry[4]])
+            entry_str += 'tc={:s}\n'.format(Shared.LIATCLIST[entry[5]])
+            entry_str += 'itgtime={:.0g} ms; waittime={:.0g} ms'.format(*entry[6:])
             entry_setting_list.append(entry_str)
 
         self.batchList = QtGui.QListWidget()
@@ -221,7 +191,7 @@ class JPLScanWindow(QtGui.QDialog):
         batchDisplay.setLayout(batchLayout)
 
         # set up single scan monitor + daq class
-        self.singleScan = SingleScan(self, parent, shared_settings, filename)
+        self.singleScan = TestClass(self, parent, filename)
 
         # set up progress bar
         currentProgress = QtGui.QLabel('Current Progress')
@@ -252,20 +222,39 @@ class JPLScanWindow(QtGui.QDialog):
         else:
             self.finish()
 
+    def stop_timers(self):
+
+        # stop timers
+        self.singleScan.itgTimer.stop()
+        self.singleScan.waitTimer.stop()
+
     def finish(self):
+
         msg = Shared.MsgInfo(self, 'Job Finished!',
                              'Congratulations! Now it is time to grab some coffee.')
         msg.exec_()
+        self.stop_timers()
         self.accept()
+
+    def reject(self):
+
+        q = QtGui.QMessageBox.question(self, 'Scan In Progress!',
+                       'The batch scan is still in progress. Are you SURE to abort the process?', QtGui.QMessageBox.Yes |
+                       QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+
+        if q == QtGui.QMessageBox.Yes:
+            self.stop_timers()
+            self.accept()
+        else:
+            pass
 
 
 class SingleScan(QtGui.QWidget):
     ''' Take a scan in a single freq window '''
 
-    def __init__(self, parent, main, shared_settings, filename):
+    def __init__(self, parent, main, filename):
         ''' parent is the JPL scan dialog window. It contains shared settings.
             main is the main GUI window. It containts instrument handles
-            shared_settings contains shared setting tuple (itgtime, waittime)
         '''
         QtGui.QWidget.__init__(self, parent)
         self.main = main
@@ -273,7 +262,6 @@ class SingleScan(QtGui.QWidget):
         self.filename = filename
 
         # Initialize shared settings
-        self.itgtime, self.waittime = shared_settings
         self.multiplier = apival.MULTIPLIER[self.main.synCtrl.bandSelect.currentIndex()]
 
         # Initialize scan entry settings
@@ -283,62 +271,86 @@ class SingleScan(QtGui.QWidget):
         self.current_avg = 0
         self.step = 0
         self.sens_index = 0
+        self.itgtime = 60
+        self.waittime = 10
 
         # Set up timers
         self.itgTimer = QtCore.QTimer()
         self.itgTimer.setInterval(self.itgtime)
         self.itgTimer.setSingleShot(True)
-        self.itgTimer.timeout.connect(self.query_lockin)
+        self.itgTimer.timeout.connect(self.query_lockin_buffer)
 
         self.waitTimer = QtCore.QTimer()
         self.waitTimer.setInterval(self.waittime)
-        self.waitTimer.setSingleShot(False)
-        self.waitTimer.timeout.connect(self.tune_lockin)
+        self.waitTimer.setSingleShot(True)
+        self.waitTimer.timeout.connect(self.set_lockin_buffer)
 
         # set up main layout
         buttons = QtGui.QWidget()
+        self.pauseButton = QtGui.QPushButton('Pause Current Scan')
+        self.pauseButton.setCheckable(True)
+        self.redoButton = QtGui.QPushButton('Redo Current Scan')
         self.abortCurrentButton = QtGui.QPushButton('Abort Current Scan')
         self.abortAllButton = QtGui.QPushButton('Abort Batch Project')
-        self.pauseButton = QtGui.QPushButton('Pause Current Scan')
-        self.redoButton = QtGui.QPushButton('Redo Current Scan')
         buttonLayout = QtGui.QHBoxLayout()
-        buttonLayout.addWidget(self.abortCurrentButton)
-        buttonLayout.addWidget(self.abortAllButton)
         buttonLayout.addWidget(self.pauseButton)
         buttonLayout.addWidget(self.redoButton)
+        buttonLayout.addWidget(self.abortCurrentButton)
+        buttonLayout.addWidget(self.abortAllButton)
         buttons.setLayout(buttonLayout)
 
-        self.pgPlot = pg.PlotWidget(title='Live Monitor')
+        pgWin = pg.GraphicsWindow(title='Live Monitor')
+        self.yPlot = pgWin.addPlot(1, 0, title='Current sweep')
+        self.yPlot.setLabels(left='Intensity', bottom='Frequency (MHz)')
+        self.ySumPlot = pgWin.addPlot(0, 0, title='Sum sweep')
+        self.ySumPlot.setLabels(left='Intensity')
+        self.yCurve = self.yPlot.plot()
+        self.yCurve.setDownsampling(auto=True)
+        self.yCurve.setPen(pg.mkPen(220, 220, 220))
+        self.ySumCurve = self.ySumPlot.plot()
+        self.ySumCurve.setDownsampling(auto=True)
+        self.ySumCurve.setPen(pg.mkPen(219, 112, 147))
         mainLayout = QtGui.QVBoxLayout()
-        mainLayout.addWidget(self.pgPlot)
+        mainLayout.addWidget(pgWin)
         mainLayout.addWidget(buttons)
         self.setLayout(mainLayout)
 
+        self.pauseButton.clicked.connect(self.pause_scan)
+
     def update_setting(self, entry_setting):
         ''' Update scan entry setting. Starts a scan after setting update.
-            entry = (start_freq, stop_freq, step, average, sens_index)
+            entry = (start_freq <MHz>, stop_freq <MHz>, step <MHz>, averages <int>,
+            lockin sens_index <int>, lockin tc_index <int>, itgtime <ms>, waittime <ms>)
         '''
 
-        self.x = Shared.gen_x_array(self.multiplier, *entry_setting[0:3])
+        self.x = Shared.gen_x_array(*entry_setting[0:3])
         self.current_x_index = 0
         self.avg = entry_setting[3]
         self.current_avg = 0
         self.sens_index = entry_setting[4]
-        self.y = np.empty_like(self.x)
+        self.tc_index = entry_setting[5]
+        self.itgtime = entry_setting[6]
+        self.waittime = entry_setting[7]
+        self.itgTimer.setInterval(self.itgtime)
+        self.waitTimer.setInterval(self.waittime)
+        self.y = np.zeros_like(self.x)
         self.y_sum = np.zeros_like(self.x)
+        self.ySumCurve.setData(self.x, self.y_sum)
+
+        # set lockin properties
+        apilc.set_sens(self.main.lcHandle, self.sens_index)
+        apilc.set_tc(self.main.lcHandle, self.tc_index)
         self.tune_syn()
 
     def tune_syn(self):
         ''' Tune synthesizer frequency '''
 
-        apisyn.set_syn_freq(self.main.synHandle, self.x[self.current_x_index])
+        apisyn.set_syn_freq(self.main.synHandle, self.x[self.current_x_index]/self.multiplier)
         self.waitTimer.start()
 
-    def tune_lockin(self):
+    def set_lockin_buffer(self):
         ''' Set up lockin to be ready. Triggered by waitTimer.timeout() '''
 
-        # set lockin sensitivity
-        apilc.set_sens(self.main.lcHandle, self.sens_index)
         # clear buffer
         self.main.lcHandle.write('REST')
         # set update rate to be 512 Hz
@@ -349,7 +361,7 @@ class SingleScan(QtGui.QWidget):
         self.main.lcHandle.write('STRT')
         self.itgTimer.start()
 
-    def query_lockin(self):
+    def query_lockin_buffer(self):
         ''' Query lockin data. Triggered by itgTimer.timeout() '''
 
         # pause buffer
@@ -366,25 +378,39 @@ class SingleScan(QtGui.QWidget):
         del y
         del buffer_data
         # update plot
-        self.pgPlot.plot(self.x[self.current_x_index] * self.multiplier, y_avg)
-        # move to the next frequency
-        if self.current_x_index < len(self.x):
-            self.current_x_index += 1
+        self.yCurve.setData(self.x, self.y)
+        # move to the next frequency, update freq index and average counter
+        self.next_freq()
+        # if done
+        if self.current_avg > self.avg:
+            self.save_data()
+        else:
             self.tune_syn()
-        else:   # start another average
-            self.current_x_index = 0
-            self.current_avg += 1
-            # add current y array to y_sum
-            self.y_sum += self.y
-            # update plot
-            self.pgPlot.plot(self.x * self.multiplier, self.y_sum, pen='r')
-            # free y array
-            self.y = np.empty_like(self.x)
-            # do more averages
-            if self.current_avg < self.avg:
-                self.tune_syn()
-            else:   # finish scan
-                self.save_data()
+
+    def next_freq(self):
+        ''' move to the next frequency point '''
+
+        # odd average, increase index
+        if self.current_avg % 2:
+            if self.current_x_index < len(self.x)-1:
+                self.current_x_index += 1
+            else:
+                self.current_avg += 1
+                self.update_ysum()
+        else:   # even average, decrease index (sweep back)
+            if self.current_x_index > 0:
+                self.current_x_index -= 1
+            else:
+                self.current_avg += 1
+                self.update_ysum()
+
+    def update_ysum(self):
+        ''' Update sum plot '''
+
+        # add current y array to y_sum
+        self.y_sum += self.y
+        # update plot
+        self.ySumCurve.setData(self.x, self.y_sum)
 
     def save_data(self):
         ''' Save data array '''
@@ -395,6 +421,167 @@ class SingleScan(QtGui.QWidget):
                   apival.LIATCLIST[tc]*1e-3, 15, 75)
 
         save.save_lwa(self.filename, self.y_sum / self.current_avg, h_info)
-        # clear plot
-        self.pgPlot.clear()
         self.parent.move_to_next_entry.emit()
+
+    def pause_scan(self, btn_pressed):
+
+        if btn_pressed:
+            self.pauseButton.setText('Resume Current Scan')
+            self.waitTimer.timeout.disconnect(self.tune_syn)
+        else:
+            self.pauseButton.setText('Pause Current Scan')
+            self.waitTimer.timeout.connect(self.tune_syn)
+            self.waitTimer.start()
+
+
+
+class TestClass(QtGui.QWidget):
+    ''' Test class. Analog to SingleScan, but remove all instrument handles '''
+
+    def __init__(self, parent, main, filename):
+
+        QtGui.QWidget.__init__(self, parent)
+        self.parent = parent
+        self.filename = filename
+
+        # Initialize shared settings
+        self.multiplier = 6
+
+        # Initialize scan entry settings
+        self.start_rf_freq = 0
+        self.stop_rf_freq = 0
+        self.current_rf_freq = 0
+        self.current_avg = 0
+        self.step = 0
+        self.sens_index = 0
+        self.itgtime = 60
+        self.waittime = 10
+
+        # Set up timers
+        self.itgTimer = QtCore.QTimer()
+        self.itgTimer.setInterval(self.itgtime)
+        self.itgTimer.setSingleShot(True)
+        self.itgTimer.timeout.connect(self.query_lockin_buffer)
+
+        self.waitTimer = QtCore.QTimer()
+        self.waitTimer.setInterval(self.waittime)
+        self.waitTimer.setSingleShot(True)
+        self.waitTimer.timeout.connect(self.set_lockin_buffer)
+
+        # set up main layout
+        buttons = QtGui.QWidget()
+        self.abortCurrentButton = QtGui.QPushButton('Abort Current Scan')
+        self.abortAllButton = QtGui.QPushButton('Abort Batch Project')
+        self.pauseButton = QtGui.QPushButton('Pause Current Scan')
+        self.pauseButton.setCheckable(True)
+        self.redoButton = QtGui.QPushButton('Redo Current Scan')
+        buttonLayout = QtGui.QHBoxLayout()
+        buttonLayout.addWidget(self.pauseButton)
+        buttonLayout.addWidget(self.redoButton)
+        buttonLayout.addWidget(self.abortCurrentButton)
+        buttonLayout.addWidget(self.abortAllButton)
+        buttons.setLayout(buttonLayout)
+
+        pgWin = pg.GraphicsWindow(title='Live Monitor')
+        self.yPlot = pgWin.addPlot(1, 0, title='Current sweep')
+        self.yPlot.setLabels(left='Intensity', bottom='Frequency (MHz)')
+        self.ySumPlot = pgWin.addPlot(0, 0, title='Sum sweep')
+        self.ySumPlot.setLabels(left='Intensity')
+        self.yCurve = self.yPlot.plot()
+        self.yCurve.setDownsampling(auto=True)
+        self.yCurve.setPen(pg.mkPen(220, 220, 220))
+        self.ySumCurve = self.ySumPlot.plot()
+        self.ySumCurve.setDownsampling(auto=True)
+        self.ySumCurve.setPen(pg.mkPen(219, 112, 147))
+        mainLayout = QtGui.QVBoxLayout()
+        mainLayout.addWidget(pgWin)
+        mainLayout.addWidget(buttons)
+        self.setLayout(mainLayout)
+
+        self.pauseButton.clicked.connect(self.pause_scan)
+
+    def update_setting(self, entry_setting):
+        ''' Update scan entry setting. Starts a scan after setting update.
+            entry = (start_freq <MHz>, stop_freq <MHz>, step <MHz>, averages <int>,
+            lockin sens_index <int>, lockin tc_index <int>, itgtime <ms>, waittime <ms>)
+        '''
+
+        self.x = Shared.gen_x_array(*entry_setting[0:3])
+        self.current_x_index = 0
+        self.avg = entry_setting[3]
+        self.current_avg = 0
+        self.sens_index = entry_setting[4]
+        self.tc_index = entry_setting[5]
+        self.itgtime = entry_setting[6]
+        self.waittime = entry_setting[7]
+        self.itgTimer.setInterval(self.itgtime)
+        self.waitTimer.setInterval(self.waittime)
+        self.y = np.zeros_like(self.x)
+        self.y_sum = np.zeros_like(self.x)
+        self.ySumCurve.setData(self.x, self.y_sum)
+
+        print('tune lockin sensitivity to {:s}'.format(Shared.LIASENSLIST[self.sens_index]))
+        print('tune lockin time constant to {:s}'.format(Shared.LIATCLIST[self.tc_index]))
+        self.tune_syn()
+
+    def tune_syn(self):
+        print('tune syn freq to {:.3f} MHz'.format(self.x[self.current_x_index]/self.multiplier))
+        self.waitTimer.start()
+
+    def set_lockin_buffer(self):
+        print('clear lockin buffer')
+        self.itgTimer.start()
+
+    def query_lockin_buffer(self):
+        print('query_lockin_buffer')
+        # append data to data list
+        y_avg = np.random.random_sample()
+        self.y[self.current_x_index] = y_avg
+        # update plot
+        self.yCurve.setData(self.x, self.y)
+        # move to the next frequency, update freq index and average counter
+        self.next_freq()
+        # if done
+        if self.current_avg > self.avg:
+            self.save_data()
+        else:
+            self.tune_syn()
+
+    def next_freq(self):
+        ''' move to the next frequency point '''
+
+        # odd average, increase index
+        if self.current_avg % 2:
+            if self.current_x_index < len(self.x)-1:
+                self.current_x_index += 1
+            else:
+                self.current_avg += 1
+                self.update_ysum()
+        else:   # even average, decrease index (sweep back)
+            if self.current_x_index > 0:
+                self.current_x_index -= 1
+            else:
+                self.current_avg += 1
+                self.update_ysum()
+
+    def update_ysum(self):
+        ''' Update sum plot '''
+
+        # add current y array to y_sum
+        self.y_sum += self.y
+        # update plot
+        self.ySumCurve.setData(self.x, self.y_sum)
+
+    def save_data(self):
+        print('save data')
+        self.parent.move_to_next_entry.emit()
+
+    def pause_scan(self, btn_pressed):
+
+        if btn_pressed:
+            self.pauseButton.setText('Resume Current Scan')
+            self.waitTimer.timeout.disconnect()
+        else:
+            self.pauseButton.setText('Pause Current Scan')
+            self.waitTimer.timeout.connect(self.set_lockin_buffer)
+            self.waitTimer.start()

@@ -171,15 +171,15 @@ class MainWindow(QtGui.QMainWindow):
         result = dconfig.exec_()
 
         if result:  # if dialog accepted
-            shared_settings, entry_settings, filename = dconfig.get_settings()
-            dscan = ScanLockin.JPLScanWindow(self,
-                                shared_settings, entry_settings, filename)
+            entry_settings, filename = dconfig.get_settings()
+            dscan = ScanLockin.JPLScanWindow(self, entry_settings, filename)
             dscan.exec_()
         else:
             pass
 
     def on_scan_pci(self):
-        pass
+        d = Dialogs.ViewPG(self)
+        d.exec_()
 
     def on_scan_cavity(self):
         pass
@@ -187,9 +187,8 @@ class MainWindow(QtGui.QMainWindow):
     def on_test(self):
         ''' Test developing widget. Modify the widget when necessary '''
 
-        shared_settings = (100, 10)
-        entry_settings = [(1, 2, 1, 1, 0), (3, 5, 5, 5, 2)]
-        dscan = ScanLockin.JPLScanWindow(self, shared_settings, entry_settings, '')
+        entry_settings = [(6, 12, 1, 3, 0, 0, 100, 100), (30, 50, 3, 1, 2, 2, 100, 100)]
+        dscan = ScanLockin.JPLScanWindow(self, entry_settings, '')
         dscan.exec_()
 
     def closeEvent(self, event):

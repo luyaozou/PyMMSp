@@ -703,7 +703,7 @@ class ScopeCtrl(QtGui.QGroupBox):
         ## -- Trigger setting status and communication
         self.srateFill.textChanged.connect(self.rateComm)
         self.slenFill.textChanged.connect(self.lenComm)
-        sensSelect.textChanged.connect(self.sensComm)
+        sensSelect.currentIndexChanged.connect(self.sensComm)
         self.avgFill.textChanged.connect(self.avgComm)
 
     def check(self):

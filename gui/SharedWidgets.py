@@ -121,6 +121,14 @@ class FreqWinEntryCaption(QtGui.QWidget):
         self.stepFill = QtGui.QLineEdit()
         self.avgFill = QtGui.QLineEdit()
         self.sensSel = lcSensBox()
+        self.tcSel = lcTcBox()
+        self.itgTimeFill = QtGui.QLineEdit()
+        self.itgTimeFill.setText('60')          # default value
+        self.waitTimeFill = QtGui.QLineEdit()
+        self.waitTimeFill.setText('10')         # default value
+        # validate default values
+        self.val_itgtime()
+        self.val_waittime(self.waitTimeFill.text())
 
         startFreq = QtGui.QWidget()
         startFreqLayout = QtGui.QFormLayout()
@@ -152,18 +160,45 @@ class FreqWinEntryCaption(QtGui.QWidget):
         sensLayout.addRow(QtGui.QLabel('Sensitivity'), self.sensSel)
         sens.setLayout(sensLayout)
 
+        tc = QtGui.QWidget()
+        tcLayout = QtGui.QFormLayout()
+        tcLayout.setRowWrapPolicy(2)
+        tcLayout.addRow(QtGui.QLabel('Time Constant'), self.tcSel)
+        tc.setLayout(tcLayout)
+
+        itgTime = QtGui.QWidget()
+        itgTimeLayout = QtGui.QFormLayout()
+        itgTimeLayout.setRowWrapPolicy(2)
+        itgTimeLayout.addRow(QtGui.QLabel('Integration Time (ms)'), self.itgTimeFill)
+        itgTime.setLayout(itgTimeLayout)
+
+        waitTime = QtGui.QWidget()
+        waitTimeLayout = QtGui.QFormLayout()
+        waitTimeLayout.setRowWrapPolicy(2)
+        waitTimeLayout.addRow(QtGui.QLabel('Wait Time (ms)'), self.waitTimeFill)
+        waitTime.setLayout(waitTimeLayout)
+
         mainLayout = QtGui.QHBoxLayout()
         mainLayout.addWidget(startFreq)
         mainLayout.addWidget(stopFreq)
         mainLayout.addWidget(step)
         mainLayout.addWidget(avg)
         mainLayout.addWidget(sens)
+        mainLayout.addWidget(tc)
+        mainLayout.addWidget(itgTime)
+        mainLayout.addWidget(waitTime)
         self.setLayout(mainLayout)
 
         self.startFreqFill.textChanged.connect(self.val_start_freq)
         self.stopFreqFill.textChanged.connect(self.val_stop_freq)
         self.stepFill.textChanged.connect(self.val_step)
         self.avgFill.textChanged.connect(self.val_avg)
+        self.tcSel.currentIndexChanged.connect(self.val_itgtime)
+        self.itgTimeFill.textChanged.connect(self.val_itgtime)
+        self.waitTimeFill.textChanged.connect(self.val_waittime)
+
+    def setDefault(self):
+        pass
 
     def val_start_freq(self, text):
 
@@ -188,6 +223,22 @@ class FreqWinEntryCaption(QtGui.QWidget):
         vdi_index = self.main.synCtrl.bandSelect.currentIndex()
         status, number = apival.val_int(text)
         self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+
+    def val_itgtime(self):
+
+        tc_index = self.tcSel.currentIndex()
+        text = self.itgTimeFill.text()
+        status, itgtime = apival.val_lc_itgtime(text, tc_index)
+        self.itgTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+
+    def val_waittime(self, text):
+
+        status, waittime = apival.val_float(text)
+        if waittime < 10:
+            status = 2
+        else:
+            pass
+        self.waitTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
 
 class FreqWinEntryNoCaption(QtGui.QWidget):
@@ -201,7 +252,16 @@ class FreqWinEntryNoCaption(QtGui.QWidget):
         self.stopFreqFill = QtGui.QLineEdit()
         self.stepFill = QtGui.QLineEdit()
         self.avgFill = QtGui.QLineEdit()
+        self.tcSel = lcTcBox()
         self.sensSel = lcSensBox()
+        self.itgTimeFill = QtGui.QLineEdit()
+        self.itgTimeFill.setText('60')          # default value
+        self.waitTimeFill = QtGui.QLineEdit()
+        self.waitTimeFill.setText('10')         # default value
+        # validate default values
+        self.val_itgtime()
+        self.val_waittime(self.waitTimeFill.text())
+
 
         mainLayout = QtGui.QHBoxLayout()
         mainLayout.setSpacing(25)
@@ -210,12 +270,22 @@ class FreqWinEntryNoCaption(QtGui.QWidget):
         mainLayout.addWidget(self.stepFill)
         mainLayout.addWidget(self.avgFill)
         mainLayout.addWidget(self.sensSel)
+        mainLayout.addWidget(self.tcSel)
+        mainLayout.addWidget(self.itgTimeFill)
+        mainLayout.addWidget(self.waitTimeFill)
         self.setLayout(mainLayout)
 
         self.startFreqFill.textChanged.connect(self.val_start_freq)
         self.stopFreqFill.textChanged.connect(self.val_stop_freq)
         self.stepFill.textChanged.connect(self.val_step)
         self.avgFill.textChanged.connect(self.val_avg)
+        self.tcSel.currentIndexChanged.connect(self.val_itgtime)
+        self.itgTimeFill.textChanged.connect(self.val_itgtime)
+        self.waitTimeFill.textChanged.connect(self.val_waittime)
+
+    def setDefault(self):
+        ''' Set default values if specified '''
+        pass
 
     def val_start_freq(self, text):
 
@@ -240,6 +310,22 @@ class FreqWinEntryNoCaption(QtGui.QWidget):
         vdi_index = self.main.synCtrl.bandSelect.currentIndex()
         status, number = apival.val_int(text)
         self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+
+    def val_itgtime(self):
+
+        tc_index = self.tcSel.currentIndex()
+        text = self.itgTimeFill.text()
+        status, itgtime = apival.val_lc_itgtime(text, tc_index)
+        self.itgTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+
+    def val_waittime(self, text):
+
+        status, waittime = apival.val_float(text)
+        if waittime < 10:
+            status = 2
+        else:
+            pass
+        self.waitTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
 
 def msgcolor(status_code):
@@ -260,25 +346,28 @@ def msgcolor(status_code):
         return '#000000'
 
 
-def gen_x_array(multiplier, start_freq, stop_freq, step):
-    ''' Generate an RF freq array for DAQ.
+def gen_x_array(start, stop, step):
+    ''' Generate an mm freq array for DAQ.
         Arguments
-            start_freq: start mm frequency (MHz), float
-            stop_freq: stop mm frequency (MHz), float
+            start: start mm frequency (MHz), float
+            stop: stop mm frequency (MHz), float
             step: step size (MHz), float
-            multiplier: VDI multiplier factor
         Returns:
             x: synthesizer RF frequency array, np.array
     '''
 
-    st_rf = start_freq / multiplier
-    sp_rf = stop_freq / multiplier
     # if start freq > stop freq, switch
-    if st_rf > sp_rf:
-        sp_rf, st_rf = st_rf, sp_rf
+    if start > stop:
+        stop, start = start, stop
+        sweep_down = True
     else:
-        pass
-    step_rf = step / multiplier
-    x = np.arange(st_rf, sp_rf, step_rf, dtype=float)
+        sweep_down = False
 
-    return x
+    # make the last point to include stop
+    x = np.arange(start, stop+step, step, dtype=float)
+
+    # if sweep down, flip x array
+    if sweep_down:
+        return np.flipud(x)
+    else:
+        return x
