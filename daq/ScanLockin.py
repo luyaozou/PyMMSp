@@ -75,7 +75,7 @@ class JPLScanConfig(QtGui.QDialog):
         self.setLayout(mainLayout)
 
         cancelButton.clicked.connect(self.reject)
-        acceptButton.clicked.connect(self.do_it)
+        acceptButton.clicked.connect(self.accept)
         saveButton.clicked.connect(self.set_file_directory)
         addBatchButton.clicked.connect(self.add_entry)
         removeBatchButton.clicked.connect(self.remove_entry)
@@ -176,21 +176,6 @@ class JPLScanConfig(QtGui.QDialog):
 
         return text
 
-    def do_it(self):
-
-        entry_settings, filename = self.get_settings()
-        if entry_settings:
-            info = self.time_estimation(entry_settings)
-            q = Shared.MsgInfo(self, 'Time Estimation', info)
-            q.addButton(QtGui.QMessageBox.Cancel)
-            result = q.exec_()
-
-            if result == QtGui.QMessageBox.Ok:
-                self.accept()
-            else:
-                pass
-        else:
-            pass
 
 class JPLScanWindow(QtGui.QDialog):
     ''' Scanning window '''

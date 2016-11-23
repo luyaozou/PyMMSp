@@ -2,6 +2,7 @@
 ''' Main GUI Window '''
 
 from PyQt4 import QtCore, QtGui
+from gui import SharedWidgets as Shared
 from gui import Panels
 from gui import Dialogs
 from daq import ScanLockin
@@ -170,8 +171,23 @@ class MainWindow(QtGui.QMainWindow):
         dconfig = ScanLockin.JPLScanConfig(self)
         result = dconfig.exec_()
 
-        if result:  # if dialog accepted
+        # this loop makes sure the config dialog does not disappear
+        # unless the settings are all valid / or user hits cancel
+        while result:  # if dialog accepted
             entry_settings, filename = dconfig.get_settings()
+            if entry_settings:
+                info = dconfig.time_estimation(entry_settings)
+                q = Shared.MsgInfo(self, 'Time Estimation', info)
+                q.addButton(QtGui.QMessageBox.Cancel)
+                qres = q.exec_()
+                if qres == QtGui.QMessageBox.Ok:
+                    result = False
+                else:
+                    result = dconfig.exec_()
+            else:
+                result = dconfig.exec_()
+
+        if entry_settings:
             dscan = ScanLockin.JPLScanWindow(self, entry_settings, filename)
             dscan.exec_()
         else:
