@@ -2,6 +2,7 @@
 
 from PyQt4 import QtGui, QtCore
 import random
+from math import ceil
 import numpy as np
 from api import validator as apival
 
@@ -146,12 +147,9 @@ class FreqWinEntryCaption(QtGui.QWidget):
         self.avgFill = QtGui.QLineEdit()
         self.sensSel = lcSensBox()
         self.tcSel = lcTcBox()
-        self.itgTimeFill = QtGui.QLineEdit()
-        self.itgTimeFill.setText('60')          # default value
         self.waitTimeFill = QtGui.QLineEdit()
-        self.waitTimeFill.setText('10')         # default value
+        self.waitTimeFill.setText('30')         # default value
         # validate default values
-        self.val_itgtime()
         self.val_waittime(self.waitTimeFill.text())
 
         startFreq = QtGui.QWidget()
@@ -190,12 +188,6 @@ class FreqWinEntryCaption(QtGui.QWidget):
         tcLayout.addRow(QtGui.QLabel('Time Constant'), self.tcSel)
         tc.setLayout(tcLayout)
 
-        itgTime = QtGui.QWidget()
-        itgTimeLayout = QtGui.QFormLayout()
-        itgTimeLayout.setRowWrapPolicy(2)
-        itgTimeLayout.addRow(QtGui.QLabel('Integration Time (ms)'), self.itgTimeFill)
-        itgTime.setLayout(itgTimeLayout)
-
         waitTime = QtGui.QWidget()
         waitTimeLayout = QtGui.QFormLayout()
         waitTimeLayout.setRowWrapPolicy(2)
@@ -209,7 +201,6 @@ class FreqWinEntryCaption(QtGui.QWidget):
         mainLayout.addWidget(avg)
         mainLayout.addWidget(sens)
         mainLayout.addWidget(tc)
-        mainLayout.addWidget(itgTime)
         mainLayout.addWidget(waitTime)
         self.setLayout(mainLayout)
 
@@ -217,8 +208,7 @@ class FreqWinEntryCaption(QtGui.QWidget):
         self.stopFreqFill.textChanged.connect(self.val_stop_freq)
         self.stepFill.textChanged.connect(self.val_step)
         self.avgFill.textChanged.connect(self.val_avg)
-        self.tcSel.currentIndexChanged.connect(self.val_itgtime)
-        self.itgTimeFill.textChanged.connect(self.val_itgtime)
+        self.tcSel.currentIndexChanged.connect(self.val_waittime)
         self.waitTimeFill.textChanged.connect(self.val_waittime)
 
     def setDefault(self):
@@ -248,20 +238,9 @@ class FreqWinEntryCaption(QtGui.QWidget):
         status, number = apival.val_int(text)
         self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
-    def val_itgtime(self):
-
-        tc_index = self.tcSel.currentIndex()
-        text = self.itgTimeFill.text()
-        status, itgtime = apival.val_lc_itgtime(text, tc_index)
-        self.itgTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
-
     def val_waittime(self, text):
 
-        status, waittime = apival.val_float(text)
-        if waittime < 10:
-            status = 2
-        else:
-            pass
+        status, waittime = apival.val_lc_waittime(text)
         self.waitTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
 
@@ -278,12 +257,9 @@ class FreqWinEntryNoCaption(QtGui.QWidget):
         self.avgFill = QtGui.QLineEdit()
         self.tcSel = lcTcBox()
         self.sensSel = lcSensBox()
-        self.itgTimeFill = QtGui.QLineEdit()
-        self.itgTimeFill.setText('60')          # default value
         self.waitTimeFill = QtGui.QLineEdit()
-        self.waitTimeFill.setText('10')         # default value
+        self.waitTimeFill.setText('30')         # default value
         # validate default values
-        self.val_itgtime()
         self.val_waittime(self.waitTimeFill.text())
 
 
@@ -295,7 +271,6 @@ class FreqWinEntryNoCaption(QtGui.QWidget):
         mainLayout.addWidget(self.avgFill)
         mainLayout.addWidget(self.sensSel)
         mainLayout.addWidget(self.tcSel)
-        mainLayout.addWidget(self.itgTimeFill)
         mainLayout.addWidget(self.waitTimeFill)
         self.setLayout(mainLayout)
 
@@ -303,8 +278,7 @@ class FreqWinEntryNoCaption(QtGui.QWidget):
         self.stopFreqFill.textChanged.connect(self.val_stop_freq)
         self.stepFill.textChanged.connect(self.val_step)
         self.avgFill.textChanged.connect(self.val_avg)
-        self.tcSel.currentIndexChanged.connect(self.val_itgtime)
-        self.itgTimeFill.textChanged.connect(self.val_itgtime)
+        self.tcSel.currentIndexChanged.connect(self.val_waittime)
         self.waitTimeFill.textChanged.connect(self.val_waittime)
 
     def setDefault(self):
@@ -335,20 +309,9 @@ class FreqWinEntryNoCaption(QtGui.QWidget):
         status, number = apival.val_int(text)
         self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
-    def val_itgtime(self):
-
-        tc_index = self.tcSel.currentIndex()
-        text = self.itgTimeFill.text()
-        status, itgtime = apival.val_lc_itgtime(text, tc_index)
-        self.itgTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
-
     def val_waittime(self, text):
 
-        status, waittime = apival.val_float(text)
-        if waittime < 10:
-            status = 2
-        else:
-            pass
+        status, waittime = apival.val_lc_waittime(text)
         self.waitTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
 
@@ -395,3 +358,22 @@ def gen_x_array(start, stop, step):
         return np.flipud(x)
     else:
         return x
+
+
+def jpl_scan_time(jpl_entry_settings):
+    ''' Estimate the time expense of batch scan JPL style '''
+
+    if isinstance(jpl_entry_settings, list):
+        pass
+    else:
+        jpl_entry_settings = [jpl_entry_settings]
+
+    total_time = 0
+    for entry in jpl_entry_settings:
+        start, stop, step = entry[0:3]
+        # estimate total data points to be taken
+        data_points = ceil((abs(stop - start) + step) / step) * entry[3]
+        # time expense for this entry in seconds
+        total_time += data_points * entry[6] * 1e-3
+
+    return total_time

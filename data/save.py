@@ -7,7 +7,7 @@ import numpy as np
 import datetime
 
 
-def save_lwa(filename, y, *h_info):
+def save_lwa(filename, y, h_info):
     ''' Save lockin scan in the JPL .lwa format
         Arguments
             filename: str
@@ -24,9 +24,9 @@ def save_lwa(filename, y, *h_info):
         f.write('DATE ' + d.strftime('%m-%d-%Y'))
         f.write(' TIME ' + d.strftime('%H:%M:%S'))
         f.write(' SH 9')
-        f.write(' IT {:.g}'.format(itgtime))
-        f.write(' SENS {:.g}'.format(sens))
-        f.write(' TAU {:.g}'.format(tc))
+        f.write(' IT {:.3g}'.format(itgtime))
+        f.write(' SENS {:.3g}'.format(sens))
+        f.write(' TAU {:.3g}'.format(tc))
         f.write(' MF {:.3f}'.format(mod_freq))
         f.write(' MA {:.3f}'.format(mod_depth))
 

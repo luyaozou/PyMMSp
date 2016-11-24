@@ -178,8 +178,12 @@ class MainWindow(QtGui.QMainWindow):
         while result:  # if dialog accepted
             entry_settings, filename = dconfig.get_settings()
             if entry_settings:
-                info = dconfig.time_estimation(entry_settings)
-                q = Shared.MsgInfo(self, 'Time Estimation', info)
+                total_time = Shared.jpl_scan_time(entry_settings)
+                now = datetime.datetime.today()
+                length = datetime.timedelta(seconds=total_time)
+                then = now + length
+                text = 'This batch job is estimated to take {:s}.\nIt is expected to finish at {:s}.'.format(str(length), then.strftime('%I:%M %p, %m-%d-%Y (%a)'))
+                q = Shared.MsgInfo(self, 'Time Estimation', text)
                 q.addButton(QtGui.QMessageBox.Cancel)
                 qres = q.exec_()
                 if qres == QtGui.QMessageBox.Ok:
@@ -205,7 +209,7 @@ class MainWindow(QtGui.QMainWindow):
     def on_test(self):
         ''' Test developing widget. Modify the widget when necessary '''
 
-        entry_settings = [(6, 12, 1, 1, 0, 0, 1000, 1000), (30, 50, 3, 3, 2, 2, 1000, 1000)]
+        entry_settings = [(6, 12, 1, 1, 0, 0, 1000), (30, 50, 3, 3, 2, 2, 1000)]
         dscan = ScanLockin.JPLScanWindow(self, entry_settings, '')
         dscan.exec_()
 

@@ -5,6 +5,7 @@
 
 from PyQt4 import QtGui, QtCore
 import numpy as np
+from math import ceil
 import pyqtgraph as pg
 import datetime
 from gui import SharedWidgets as Shared
@@ -139,13 +140,12 @@ class JPLScanConfig(QtGui.QDialog):
                 status4, average = apival.val_int(entry.avgFill.text())
                 sens_index = entry.sensSel.currentIndex()
                 tc_index = entry.tcSel.currentIndex()
-                status5, itgtime = apival.val_lc_itgtime(entry.itgTimeFill.text(), tc_index)
-                status6, waittime = apival.val_float(entry.waitTimeFill.text())
+                status5, waittime = apival.val_float(entry.waitTimeFill.text())
                 # put them into a setting tuple
-                if not (status1 or status2 or status3 or status4 or status5 or status6):
+                if not (status1 or status2 or status3 or status4 or status5):
                     no_error *= True
                     setting_entry = (start_freq, stop_freq, step, average,
-                                     sens_index, tc_index, itgtime, waittime)
+                                     sens_index, tc_index, waittime)
                     # put the setting tuple into a list
                     entry_settings.append(setting_entry)
                 else:
@@ -157,24 +157,6 @@ class JPLScanConfig(QtGui.QDialog):
             msg = Shared.MsgError(self.parent, 'Invalid input!', 'Please fix invalid inputs before proceeding.')
             msg.exec_()
             return None, None
-
-    def time_estimation(self, entry_settings):
-        ''' Estimate the time expense of this batch job '''
-
-        total_time = 0
-        for entry in entry_settings:
-            # estimate total data points to be taken
-            data_points = (int(abs(entry[1] + entry[2] - entry[0])/entry[2]) + 1)* entry[3]
-            # time expense for this entry in seconds
-            total_time += data_points * (entry[6] + entry[7]) * 1e-3
-
-        now = datetime.datetime.today()
-        length = datetime.timedelta(seconds=total_time)
-        then = now + length
-
-        text = 'This batch job is estimated to take {:s}.\nIt is expected to finish at {:s}.'.format(str(length), then.strftime('%I:%M %p, %m-%d-%Y (%a)'))
-
-        return text
 
 
 class JPLScanWindow(QtGui.QDialog):
@@ -196,7 +178,7 @@ class JPLScanWindow(QtGui.QDialog):
             entry_str = '{:.3f} -- {:.3f} MHz;\n    step={:.3f} MHz; avg={:d}; '.format(*entry[:4])
             entry_str += 'sens={:s}; '.format(Shared.LIASENSLIST[entry[4]])
             entry_str += 'tc={:s}\n'.format(Shared.LIATCLIST[entry[5]])
-            entry_str += 'itgtime={:.0g} ms; waittime={:.0g} ms'.format(*entry[6:])
+            entry_str += 'waittime={:.0f} ms'.format(entry[6])
             entry_setting_list.append(entry_str)
 
         self.batchList = QtGui.QListWidget()
@@ -243,22 +225,16 @@ class JPLScanWindow(QtGui.QDialog):
         mainLayout.addWidget(progressDisplay, 1, 0, 1, 3)
         self.setLayout(mainLayout)
 
-        self.prog_calc()
+        # Initiate progress bar
+        total_time = ceil(Shared.jpl_scan_time(entry_settings))
+        self.totalProgBar.setRange(0, total_time)
+        self.totalProgBar.setValue(0)
+        self.batch_progress_taken = 0
+
+        # Start scan
         self.move_to_next_entry.connect(self.next_entry)
         self.current_entry_index = -1   # make sure batch starts at index 0
         self.move_to_next_entry.emit()
-
-    def prog_calc(self):
-        ''' Calculate progress bar ranges '''
-
-        total_pts = 0
-        for entry in self.entry_settings:
-            # estimate total data points to be taken
-            total_pts += (int(abs(entry[1] + entry[2] - entry[0])/entry[2]) + 1) * entry[3]
-
-        self.totalProgBar.setRange(0, total_pts)
-        self.totalProgBar.setValue(0)
-        self.batch_pts_taken = 0
 
     def next_entry(self):
 
@@ -272,7 +248,6 @@ class JPLScanWindow(QtGui.QDialog):
     def stop_timers(self):
 
         # stop timers
-        self.singleScan.itgTimer.stop()
         self.singleScan.waitTimer.stop()
 
     def finish(self):
@@ -321,19 +296,12 @@ class SingleScan(QtGui.QWidget):
         self.acquired_avg = 0
         self.step = 0
         self.sens_index = 0
-        self.itgtime = 60
-        self.waittime = 10
-
-        # Set up timers
-        self.itgTimer = QtCore.QTimer()
-        self.itgTimer.setInterval(self.itgtime)
-        self.itgTimer.setSingleShot(True)
-        self.itgTimer.timeout.connect(self.query_lockin_buffer)
+        self.waittime = 30
 
         self.waitTimer = QtCore.QTimer()
         self.waitTimer.setInterval(self.waittime)
         self.waitTimer.setSingleShot(True)
-        self.waitTimer.timeout.connect(self.set_lockin_buffer)
+        self.waitTimer.timeout.connect(self.query_lockin)
 
         # set up main layout
         buttons = QtGui.QWidget()
@@ -389,16 +357,15 @@ class SingleScan(QtGui.QWidget):
         self.acquired_avg = 0
         self.sens_index = entry_setting[4]
         self.tc_index = entry_setting[5]
-        self.itgtime = entry_setting[6]
-        self.waittime = entry_setting[7]
-        self.itgTimer.setInterval(self.itgtime)
+        self.waittime = entry_setting[6]
         self.waitTimer.setInterval(self.waittime)
         self.y = np.zeros_like(self.x)
         self.y_sum = np.zeros_like(self.x)
         self.ySumCurve.setData(self.x, self.y_sum)
+        total_pts =  len(self.x) * self.target_avg
         self.pts_taken = 0
-        self.parent.currentProgBar.setRange(0, len(self.x)*self.target_avg)
-        self.parent.currentProgBar.setValue(self.pts_taken)
+        self.parent.currentProgBar.setRange(0, ceil(total_pts*self.waittime*1e-3))
+        self.parent.currentProgBar.setValue(ceil(self.pts_taken*self.waittime*1e-3))
 
         # set lockin properties
         apilc.set_sens(self.main.lcHandle, self.sens_index)
@@ -411,35 +378,11 @@ class SingleScan(QtGui.QWidget):
         apisyn.set_syn_freq(self.main.synHandle, self.x[self.current_x_index]/self.multiplier)
         self.waitTimer.start()
 
-    def set_lockin_buffer(self):
-        ''' Set up lockin to be ready. Triggered by waitTimer.timeout() '''
+    def query_lockin(self):
+        ''' Query lockin data. Triggered by waitTimer.timeout() '''
 
-        # clear buffer
-        self.main.lcHandle.write('REST')
-        # set update rate to be 512 Hz
-        self.main.lcHandle.write('SRAT13')
-        # set buffer to single shot
-        self.main.lcHandle.write('SEND0')
-        # start buffer and timer
-        self.main.lcHandle.write('STRT')
-        self.itgTimer.start()
-
-    def query_lockin_buffer(self):
-        ''' Query lockin data. Triggered by itgTimer.timeout() '''
-
-        # pause buffer
-        lcHandle.write('PAUS')
-        # get buffer length
-        n = lcHandle.query('SPTS?')
-        buffer_data = lcHandle.query('TRCA1,0,{:d}'.format(int(n.strip())-1))
-        # parse buffer_data
-        y = np.array(buffer_data.split(','), dtype=float)
-        y_avg = np.average(y)
         # append data to data list
-        self.y[self.current_x_index] = y_avg
-        # free memory
-        del y
-        del buffer_data
+        self.y[self.current_x_index] = apilc.query_single_x(self.main.lcHandle)
         # update plot
         self.yCurve.setData(self.x, self.y)
         # move to the next frequency, update freq index and average counter
@@ -447,7 +390,7 @@ class SingleScan(QtGui.QWidget):
         # if done
         if self.acquired_avg == self.target_avg:
             self.save_data()
-            self.parent.batch_pts_taken += len(self.x)*self.target_avg
+            self.parent.batch_progress_taken += ceil(len(self.x)*self.target_avg*self.waittime*1e-3)
             self.parent.move_to_next_entry.emit()
         else:
             self.tune_syn()
@@ -475,8 +418,9 @@ class SingleScan(QtGui.QWidget):
                 self.y = np.zeros_like(self.x)
 
         # update progress bar
-        self.parent.currentProgBar.setValue(self.pts_taken)
-        self.parent.totalProgBar.setValue(self.parent.batch_pts_taken + self.pts_taken)
+        self.parent.currentProgBar.setValue(ceil(self.pts_taken*self.waittime*1e-3))
+        self.parent.totalProgBar.setValue(self.parent.batch_progress_taken +
+                                          ceil(self.pts_taken*self.waittime*1e-3))
 
     def update_ysum(self):
         ''' Update sum plot '''
@@ -507,7 +451,6 @@ class SingleScan(QtGui.QWidget):
             self.pauseButton.setText('Resume Current Scan')
             print('pause')
             self.waitTimer.stop()
-            self.itgTimer.stop()
         else:
             self.pauseButton.setText('Pause Current Scan')
             print('resume')
@@ -518,7 +461,10 @@ class SingleScan(QtGui.QWidget):
 
         print('redo current')
         self.waitTimer.stop()
-        self.itgTimer.stop()
+        if self.pauseButton.isChecked():
+            self.pauseButton.click()
+        else:
+            pass
 
         if self.acquired_avg % 2:
             self.current_x_index = len(self.x) - 1
@@ -538,7 +484,6 @@ class SingleScan(QtGui.QWidget):
         if q == QtGui.QMessageBox.Yes:
             print('restart average')
             self.waitTimer.stop()
-            self.itgTimer.stop()
             self.acquired_avg = 0
             self.current_x_index = 0
             self.y = np.zeros_like(self.x)
@@ -552,7 +497,6 @@ class SingleScan(QtGui.QWidget):
         ''' Save what's got so far and continue '''
 
         self.waitTimer.stop()
-        self.itgTimer.stop()
         self.save_data()
         self.waitTimer.start()
 
@@ -566,13 +510,11 @@ class SingleScan(QtGui.QWidget):
         if q == QtGui.QMessageBox.Yes:
             print('abort current')
             self.waitTimer.stop()
-            self.itgTimer.stop()
             self.parent.batch_pts_taken += len(self.x)*self.target_avg
             self.save_data()
         elif q == QtGui.QMessageBox.No:
             print('abort current')
             self.waitTimer.stop()
-            self.itgTimer.stop()
             self.parent.batch_pts_taken += len(self.x)*self.target_avg
             self.parent.move_to_next_entry.emit()
         else:
@@ -602,19 +544,12 @@ class TestClass(QtGui.QWidget):
         self.acquired_avg = 0
         self.step = 0
         self.sens_index = 0
-        self.itgtime = 60
-        self.waittime = 10
-
-        # Set up timers
-        self.itgTimer = QtCore.QTimer()
-        self.itgTimer.setInterval(self.itgtime)
-        self.itgTimer.setSingleShot(True)
-        self.itgTimer.timeout.connect(self.query_lockin_buffer)
+        self.waittime = 30
 
         self.waitTimer = QtCore.QTimer()
         self.waitTimer.setInterval(self.waittime)
         self.waitTimer.setSingleShot(True)
-        self.waitTimer.timeout.connect(self.set_lockin_buffer)
+        self.waitTimer.timeout.connect(self.query_lockin)
 
         # set up main layout
         buttons = QtGui.QWidget()
@@ -669,16 +604,15 @@ class TestClass(QtGui.QWidget):
         self.acquired_avg = 0
         self.sens_index = entry_setting[4]
         self.tc_index = entry_setting[5]
-        self.itgtime = entry_setting[6]
-        self.waittime = entry_setting[7]
-        self.itgTimer.setInterval(self.itgtime)
+        self.waittime = entry_setting[6]
         self.waitTimer.setInterval(self.waittime)
         self.y = np.zeros_like(self.x)
         self.y_sum = np.zeros_like(self.x)
         self.ySumCurve.setData(self.x, self.y_sum)
+        total_pts =  len(self.x) * self.target_avg
         self.pts_taken = 0
-        self.parent.currentProgBar.setRange(0, len(self.x)*self.target_avg)
-        self.parent.currentProgBar.setValue(self.pts_taken)
+        self.parent.currentProgBar.setRange(0, ceil(total_pts*self.waittime*1e-3))
+        self.parent.currentProgBar.setValue(ceil(self.pts_taken*self.waittime*1e-3))
 
         print('tune lockin sensitivity to {:s}'.format(Shared.LIASENSLIST[self.sens_index]))
         print('tune lockin time constant to {:s}'.format(Shared.LIATCLIST[self.tc_index]))
@@ -688,11 +622,7 @@ class TestClass(QtGui.QWidget):
         print('tune syn freq to {:.3f} MHz'.format(self.x[self.current_x_index]/self.multiplier))
         self.waitTimer.start()
 
-    def set_lockin_buffer(self):
-        print('clear lockin buffer')
-        self.itgTimer.start()
-
-    def query_lockin_buffer(self):
+    def query_lockin(self):
         print('query_lockin_buffer')
         # append data to data list
         y_avg = np.random.random_sample()
@@ -704,7 +634,7 @@ class TestClass(QtGui.QWidget):
         # if done
         if self.acquired_avg == self.target_avg:
             self.save_data()
-            self.parent.batch_pts_taken += len(self.x)*self.target_avg
+            self.parent.batch_progress_taken += ceil(len(self.x)*self.target_avg*self.waittime*1e-3)
             self.parent.move_to_next_entry.emit()
         else:
             self.tune_syn()
@@ -732,8 +662,9 @@ class TestClass(QtGui.QWidget):
                 self.y = np.zeros_like(self.x)
 
         # update progress bar
-        self.parent.currentProgBar.setValue(self.pts_taken)
-        self.parent.totalProgBar.setValue(self.parent.batch_pts_taken + self.pts_taken)
+        self.parent.currentProgBar.setValue(ceil(self.pts_taken*self.waittime*1e-3))
+        self.parent.totalProgBar.setValue(self.parent.batch_progress_taken +
+                                          ceil(self.pts_taken*self.waittime*1e-3))
 
     def update_ysum(self):
         ''' Update sum plot '''
@@ -753,7 +684,6 @@ class TestClass(QtGui.QWidget):
             self.pauseButton.setText('Resume Current Scan')
             print('pause')
             self.waitTimer.stop()
-            self.itgTimer.stop()
         else:
             self.pauseButton.setText('Pause Current Scan')
             print('resume')
@@ -764,7 +694,10 @@ class TestClass(QtGui.QWidget):
 
         print('redo current')
         self.waitTimer.stop()
-        self.itgTimer.stop()
+        if self.pauseButton.isChecked():
+            self.pauseButton.click()
+        else:
+            pass
 
         if self.acquired_avg % 2:
             self.current_x_index = len(self.x) - 1
@@ -784,7 +717,6 @@ class TestClass(QtGui.QWidget):
         if q == QtGui.QMessageBox.Yes:
             print('restart average')
             self.waitTimer.stop()
-            self.itgTimer.stop()
             self.acquired_avg = 0
             self.current_x_index = 0
             self.y = np.zeros_like(self.x)
@@ -798,7 +730,6 @@ class TestClass(QtGui.QWidget):
         ''' Save what's got so far and continue '''
 
         self.waitTimer.stop()
-        self.itgTimer.stop()
         self.save_data()
         self.waitTimer.start()
 
@@ -812,13 +743,11 @@ class TestClass(QtGui.QWidget):
         if q == QtGui.QMessageBox.Yes:
             print('abort current')
             self.waitTimer.stop()
-            self.itgTimer.stop()
             self.parent.batch_pts_taken += len(self.x)*self.target_avg
             self.save_data()
         elif q == QtGui.QMessageBox.No:
             print('abort current')
             self.waitTimer.stop()
-            self.itgTimer.stop()
             self.parent.batch_pts_taken += len(self.x)*self.target_avg
             self.parent.move_to_next_entry.emit()
         else:

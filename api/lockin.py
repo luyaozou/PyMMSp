@@ -230,25 +230,3 @@ def query_single_x(lcHandle):
         return x
     except:
         return 0
-
-
-def sp_integration(lcHandle, itg_time):
-    ''' Integrate single-point lockin voltage over specified integration time.
-        Arguments:
-            lcHandle: lockin handle, pyvisa session
-            itg_time: integration time in milliseconds, float
-        Returns:
-            vol: averaged voltage, float
-    '''
-
-    # clear buffer
-    lcHandle.write('REST')
-    # set update rate to be 512 Hz
-    lcHandle.write('SRAT13')
-    # start buffer
-    lcHandle.write('STRT')
-
-
-
-
-    return vol
