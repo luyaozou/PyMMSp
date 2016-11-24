@@ -2,6 +2,7 @@
 ''' Main GUI Window '''
 
 from PyQt4 import QtCore, QtGui
+import datetime
 from gui import SharedWidgets as Shared
 from gui import Panels
 from gui import Dialogs

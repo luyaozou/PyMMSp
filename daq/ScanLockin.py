@@ -7,7 +7,6 @@ from PyQt4 import QtGui, QtCore
 import numpy as np
 from math import ceil
 import pyqtgraph as pg
-import datetime
 from gui import SharedWidgets as Shared
 from api import general as apigen
 from api import validator as apival
@@ -140,7 +139,7 @@ class JPLScanConfig(QtGui.QDialog):
                 status4, average = apival.val_int(entry.avgFill.text())
                 sens_index = entry.sensSel.currentIndex()
                 tc_index = entry.tcSel.currentIndex()
-                status5, waittime = apival.val_float(entry.waitTimeFill.text())
+                status5, waittime = apival.val_lc_waittime(entry.waitTimeFill.text(), tc_index)
                 # put them into a setting tuple
                 if not (status1 or status2 or status3 or status4 or status5):
                     no_error *= True
@@ -435,8 +434,9 @@ class SingleScan(QtGui.QWidget):
 
         tc = apilc.read_tc(self.main.lcHandle)
 
-        h_info = (self.itgtime, apival.LIASENSLIST[self.sens_index],
-                  apival.LIATCLIST[tc]*1e-3, 15, 75)
+        h_info = (self.waittime, apival.LIASENSLIST[self.sens_index],
+                  apival.LIATCLIST[tc]*1e-3, 15, 75, self.entry_setting[0],
+                  self.entry_setting[2], self.acquired_avg)
 
         # if already finishes at least one sweep
         if self.acquired_avg > 0:

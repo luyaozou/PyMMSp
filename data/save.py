@@ -17,7 +17,8 @@ def save_lwa(filename, y, h_info):
     '''
 
     d = datetime.datetime.today()
-    itgtime, sens, tc, mod_freq, mod_depth = h_info
+    itgtime, sens, tc, mod_freq, mod_depth, start_freq, step, avg = h_info
+    comments = ''
 
     with open(filename, 'w+') as f:
         # write first line
@@ -34,7 +35,7 @@ def save_lwa(filename, y, h_info):
         f.write('\n {:s}'.format(comments))
 
         # write third line
-        f.write('\n {:.3f}   {:.6f}  {:d}'.format(start_freq, step, samplen))
+        f.write('\n {:.3f}   {:.6f}  {:d}'.format(start_freq, step, len(y)))
         f.write(' {:d} 1 1  1.887  0.000 0 0 START\n'.format(avg))
 
         # write y data

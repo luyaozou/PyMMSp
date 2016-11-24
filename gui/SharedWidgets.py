@@ -150,7 +150,7 @@ class FreqWinEntryCaption(QtGui.QWidget):
         self.waitTimeFill = QtGui.QLineEdit()
         self.waitTimeFill.setText('30')         # default value
         # validate default values
-        self.val_waittime(self.waitTimeFill.text())
+        self.val_waittime()
 
         startFreq = QtGui.QWidget()
         startFreqLayout = QtGui.QFormLayout()
@@ -238,9 +238,11 @@ class FreqWinEntryCaption(QtGui.QWidget):
         status, number = apival.val_int(text)
         self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
-    def val_waittime(self, text):
+    def val_waittime(self):
 
-        status, waittime = apival.val_lc_waittime(text)
+        text = self.waitTimeFill.text()
+        tc_index = self.tcSel.currentIndex()
+        status, waittime = apival.val_lc_waittime(text, tc_index)
         self.waitTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
 
@@ -260,7 +262,7 @@ class FreqWinEntryNoCaption(QtGui.QWidget):
         self.waitTimeFill = QtGui.QLineEdit()
         self.waitTimeFill.setText('30')         # default value
         # validate default values
-        self.val_waittime(self.waitTimeFill.text())
+        self.val_waittime()
 
 
         mainLayout = QtGui.QHBoxLayout()
@@ -309,8 +311,11 @@ class FreqWinEntryNoCaption(QtGui.QWidget):
         status, number = apival.val_int(text)
         self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
-    def val_waittime(self, text):
+    def val_waittime(self):
 
+        text = self.waitTimeFill.text()
+        tc_index = self.tcSel.currentIndex()
+        status, waittime = apival.val_lc_waittime(text, tc_index)
         status, waittime = apival.val_lc_waittime(text)
         self.waitTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
