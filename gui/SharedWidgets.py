@@ -1,6 +1,7 @@
 #! encoding = utf-8
 
 from PyQt4 import QtGui, QtCore
+import random
 import numpy as np
 from api import validator as apival
 
@@ -17,6 +18,27 @@ LIASENSLIST = ['2 nV', '5 nV', '10 nV', '20 nV', '50 nV', '100 nV',
 LIATCLIST = ['10 us', '30 us', '100 us', '300 us', '1 ms', '3 ms', '10 ms',
              '30 ms', '100 ms', '300 ms', '1 s', '3 s', '10 s', '30 s'
              ]
+
+# QPushButton label dictionary
+BUTTONLABEL = {'confirm':['Lets do it', 'Go forth and conquer', 'Gotcha',
+                          'Ready to go'],
+               'complete':['Good job', 'Sweet', 'Done', 'Mission complete'],
+               'reject':['Never mind', 'I changed my mind']
+                }
+
+def btn_label(btn_type):
+    ''' Randomly generate a QPushButton label.
+        Arguments
+            btn_type: str
+        Returns
+            label: str
+    '''
+
+    try:
+        a_list = BUTTONLABEL[btn_type]
+        return a_list[random.randint(0, len(a_list)-1)]
+    except KeyError:
+        return 'A Button'
 
 
 class InstStatus(QtGui.QMessageBox):
@@ -354,7 +376,7 @@ def gen_x_array(start, stop, step):
             start: start mm frequency (MHz), float
             stop: stop mm frequency (MHz), float
             step: step size (MHz), float
-        Returns:
+        Returns
             x: synthesizer RF frequency array, np.array
     '''
 

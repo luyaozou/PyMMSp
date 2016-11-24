@@ -4,6 +4,7 @@
 
 from PyQt4 import QtGui, QtCore
 from api import general as apigen
+from gui import SharedWidgets as Shared
 
 
 class SelInstDialog(QtGui.QDialog):
@@ -150,7 +151,7 @@ class CloseSelInstDialog(QtGui.QDialog):
             pass
         inst.setLayout(instLayout)
 
-        okButton = QtGui.QPushButton('Done')
+        okButton = QtGui.QPushButton(Shared.btn_label('complete'))
         mainLayout = QtGui.QVBoxLayout()
         mainLayout.addWidget(inst)
         mainLayout.addWidget(okButton)

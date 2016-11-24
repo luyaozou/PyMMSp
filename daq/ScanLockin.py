@@ -41,8 +41,8 @@ class JPLScanConfig(QtGui.QDialog):
         topButtons.setLayout(topButtonLayout)
 
         # Add bottom buttons
-        cancelButton = QtGui.QPushButton('Cancel')
-        acceptButton = QtGui.QPushButton('Do it!')
+        cancelButton = QtGui.QPushButton(Shared.btn_label('reject'))
+        acceptButton = QtGui.QPushButton(Shared.btn_label('confirm'))
         acceptButton.setDefault(True)
         bottomButtonLayout = QtGui.QHBoxLayout()
         bottomButtonLayout.addWidget(cancelButton)
@@ -337,7 +337,7 @@ class SingleScan(QtGui.QWidget):
 
         # set up main layout
         buttons = QtGui.QWidget()
-        jumpButton = QtGui.QPushButton('Abort Current Window')
+        jumpButton = QtGui.QPushButton('Jump to Next Window')
         abortAllButton = QtGui.QPushButton('Abort Batch Project')
         self.pauseButton = QtGui.QPushButton('Pause Current Scan')
         self.pauseButton.setCheckable(True)
