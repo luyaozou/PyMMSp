@@ -42,6 +42,7 @@ class SynStatus(QtGui.QGroupBox):
         self.synModFreq = QtGui.QLabel()
         self.synLF = QtGui.QLabel()
         self.synLFV = QtGui.QLabel()
+        self.synErrMsg = QtGui.QLabel()
 
         ## -- Set layout and add GUI elements
         mainLayout = QtGui.QGridLayout()
@@ -70,6 +71,8 @@ class SynStatus(QtGui.QGroupBox):
         mainLayout.addWidget(self.synModFreq, 5, 3)
         mainLayout.addWidget(QtGui.QLabel('Mod Amp'), 6, 2)
         mainLayout.addWidget(self.synModDepth, 6, 3)
+        mainLayout.addWidget(QtGui.QLabel('Error Msg'), 7, 0)
+        mainLayout.addWidget(self.synErrMsg, 7, 1, 1, 3)
 
         ## -- Trigger status updates
         self.refreshButton.clicked.connect(self.update)
@@ -87,6 +90,7 @@ class SynStatus(QtGui.QGroupBox):
             lf_vol, lf_status = apisyn.read_lf(self.parent.synHandle)
             self.synLF.setText('On' if lf_status else 'Off')
             self.synLFV.setText('{:.3f} V'.format(lf_vol))
+            self.synErrMsg.setText(apisyn.query_err_msg(self.parent.synHandle))
         else:
             self.addressText.setText('N.A.')
             self.synRF.setText('N.A.')
@@ -95,7 +99,7 @@ class SynStatus(QtGui.QGroupBox):
             self.synMod.setText('N.A.')
             self.synLF.setText('N.A.')
             self.synLFV.setText('N.A.')
-
+            self.synErrMsg.setText('N.A.')
 
 
 class LockinStatus(QtGui.QGroupBox):
@@ -708,7 +712,7 @@ class ScopeCtrl(QtGui.QGroupBox):
 
     def check(self):
         ''' Enable/disable this groupbox '''
-        if self.parent.lcHandle:
+        if self.parent.pciHandle:
             self.setChecked(True)
         else:
             self.setChecked(False)
@@ -755,7 +759,7 @@ class MotorCtrl(QtGui.QGroupBox):
 
     def check(self):
         ''' Enable/disable this groupbox '''
-        if self.parent.lcHandle:
+        if self.parent.motorHandle:
             self.setChecked(True)
         else:
             self.setChecked(False)

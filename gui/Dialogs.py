@@ -121,34 +121,38 @@ class CloseSelInstDialog(QtGui.QDialog):
         self.setMinimumHeight(400)
 
         inst = QtGui.QWidget()
-        synToggle = QtGui.QCheckBox()
-        lcToggle = QtGui.QCheckBox()
-        pciToggle = QtGui.QCheckBox()
-        motorToggle = QtGui.QCheckBox()
+        self.synToggle = QtGui.QCheckBox()
+        self.lcToggle = QtGui.QCheckBox()
+        self.pciToggle = QtGui.QCheckBox()
+        self.motorToggle = QtGui.QCheckBox()
 
         instLayout = QtGui.QFormLayout()
         instLayout.addRow(QtGui.QLabel('Instrument'), QtGui.QLabel('Status'))
         # only list currently connected instruments
         if self.parent.synHandle:
-            synToggle.setCheckState(True)
-            instLayout.addRow(QtGui.QLabel('Synthesizer'), synToggle)
+            self.synToggle.setCheckState(True)
+            instLayout.addRow(QtGui.QLabel('Synthesizer'), self.synToggle)
         else:
-            pass
+            self.synToggle.setCheckState(False)
+
         if self.parent.lcHandle:
-            lcToggle.setCheckState(True)
-            instLayout.addRow(QtGui.QLabel('Lockin'), lcToggle)
+            self.lcToggle.setCheckState(True)
+            instLayout.addRow(QtGui.QLabel('Lockin'), self.lcToggle)
         else:
-            pass
+            self.lcToggle.setCheckState(False)
+
         if self.parent.pciHandle:
-            pciToggle.setCheckState(True)
-            instLayout.addRow(QtGui.QLabel('Oscilloscope'), pciToggle)
+            self.pciToggle.setCheckState(True)
+            instLayout.addRow(QtGui.QLabel('Oscilloscope'), self.pciToggle)
         else:
-            pass
+            self.pciToggle.setCheckState(False)
+
         if self.parent.motorHandle:
-            motorToggle.setCheckState(True)
-            instLayout.addRow(QtGui.QLabel('Motor'), motorToggle)
+            self.motorToggle.setCheckState(True)
+            instLayout.addRow(QtGui.QLabel('Motor'), self.motorToggle)
         else:
-            pass
+            self.motorToggle.setCheckState(False)
+
         inst.setLayout(instLayout)
 
         okButton = QtGui.QPushButton(Shared.btn_label('complete'))
@@ -157,36 +161,46 @@ class CloseSelInstDialog(QtGui.QDialog):
         mainLayout.addWidget(okButton)
         self.setLayout(mainLayout)
 
-        synToggle.clicked["bool"].connect(self.close_syn)
-        lcToggle.clicked["bool"].connect(self.close_lc)
-        pciToggle.clicked["bool"].connect(self.close_scope)
-        motorToggle.clicked["bool"].connect(self.close_motor)
         okButton.clicked.connect(self.accept)
 
+    def accept(self):
+
+        self.close_syn(self.synToggle.isChecked())
+        self.close_lc(self.lcToggle.isChecked())
+        self.close_scope(self.pciToggle.isChecked())
+        self.close_motor(self.motorToggle.isChecked())
+
+        self.close()
+
     def close_syn(self, check_state):
-        if check_state:
-            pass
-        else:
-            status = apigen.close_inst(self.parent.synHandle)
+
+        if (not check_state) and self.parent.synHandle:
+            apigen.close_inst(self.parent.synHandle)
             self.parent.synHandle = None
+        else:
+            pass
 
     def close_lc(self, check_state):
-        if check_state:
-            pass
-        else:
-            status = apigen.close_inst(self.parent.lcHandle)
+
+        if (not check_state) and self.parent.lcHandle:
+            apigen.close_inst(self.parent.lcHandle)
             self.parent.lcHandle = None
+        else:
+            pass
 
     def close_scope(self, check_state):
-        if check_state:
-            pass
-        else:
-            status = apigen.close_inst(self.parent.pciHandle)
+
+        if (not check_state) and self.parent.pciHandle:
+            apigen.close_inst(self.parent.pciHandle)
             self.parent.pciHandle = None
+        else:
+            pass
+
 
     def close_motor(self, check_state):
-        if check_state:
-            pass
-        else:
-            status = apigen.close_inst(self.parent.motorHandle)
+
+        if (not check_state) and self.parent.motorHandle:
+            apigen.close_inst(self.parent.motorHandle)
             self.parent.motorHandle = None
+        else:
+            pass

@@ -315,3 +315,16 @@ def set_lf_amp(synHandle, lf_amp):
         return vcode
     except:
         return 'IOError'
+
+
+def query_err_msg(synHandle):
+    ''' Query the most recent error message. Keep doing it can clear all
+        error messages.
+        Returns msg, str
+    '''
+
+    try:
+        msg = synHandle.query(':SYST:ERR?')
+        return msg.strip()
+    except:
+        return 'N.A.'
