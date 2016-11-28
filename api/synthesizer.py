@@ -206,7 +206,7 @@ def read_am_par(synHandle):
         text = synHandle.query(':AM1:INT1:FREQ?')
         freq = float(text.strip())
         text = synHandle.query(':AM1:DEPT?')
-        depth = float(text.strip())
+        depth = float(text.strip()) * 100
         text = synHandle.query(':AM1:STAT?')
         status = bool(int(text.strip()))
         return freq, depth, status
