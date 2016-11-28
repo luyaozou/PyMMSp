@@ -48,6 +48,7 @@ class SelInstDialog(QtGui.QDialog):
 
         # Set main layout
         mainLayout = QtGui.QVBoxLayout()
+        mainLayout.addWidget(QtGui.QLabel('Reselecting instrument will reset instrument settings to default values.'))
         mainLayout.addWidget(self.availableInst)
         mainLayout.addWidget(refreshButton)
         mainLayout.addWidget(selInst)
@@ -64,7 +65,6 @@ class SelInstDialog(QtGui.QDialog):
         ''' Refresh instrument list '''
 
         # refresh avaiable instrument list
-        self.availableInst = QtGui.QLabel()
         instList, instStr = apigen.list_inst()
         self.availableInst.setText(instStr)
 

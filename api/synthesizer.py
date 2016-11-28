@@ -27,7 +27,7 @@ def init_syn(synHandle):
     '''
 
     try:
-        num, vcode = synHandle.write(':AM1:SOUR INT1; :FM1:SOUR INT1; :LFO:SOUR INT1; :LFO:AMPL 0.1VP; :POW:MODE FIX; :FREQ:MODE CW')
+        num, vcode = synHandle.write(':AM1:SOUR INT1; :AM1:STAT 0; :FM1:SOUR INT1; :FM1:STAT 0; :OUTP:MOD 0; :LFO:SOUR INT1; :LFO:AMPL 0VP; :POW:MODE FIX; :FREQ:MODE CW')
         return vcode
     except:
         return 'IOError'

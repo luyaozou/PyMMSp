@@ -26,7 +26,7 @@ class SynStatus(QtGui.QGroupBox):
         self.parent = parent
 
         self.setTitle('Synthesizer Status')
-        self.setAlignment(1)
+        self.setAlignment(QtCore.Qt.AlignLeft)
         self.setCheckable(False)
 
         ## -- Define synthesizer status elements --
@@ -50,7 +50,7 @@ class SynStatus(QtGui.QGroupBox):
         # put modulation settings in a groupbox
         modGroup = QtGui.QGroupBox()
         modGroup.setTitle('Mod Settings')
-        modGroup.setAlignment(1)
+        modGroup.setAlignment(QtCore.Qt.AlignLeft)
         modGroup.setCheckable(False)
         modGroupLayout = QtGui.QGridLayout()
         modGroupLayout.addWidget(QtGui.QLabel('AM'), 0, 1)
@@ -85,9 +85,9 @@ class SynStatus(QtGui.QGroupBox):
         mainLayout.addWidget(self.synLFV, 6, 1)
         self.setLayout(mainLayout)
         # second column
-        mainLayout.addWidget(QtGui.QLabel('Modulation'), 3, 2)
-        mainLayout.addWidget(self.synMod, 3, 3)
-        mainLayout.addWidget(modGroup, 4, 2, 3, 2)
+        mainLayout.addWidget(QtGui.QLabel('Modulation'), 2, 2)
+        mainLayout.addWidget(self.synMod, 2, 3)
+        mainLayout.addWidget(modGroup, 3, 2, 4, 2)
         mainLayout.addWidget(QtGui.QLabel('Error Msg'), 7, 0)
         mainLayout.addWidget(self.synErrMsg, 7, 1, 1, 3)
 
@@ -99,7 +99,7 @@ class SynStatus(QtGui.QGroupBox):
     def update(self):
         ''' Update instrument information '''
         if self.parent.synHandle:
-            self.addressText.setText(apisyn.query_inst_name(self.parent.synHandle))
+            self.addressText.setText(self.parent.synHandle.resource_name)
             self.synRF.setText('On' if apisyn.read_power_toggle(self.parent.synHandle) else 'Off')
             self.synPower.setText('{:.1f} dbm'.format(apisyn.read_syn_power(self.parent.synHandle)))
             self.synFreq.setText('{:.9f} MHz'.format(apisyn.read_syn_freq(self.parent.synHandle)))
@@ -108,7 +108,7 @@ class SynStatus(QtGui.QGroupBox):
             fmfreq, fmdev, fmstat = apisyn.read_fm_par(self.parent.synHandle)
             self.synAMStat.setText('On' if amstat else 'Off')
             self.synFMStat.setText('On' if fmstat else 'Off')
-            self.synAMDepth.setText('{:.1f} \%'.format(amdepth))
+            self.synAMDepth.setText('{:.1f} %'.format(amdepth))
             self.synAMFreq.setText('{:.3g} kHz'.format(amfreq))
             self.synFMDev.setText('{:.3g} kHz'.format(fmdev))
             self.synFMFreq.setText('{:.3g} kHz'.format(fmfreq))
@@ -143,7 +143,7 @@ class LockinStatus(QtGui.QGroupBox):
         self.parent = parent
 
         self.setTitle('Lockin Status')
-        self.setAlignment(1)
+        self.setAlignment(QtCore.Qt.AlignLeft)
         self.setCheckable(False)
 
         ## -- Define synthesizer status elements --
@@ -190,7 +190,7 @@ class LockinStatus(QtGui.QGroupBox):
     def update(self):
         ''' Update instrument information '''
         if self.parent.lcHandle:
-            self.addressText.setText(apilc.query_inst_name(self.parent.lcHandle))
+            self.addressText.setText(self.parent.lcHandle.resource_name)
             self.lcHarm.setText(apilc.read_harm(self.parent.lcHandle))
             self.lcPhase.setText('{:s} deg'.format(apilc.read_phase(self.parent.lcHandle)))
             self.lcFreq.setText('{:.3f} kHz'.format(apilc.read_freq(self.parent.lcHandle)))
@@ -219,7 +219,7 @@ class ScopeStatus(QtGui.QGroupBox):
         self.parent = parent
 
         self.setTitle('Oscilloscope Status')
-        self.setAlignment(1)
+        self.setAlignment(QtCore.Qt.AlignLeft)
         self.setCheckable(False)
 
         ## -- Define synthesizer status elements --
@@ -244,7 +244,7 @@ class ScopeStatus(QtGui.QGroupBox):
         ''' Update instrument information '''
 
         if self.parent.pciHandle:
-            self.addressText.setText(apilc.query_inst_name(self.parent.pciHandle))
+            self.addressText.setText(self.parent.pciHandle.resource_name)
         else:
             self.addressText.setText('N.A.')
 
@@ -258,7 +258,7 @@ class SynCtrl(QtGui.QGroupBox):
         self.parent = parent
 
         self.setTitle('Synthesizer Control')
-        self.setAlignment(1)    # align left
+        self.setAlignment(QtCore.Qt.AlignLeft)    # align left
         self.setCheckable(True)
         self.check()
 
@@ -271,10 +271,10 @@ class SynCtrl(QtGui.QGroupBox):
 
         ## -- Set up synthesizer control layout --
         synLayout = QtGui.QGridLayout()
-        synLayout.addWidget(QtGui.QLabel('Synthesizer Frequency'), 0, 0)
+        synLayout.addWidget(QtGui.QLabel('Synthesizer Freq'), 0, 0)
         synLayout.addWidget(self.synfreq, 0, 1)
         synLayout.addWidget(QtGui.QLabel('MHz'), 0, 2)
-        synLayout.addWidget(QtGui.QLabel('Probing Frequency'), 1, 0)
+        synLayout.addWidget(QtGui.QLabel('Probing Freq'), 1, 0)
         synLayout.addWidget(self.probfreqFill, 1, 1)
         synLayout.addWidget(QtGui.QLabel('MHz'), 1, 2)
         synLayout.addWidget(QtGui.QLabel('VDI Band'), 2, 0)
@@ -283,9 +283,9 @@ class SynCtrl(QtGui.QGroupBox):
 
         # Set up modulation child widget
         modGBox = QtGui.QGroupBox()
-        modGBox.setTitle('Modulation')
+        modGBox.setTitle('Modulation Control')
         modGBox.setFlat(True)
-        modGBox.setAlignment(1)
+        modGBox.setAlignment(QtCore.Qt.AlignLeft)
         modLayout = QtGui.QGridLayout()
         modLayout.setSpacing(0)
 
@@ -298,7 +298,7 @@ class SynCtrl(QtGui.QGroupBox):
         self.modFreqUnit.addItems(['Hz', 'kHz', 'MHz'])
         self.modFreqUnit.setCurrentIndex(1)
         modFreqLayout = QtGui.QHBoxLayout()
-        modFreqLayout.addWidget(QtGui.QLabel('Mod Frequency'))
+        modFreqLayout.addWidget(QtGui.QLabel('Mod Freq'))
         modFreqLayout.addWidget(self.modFreqFill)
         modFreqLayout.addWidget(self.modFreqUnit)
         self.modFreq.setLayout(modFreqLayout)
@@ -308,7 +308,7 @@ class SynCtrl(QtGui.QGroupBox):
         self.modDepthUnit = QtGui.QComboBox()
         self.modDepthUnit.addItems('')
         modDepthLayout = QtGui.QHBoxLayout()
-        modDepthLayout.addWidget(QtGui.QLabel('Mod Depth'))
+        modDepthLayout.addWidget(QtGui.QLabel('Mod Amp'))
         modDepthLayout.addWidget(self.modDepthFill)
         modDepthLayout.addWidget(self.modDepthUnit)
         self.modDepth.setLayout(modDepthLayout)
@@ -321,35 +321,35 @@ class SynCtrl(QtGui.QGroupBox):
         lfLayout.addWidget(QtGui.QLabel('V'))
         self.lfVol.setLayout(lfLayout)
 
-        self.modToggle = QtGui.QCheckBox()
-        self.modToggle.setCheckState(False)
-        self.modLFToggle = QtGui.QCheckBox()
-        self.modLFToggle.setCheckState(False)
+        self.modSwitchBtn = QtGui.QPushButton('OFF')
+        self.modSwitchBtn.setCheckable(True)
+        self.lfSwitchBtn = QtGui.QPushButton('OFF')
+        self.lfSwitchBtn.setCheckable(True)
 
-        modLayout.addWidget(QtGui.QLabel('LF On'), 0, 0, 1, 1)
-        modLayout.addWidget(self.modLFToggle, 0, 1, 1, 1)
-        modLayout.addWidget(QtGui.QLabel('Mod On'), 0, 2, 1, 1)
-        modLayout.addWidget(self.modToggle, 0, 3, 1, 1)
-        modLayout.addWidget(QtGui.QLabel('Mode'), 0, 4, 1, 1)
-        modLayout.addWidget(self.modModeSelect, 0, 5, 1, 1)
-        modLayout.addWidget(self.modFreq, 1, 0, 1, 6)
-        modLayout.addWidget(self.modDepth, 2, 0, 1, 6)
-        modLayout.addWidget(self.lfVol, 3, 0, 1, 6)
+        modLayout.addWidget(QtGui.QLabel('Mod Mode'), 0, 0)
+        modLayout.addWidget(QtGui.QLabel('Mod Switch'), 1, 0)
+        modLayout.addWidget(QtGui.QLabel('LF Switch'), 2, 0)
+        modLayout.addWidget(self.modModeSelect, 0, 1)
+        modLayout.addWidget(self.modSwitchBtn, 1, 1)
+        modLayout.addWidget(self.lfSwitchBtn, 2, 1)
+        modLayout.addWidget(self.modFreq, 0, 2, 1, 3)
+        modLayout.addWidget(self.modDepth, 1, 2, 1, 3)
+        modLayout.addWidget(self.lfVol, 2, 2, 1, 3)
         modGBox.setLayout(modLayout)
         self.modFreq.hide()
         self.modDepth.hide()
         self.lfVol.hide()
 
         ## -- Define synthesizer power switch
-        self.synPowerToggle = QtGui.QCheckBox()
-        self.synPowerToggle.setTristate(False)
-        self.synPowerToggle.setCheckState(False)
+        self.synPowerSwitchBtn = QtGui.QPushButton('OFF')
+        self.synPowerSwitchBtn.setCheckable(True)
         synPowerManualInput = QtGui.QPushButton('Set Power')
 
         synPowerLayout = QtGui.QHBoxLayout()
-        synPowerLayout.addWidget(QtGui.QLabel('Synthesizer On'))
-        synPowerLayout.addWidget(self.synPowerToggle)
+        synPowerLayout.setAlignment(QtCore.Qt.AlignLeft)
         synPowerLayout.addWidget(synPowerManualInput)
+        synPowerLayout.addWidget(QtGui.QLabel('RF Switch'))
+        synPowerLayout.addWidget(self.synPowerSwitchBtn)
         synPowerCtrl = QtGui.QWidget()
         synPowerCtrl.setLayout(synPowerLayout)
 
@@ -369,18 +369,19 @@ class SynCtrl(QtGui.QGroupBox):
         self.modFreqFill.textChanged.connect(self.modParComm)
         self.modFreqUnit.currentIndexChanged.connect(self.modParComm)
         self.modDepthFill.textChanged.connect(self.modParComm)
-        self.modToggle.stateChanged.connect(self.modToggleComm)
-        self.modLFToggle.stateChanged.connect(self.modLFToggleComm)
+        self.modSwitchBtn.clicked.connect(self.modSwitchBtnComm)
+        self.lfSwitchBtn.clicked.connect(self.lfSwitchBtnComm)
         self.lfVolFill.textChanged.connect(self.modLFVolComm)
 
         # Trigger synthesizer power toggle and communication
         synPowerManualInput.clicked.connect(self.synPowerComm)
-        self.synPowerToggle.stateChanged[int].connect(self.synPowerOnOff)
+        self.synPowerSwitchBtn.clicked.connect(self.synPowerOnOff)
 
     def check(self):
         ''' Enable/disable this groupbox '''
         if self.parent.synHandle:
             self.setChecked(True)
+            apisyn.init_syn(self.parent.synHandle)
         else:
             self.setChecked(False)
 
@@ -421,24 +422,30 @@ class SynCtrl(QtGui.QGroupBox):
             vCode = apisyn.set_syn_power(self.parent.synHandle, set_power)
             if vCode == pyvisa.constants.StatusCode.success:
                 self.parent.synStatus.update()
-                self.synPowerToggle.setCheckState(True)
+                self.synPowerSwitchBtn.setCheckState(True)
             else:
                 msg = Shared.InstStatus(self, vCode)
                 msg.exec_()
         else:
             pass
 
-    def synPowerOnOff(self, toggle_stat):
+    def synPowerOnOff(self, btn_pressed):
         '''
             Triggered by the synthesizer power toggle
         '''
 
-        vCode = apisyn.set_power_toggle(self.parent.synHandle, toggle_stat)
+        vCode = apisyn.set_power_toggle(self.parent.synHandle, btn_pressed)
+
         if vCode == pyvisa.constants.StatusCode.success:
-            pass
+            if btn_pressed:
+                self.synPowerSwitchBtn.setText('ON')
+            else:
+                self.synPowerSwitchBtn.setText('OFF')
         else:
             msg = Shared.InstStatus(self, vCode)
             msg.exec_()
+            self.synPowerSwitchBtn.setText('OFF')
+
         self.parent.synStatus.update()
 
     def modModeComm(self):
@@ -495,7 +502,7 @@ class SynCtrl(QtGui.QGroupBox):
         '''
 
         mod_index = self.modModeSelect.currentIndex()
-        toggle = self.modToggle.isChecked()
+        toggle = self.modSwitchBtn.isChecked()
 
         # convert input and set sheet border color by status
         freq_status, mod_freq = apival.val_syn_mod_freq(self.modFreqFill.text(),
@@ -518,36 +525,51 @@ class SynCtrl(QtGui.QGroupBox):
             msg = Shared.InstStatus(self, vCode)
             msg.exec_()
 
-    def modToggleComm(self):
+    def modSwitchBtnComm(self, btn_pressed):
         '''
             Communicate with the synthesizer and update modulation on/off toggle
         '''
 
-        vCode = apisyn.set_mod_toggle(self.parent.synHandle, self.modToggle.isChecked())
-        if vCode == pyvisa.constants.StatusCode.success:
-            self.parent.synStatus.update()
+        if btn_pressed:
+            vCode = apisyn.set_mod_toggle(self.parent.synHandle, btn_pressed)
+            if vCode == pyvisa.constants.StatusCode.success:
+                self.parent.synStatus.update()
+                self.modSwitchBtn.setText('ON')
+            else:
+                msg = Shared.InstStatus(self, vCode)
+                msg.exec_()
+                self.modSwitchBtn.setText('OFF')
+                self.modSwitchBtn.setChecked(False)
         else:
-            msg = Shared.InstStatus(self, vCode)
-            msg.exec_()
+            self.modSwitchBtn.setText('OFF')
 
-    def modLFToggleComm(self):
+
+    def lfSwitchBtnComm(self, btn_pressed):
         '''
             Communicate with the synthesizer and update LF on/off toggle
         '''
 
-        vCode = apisyn.set_lf_toggle(self.parent.synHandle, self.modLFToggle.isChecked())
-        if vCode == pyvisa.constants.StatusCode.success:
-            self.parent.synStatus.update()
+        if btn_pressed:
+            vCode = apisyn.set_lf_toggle(self.parent.synHandle, self.lfSwitchBtn.isChecked())
+            if vCode == pyvisa.constants.StatusCode.success:
+                self.parent.synStatus.update()
+                self.lfSwitchBtn.setText('ON')
+                self.lfVolFill.setText('0.1')   # default value
+            else:
+                msg = Shared.InstStatus(self, vCode)
+                msg.exec_()
+                self.lfSwitchBtn.setText('OFF')
+                self.lfSwitchBtn.setChecked(False)
         else:
-            msg = Shared.InstStatus(self, vCode)
-            msg.exec_()
+            self.lfSwitchBtn.setText('OFF')
+            self.lfVolFill.setText('0')
 
     def modLFVolComm(self, vol_text):
         '''
             Communicate with the synthesizer and update LF voltage
         '''
 
-        if self.modLFToggle.isChecked():
+        if self.lfSwitchBtn.isChecked():
             status, lf_vol = apival.val_syn_lf_vol(vol_text)
             self.lfVolFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
             if status:
@@ -570,7 +592,7 @@ class LockinCtrl(QtGui.QGroupBox):
         self.parent = parent
 
         self.setTitle('Lockin Control')
-        self.setAlignment(1)        # align left
+        self.setAlignment(QtCore.Qt.AlignLeft)        # align left
         self.setCheckable(True)
         self.check()
 
@@ -616,6 +638,7 @@ class LockinCtrl(QtGui.QGroupBox):
         ''' Enable/disable this groupbox '''
         if self.parent.lcHandle:
             self.setChecked(True)
+            apilc.init_lia(self.parent.lcHandle)
         else:
             self.setChecked(False)
 
@@ -715,7 +738,7 @@ class ScopeCtrl(QtGui.QGroupBox):
         self.parent = parent
 
         self.setTitle('Oscilloscope Control')
-        self.setAlignment(1)
+        self.setAlignment(QtCore.Qt.AlignLeft)
         self.setCheckable(True)
         self.check()
 
@@ -776,7 +799,7 @@ class MotorCtrl(QtGui.QGroupBox):
         self.parent = parent
 
         self.setTitle('Cavity Control')
-        self.setAlignment(1)
+        self.setAlignment(QtCore.Qt.AlignLeft)
         self.setCheckable(True)
         self.check()
 

@@ -21,7 +21,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Set global window properties
         self.setWindowTitle(self.title_text)
-        self.setMinimumWidth(1200)
+        self.setMinimumWidth(1500)
         self.setMinimumHeight(800)
 
         # Initiate pyvisa instrument objects
@@ -103,13 +103,13 @@ class MainWindow(QtGui.QMainWindow):
         self.mainLayout.addWidget(self.synStatus, 0, 0, 1, 2)
         self.mainLayout.addWidget(self.lcStatus, 1, 0, 1, 2)
         self.mainLayout.addWidget(self.scopeStatus, 2, 0, 1, 2)
-        self.mainLayout.addWidget(self.synCtrl, 0, 2, 1, 2)
-        self.mainLayout.addWidget(self.lcCtrl, 1, 2, 1, 2)
-        self.mainLayout.addWidget(self.scopeCtrl, 2, 2, 1, 2)
-        self.mainLayout.addWidget(self.motorCtrl, 3, 2, 1, 2)
-        self.mainLayout.addWidget(self.scopeMonitor, 0, 4, 1, 4)
-        self.mainLayout.addWidget(self.lcMonitor, 1, 4, 1, 4)
-        self.mainLayout.addWidget(self.specMonitor, 2, 4, 1, 4)
+        self.mainLayout.addWidget(self.synCtrl, 0, 2, 1, 3)
+        self.mainLayout.addWidget(self.lcCtrl, 1, 2, 1, 3)
+        self.mainLayout.addWidget(self.scopeCtrl, 2, 2, 1, 3)
+        self.mainLayout.addWidget(self.motorCtrl, 3, 2, 1, 3)
+        self.mainLayout.addWidget(self.scopeMonitor, 0, 5, 1, 4)
+        self.mainLayout.addWidget(self.lcMonitor, 1, 5, 1, 4)
+        self.mainLayout.addWidget(self.specMonitor, 2, 5, 1, 4)
 
         # Enable main window
         self.mainWidget = QtGui.QWidget()
@@ -141,7 +141,6 @@ class MainWindow(QtGui.QMainWindow):
         d = Dialogs.SelInstDialog(self)
         result = d.exec_()
 
-        print(result)
         if result:
             self.refresh_syn()
             self.refresh_lockin()
