@@ -14,6 +14,18 @@ def init_lia(lcHandle):
     return vcode
 
 
+def query_inst_name(lcHandle):
+    ''' Query instrument name
+        Returns instrument name, str
+    '''
+
+    try:
+        text = lcHandle.query('*IDN?')
+        return text.strip()
+    except:
+        return 'N.A.'
+
+
 def read_freq(lcHandle):
     ''' Read current lockin frequency.
         Returns frequency in kHz (float)

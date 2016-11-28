@@ -1,5 +1,18 @@
 #! encoding = utf-8
 
+
+def query_inst_name(pciHandle):
+    ''' Query instrument name
+        Returns instrument name, str
+    '''
+
+    try:
+        text = pciHandle.query('*IDN?')
+        return text.strip()
+    except:
+        return 'N.A.'
+
+
 def set_sampling_len(len_text):
     ''' Set the oscilloscope sampling length to len_text
         Arguments

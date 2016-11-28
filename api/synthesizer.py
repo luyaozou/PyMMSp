@@ -33,6 +33,18 @@ def init_syn(synHandle):
         return 'IOError'
 
 
+def query_inst_name(synHandle):
+    ''' Query instrument name
+        Returns instrument name, str
+    '''
+
+    try:
+        text = synHandle.query('*IDN?')
+        return text.strip()
+    except:
+        return 'N.A.'
+
+
 def read_power_toggle(synHandle):
     ''' Read current synthesizer power output.
         Returns status (bool)
@@ -51,18 +63,24 @@ def set_power_toggle(synHandle, toggle_stat):
         Returns visaCode
     '''
 
-    if toggle_stat:     # user want to turn on RF
-        num, vcode = synHandle.write(':OUTP 1')
-        # only ramp up power if the RF is successfully turned on
-        if vcode == pyvisa.constants.StatusCode.success:
-            vcode = set_syn_power(synHandle, 0)
-    else:               # user want to turn off RF
-        vcode = set_syn_power(synHandle, -20)
-        # only turn off RF if power is successfully ramped down
-        if vcode == pyvisa.constants.StatusCode.success:
-            num, vcode = synHandle.write(':OUTP 0')
-
-    return vcode
+    try:
+        if toggle_stat:     # user want to turn on RF
+            num, vcode = synHandle.write(':OUTP 1')
+            # only ramp up power if the RF is successfully turned on
+            if vcode == pyvisa.constants.StatusCode.success:
+                vcode = set_syn_power(synHandle, 0)
+            else:
+                pass
+        else:               # user want to turn off RF
+            vcode = set_syn_power(synHandle, -20)
+            # only turn off RF if power is successfully ramped down
+            if vcode == pyvisa.constants.StatusCode.success:
+                num, vcode = synHandle.write(':OUTP 0')
+            else:
+                pass
+        return vcode
+    except:
+        return 'IOError'
 
 
 def read_syn_power(synHandle):

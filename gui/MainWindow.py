@@ -117,31 +117,22 @@ class MainWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.mainWidget)
 
     def refresh_syn(self):
-        if self.synHandle:
-            self.synStatus.update()
-            self.synCtrl.check()
-        else:
-            pass
+
+        self.synCtrl.check()
+        self.synStatus.update()
 
     def refresh_lockin(self):
-        if self.lcHandle:
-            self.lcStatus.update()
-            self.lcCtrl.check()
-        else:
-            pass
+        self.lcStatus.update()
+        self.lcCtrl.check()
 
     def refresh_scope(self):
-        if self.pciHandle:
-            self.scopeStatus.update()
-            self.scopeCtrl.check()
-        else:
-            pass
+
+        self.scopeStatus.update()
+        self.scopeCtrl.check()
 
     def refresh_motor(self):
-        if self.motorHandle:
-            self.motorCtrl.check()
-        else:
-            pass
+
+        self.motorCtrl.check()
 
     def on_exit(self):
         self.close()

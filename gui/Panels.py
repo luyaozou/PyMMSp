@@ -79,7 +79,7 @@ class SynStatus(QtGui.QGroupBox):
     def update(self):
         ''' Update instrument information '''
         if self.parent.synHandle:
-            self.addressText.setText(str(self.parent.synHandle.primary_address))
+            self.addressText.setText(apisyn.query_inst_name(self.parent.synHandle))
             self.synRF.setText('On' if apisyn.read_power_toggle(self.parent.synHandle) else 'Off')
             self.synPower.setText('{:.1f} dbm'.format(apisyn.read_syn_power(self.parent.synHandle)))
             self.synFreq.setText('{:.9f} MHz'.format(apisyn.read_syn_freq(self.parent.synHandle)))
@@ -155,7 +155,7 @@ class LockinStatus(QtGui.QGroupBox):
     def update(self):
         ''' Update instrument information '''
         if self.parent.lcHandle:
-            self.addressText.setText(str(self.parent.lcHandle.primary_address))
+            self.addressText.setText(apilc.query_inst_name(self.parent.lcHandle))
             self.lcHarm.setText(apilc.read_harm(self.parent.lcHandle))
             self.lcPhase.setText('{:s} deg'.format(apilc.read_phase(self.parent.lcHandle)))
             self.lcFreq.setText('{:.3f} kHz'.format(apilc.read_freq(self.parent.lcHandle)))
@@ -206,8 +206,12 @@ class ScopeStatus(QtGui.QGroupBox):
         self.update()
 
     def update(self):
-        pass
+        ''' Update instrument information '''
 
+        if self.parent.pciHandle:
+            self.addressText.setText(apilc.query_inst_name(self.parent.pciHandle))
+        else:
+            self.addressText.setText('N.A.')
 
 class SynCtrl(QtGui.QGroupBox):
     '''
@@ -303,6 +307,7 @@ class SynCtrl(QtGui.QGroupBox):
 
         ## -- Define synthesizer power switch
         self.synPowerToggle = QtGui.QCheckBox()
+        self.synPowerToggle.setTristate(False)
         self.synPowerToggle.setCheckState(False)
         synPowerManualInput = QtGui.QPushButton('Set Power')
 
@@ -335,7 +340,7 @@ class SynCtrl(QtGui.QGroupBox):
 
         # Trigger synthesizer power toggle and communication
         synPowerManualInput.clicked.connect(self.synPowerComm)
-        self.synPowerToggle.stateChanged[int].connect(self.synPowerDialog)
+        self.synPowerToggle.stateChanged[int].connect(self.synPowerOnOff)
 
     def check(self):
         ''' Enable/disable this groupbox '''
@@ -366,7 +371,6 @@ class SynCtrl(QtGui.QGroupBox):
         # update synthesizer frequency
         self.synfreq.setText('{:.12f}'.format(apisyn.read_syn_freq(self.parent.synHandle)))
 
-
     def synPowerComm(self):
         '''
             Communicate with the synthesizer and set up RF power
@@ -376,10 +380,10 @@ class SynCtrl(QtGui.QGroupBox):
         # Get current syn power
         current_power = apisyn.read_syn_power(self.parent.synHandle)
         # Grab manual input power
-        set_power, status = QtGui.QInputDialog.getInt(self, 'Synthesizer RF Power',
+        set_power, okay = QtGui.QInputDialog.getInt(self, 'Synthesizer RF Power',
                                 'Manual Input (-20 to 0)', current_power, -20, 0, 1)
-        if not status:    # hopefully no error occurs
-            vCode = apisyn.set_syn_power(set_power)
+        if okay:    # hopefully no error occurs
+            vCode = apisyn.set_syn_power(self.parent.synHandle, set_power)
             if vCode == pyvisa.constants.StatusCode.success:
                 self.parent.synStatus.update()
                 self.synPowerToggle.setCheckState(True)
@@ -387,22 +391,20 @@ class SynCtrl(QtGui.QGroupBox):
                 msg = Shared.InstStatus(self, vCode)
                 msg.exec_()
         else:
-            msg = Shared.MsgWarning(self, 'Dangerous Input!', 'Input power exceed safety range!')
-            msg.exec_()
+            pass
 
-    def synPowerDialog(self, toggle_stat):
+    def synPowerOnOff(self, toggle_stat):
         '''
-            Pop-up warning window when user trigger the synthesizer toggle
+            Triggered by the synthesizer power toggle
         '''
 
         vCode = apisyn.set_power_toggle(self.parent.synHandle, toggle_stat)
         if vCode == pyvisa.constants.StatusCode.success:
-            self.synPowerToggle.setCheckState(toggle_stat)
-            self.parent.synStatus.update()
+            pass
         else:
             msg = Shared.InstStatus(self, vCode)
             msg.exec_()
-
+        self.parent.synStatus.update()
 
     def modModeComm(self):
         '''
@@ -452,7 +454,6 @@ class SynCtrl(QtGui.QGroupBox):
         else:
             pass
 
-
     def modParComm(self):
         '''
             Communicate with the synthesizer and update modulation parameters
@@ -493,7 +494,6 @@ class SynCtrl(QtGui.QGroupBox):
         else:
             msg = Shared.InstStatus(self, vCode)
             msg.exec_()
-
 
     def modLFToggleComm(self):
         '''
