@@ -20,6 +20,7 @@ class SelInstDialog(QtGui.QDialog):
 
         refreshButton = QtGui.QPushButton('Refresh')
         acceptButton = QtGui.QPushButton('Ok')
+        cancelButton = QtGui.QPushButton('Cancel')
 
         self.availableInst = QtGui.QLabel()
         instList, instStr = apigen.list_inst()
@@ -48,13 +49,15 @@ class SelInstDialog(QtGui.QDialog):
         # Set main layout
         mainLayout = QtGui.QVBoxLayout()
         mainLayout.addWidget(self.availableInst)
-        mainLayout.addWidget(selInst)
         mainLayout.addWidget(refreshButton)
+        mainLayout.addWidget(selInst)
+        mainLayout.addWidget(cancelButton)
         mainLayout.addWidget(acceptButton)
 
         self.setLayout(mainLayout)
 
         refreshButton.clicked.connect(self.refresh)
+        cancelButton.clicked.connect(self.reject)
         acceptButton.clicked.connect(self.accept)
 
     def refresh(self):
@@ -94,7 +97,7 @@ class SelInstDialog(QtGui.QDialog):
         self.parent.pciHandle = apigen.open_inst(self.selScope.currentText())
         self.parent.motorHandle = apigen.open_inst(self.selMotor.currentText())
 
-        self.close()
+        self.done(True)
 
 
 class ViewInstDialog(QtGui.QDialog):

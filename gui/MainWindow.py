@@ -139,12 +139,16 @@ class MainWindow(QtGui.QMainWindow):
 
     def on_sel_inst(self):
         d = Dialogs.SelInstDialog(self)
-        d.exec_()
+        result = d.exec_()
 
-        self.refresh_syn()
-        self.refresh_lockin()
-        self.refresh_scope()
-        self.refresh_motor()
+        print(result)
+        if result:
+            self.refresh_syn()
+            self.refresh_lockin()
+            self.refresh_scope()
+            self.refresh_motor()
+        else:
+            pass
 
     def on_view_inst_stat(self):
         d = Dialogs.ViewInstDialog(self)
