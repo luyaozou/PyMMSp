@@ -242,3 +242,17 @@ def query_single_x(lcHandle):
         return x
     except:
         return 0
+
+
+def read_ref_source(lcHandle):
+    ''' Read reference source
+        Returns
+            text: str
+    '''
+
+    a_dict = {0:'External', 1:'Internal'}
+    try:
+        text = lcHandle.query('FMOD?')
+        return a_dict[int(text.strip())]
+    else:
+        return 'N.A.'

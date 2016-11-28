@@ -27,7 +27,7 @@ def init_syn(synHandle):
     '''
 
     try:
-        num, vcode = synHandle.write(':AM1:SOUR INT1; :AM1:STAT 0; :FM1:SOUR INT1; :FM1:STAT 0; :OUTP:MOD 0; :LFO:SOUR INT1; :LFO:AMPL 0VP; :POW:MODE FIX; :FREQ:MODE CW')
+        num, vcode = synHandle.write(':AM1:SOUR INT1; :AM1:STAT 0; :FM1:SOUR INT1; :FM1:STAT 0; :OUTP:MOD 0; :LFO:SOUR INT1; :LFO:AMPL 0VP; :POW:MODE FIX; :FREQ:MODE CW; :DISP:REM 0')
         return vcode
     except:
         return 'IOError'
@@ -136,7 +136,7 @@ def read_syn_freq(synHandle):
 def set_syn_freq(synHandle, freq):
     ''' Set the synthesizer frequency to freq.
         Arguments
-            lcHandle: pyvisa.resources.Resource, synthesizer handle
+            synHandle: pyvisa.resources.Resource, synthesizer handle
             freq: float
         Returns visaCode
     '''
@@ -214,6 +214,90 @@ def read_am_par(synHandle):
         return 0, 0, False
 
 
+def read_am_source(synHandle, channel):
+    ''' Read synthesizer AM source for channel (1 or 2)
+        Arguments
+            synHandle: pyvisa.resources.Resource
+            channel: int
+        Returns
+            text: str
+    '''
+
+    try:
+        text = synHandle.query(':AM{:d}:SOUR?'.format(channel))
+        return text.strip()
+    except:
+        return 'N.A.'
+
+
+def read_am_state(synHandle, channel):
+    ''' Read synthesizer AM state for channel (1 or 2)
+        Arguments
+            synHandle: pyvisa.resources.Resource
+            channel: int
+        Returns
+            status: boolean
+    '''
+
+    try:
+        text = synHandle.query(':AM{:d}:STAT?'.format(channel))
+        return bool(int(text.strip()))
+    except:
+        return False
+
+
+def read_am_depth(synHandle, channel):
+    ''' Read synthesizer AM depth for channel (1 or 2)
+        Arguments
+            synHandle: pyvisa.resources.Resource
+            channel: int
+        Returns
+            depth_linear: float, depth in %
+            depth_exp: float, depth in dB
+    '''
+
+    try:
+        text = synHandle.query(':AM{:d}:DEPT?'.format(channel))
+        depth_linear = float(text) * 100
+        text = synHandle.query(':AM{:d}:DEPT:EXP?'.format(channel))
+        depth_exp = float(text)
+        return depth_linear, depth_exp
+    except:
+        return 0, 0
+
+
+def read_am_freq(synHandle, channel):
+    ''' Read synthesizer AM freq for channel (1 or 2)
+        Arguments
+            synHandle: pyvisa.resources.Resource
+            channel: int
+        Returns
+            freq: float
+    '''
+
+    try:
+        text = synHandle.query(':AM{:d}:INT{:d}:FREQ?'.format(channel, channel))
+        return float(text)
+    except:
+        return 0
+
+
+def read_am_waveform(synHandle, channel):
+    ''' Read synthesizer AM freq for channel (1 or 2)
+        Arguments
+            synHandle: pyvisa.resources.Resource
+            channel: int
+        Returns
+            text: str
+    '''
+
+    try:
+        text = synHandle.query(':AM{:d}:INT{:d}:FUNC:SHAP?'.format(channel, channel))
+        return text.strip()
+    except:
+        return 'N.A.'
+
+
 def set_am(synHandle, freq, depth, toggle_stat):
     ''' Set synthesizer AM to freq and depth.
         Arguments
@@ -253,6 +337,87 @@ def read_fm_par(synHandle):
         return 0, 0, False
 
 
+def read_fm_source(synHandle, channel):
+    ''' Read synthesizer FM source for channel (1 or 2)
+        Arguments
+            synHandle: pyvisa.resources.Resource
+            channel: int
+        Returns
+            text: str
+    '''
+
+    try:
+        text = synHandle.query(':FM{:d}:SOUR?'.format(channel))
+        return text.strip()
+    except:
+        return 'N.A.'
+
+
+def read_fm_state(synHandle, channel):
+    ''' Read synthesizer FM state for channel (1 or 2)
+        Arguments
+            synHandle: pyvisa.resources.Resource
+            channel: int
+        Returns
+            status: boolean
+    '''
+
+    try:
+        text = synHandle.query(':FM{:d}:STAT?'.format(channel))
+        return bool(int(text.strip()))
+    except:
+        return False
+
+
+def read_fm_dev(synHandle, channel):
+    ''' Read synthesizer FM depth for channel (1 or 2)
+        Arguments
+            synHandle: pyvisa.resources.Resource
+            channel: int
+        Returns
+            dev: float
+    '''
+
+    try:
+        text = synHandle.query(':FM{:d}:DEV?'.format(channel))
+        dev = float(text)
+        return dev
+    except:
+        return 0
+
+
+def read_fm_freq(synHandle, channel):
+    ''' Read synthesizer FM freq for channel (1 or 2)
+        Arguments
+            synHandle: pyvisa.resources.Resource
+            channel: int
+        Returns
+            freq: float
+    '''
+
+    try:
+        text = synHandle.query(':AM{:d}:INT{:d}:FREQ?'.format(channel, channel))
+        return float(text)
+    except:
+        return 0
+
+
+def read_fm_waveform(synHandle, channel):
+    ''' Read synthesizer FM freq for channel (1 or 2)
+        Arguments
+            synHandle: pyvisa.resources.Resource
+            channel: int
+        Returns
+            text: str
+    '''
+
+    try:
+        text = synHandle.query(':FM{:d}:INT{:d}:FUNC:SHAP?'.format(channel, channel))
+        return text.strip()
+    except:
+        return 'N.A.'
+
+
 def set_fm(synHandle, freq, depth, toggle_stat):
     ''' Set synthesizer FM to freq and depth.
         Arguments
@@ -272,6 +437,87 @@ def set_fm(synHandle, freq, depth, toggle_stat):
     return vcode
 
 
+def read_pm_source(synHandle, channel):
+    ''' Read synthesizer PM source for channel (1 or 2)
+        Arguments
+            synHandle: pyvisa.resources.Resource
+            channel: int
+        Returns
+            text: str
+    '''
+
+    try:
+        text = synHandle.query(':PM{:d}:SOUR?'.format(channel))
+        return text.strip()
+    except:
+        return 'N.A.'
+
+
+def read_pm_state(synHandle, channel):
+    ''' Read synthesizer PM state for channel (1 or 2)
+        Arguments
+            synHandle: pyvisa.resources.Resource
+            channel: int
+        Returns
+            status: boolean
+    '''
+
+    try:
+        text = synHandle.query(':PM{:d}:STAT?'.format(channel))
+        return bool(int(text.strip()))
+    except:
+        return False
+
+
+def read_pm_dev(synHandle, channel):
+    ''' Read synthesizer PM depth for channel (1 or 2)
+        Arguments
+            synHandle: pyvisa.resources.Resource
+            channel: int
+        Returns
+            dev: float
+    '''
+
+    try:
+        text = synHandle.query(':PM{:d}:DEV?'.format(channel))
+        dev = float(text)
+        return dev
+    except:
+        return 0
+
+
+def read_pm_freq(synHandle, channel):
+    ''' Read synthesizer PM freq for channel (1 or 2)
+        Arguments
+            synHandle: pyvisa.resources.Resource
+            channel: int
+        Returns
+            freq: float
+    '''
+
+    try:
+        text = synHandle.query(':PM{:d}:INT{:d}:FREQ?'.format(channel, channel))
+        return float(text)
+    except:
+        return 0
+
+
+def read_pm_waveform(synHandle, channel):
+    ''' Read synthesizer PM freq for channel (1 or 2)
+        Arguments
+            synHandle: pyvisa.resources.Resource
+            channel: int
+        Returns
+            text: str
+    '''
+
+    try:
+        text = synHandle.query(':PM{:d}:INT{:d}:FUNC:SHAP?'.format(channel, channel))
+        return text.strip()
+    except:
+        return 'N.A.'
+
+
 def read_lf(synHandle):
     ''' Read current LF settings.
         Returns
@@ -287,6 +533,19 @@ def read_lf(synHandle):
         return vol, status
     except:
         return 0, False
+
+
+def read_lf_source(synHandle):
+    ''' Read synthesizer LF source
+        Returns
+            status: boolean
+    '''
+
+    try:
+        text = synHandle.query(':LFO:SOUR?')
+        return text.strip()
+    except:
+        return 'N.A.'
 
 
 def set_lf_toggle(synHandle, toggle_stat):
@@ -328,3 +587,16 @@ def query_err_msg(synHandle):
         return msg.strip()
     except:
         return 'N.A.'
+
+
+def read_remote_disp(synHandle):
+    ''' Read remote display setting.
+        Returns status (bool)
+    '''
+
+    try:
+        text = synHandle.query(':DISP:REM?')
+        status = bool(int(text.strip()))
+        return status
+    except:
+        return False

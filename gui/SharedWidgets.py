@@ -21,9 +21,9 @@ LIATCLIST = ['10 us', '30 us', '100 us', '300 us', '1 ms', '3 ms', '10 ms',
              ]
 
 # QPushButton label dictionary
-BUTTONLABEL = {'confirm':['Lets do it', 'Go forth and conquer', 'Gotcha',
-                          'Ready to go'],
+BUTTONLABEL = {'confirm':['Lets do it', 'Go forth and conquer', 'Ready to go'],
                'complete':['Good job', 'Sweet', 'Done', 'Mission complete'],
+               'accept': ['I see', 'Gotcha', 'Okay'],
                'reject':['Never mind', 'I changed my mind']
                 }
 

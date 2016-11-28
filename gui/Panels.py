@@ -9,6 +9,7 @@ import pyvisa
 import numpy as np
 # import shared gui widgets
 from gui import SharedWidgets as Shared
+from gui import Dialogs
 # import instrument api
 from api import synthesizer as apisyn
 from api import lockin as apilc
@@ -31,7 +32,7 @@ class SynStatus(QtGui.QGroupBox):
 
         ## -- Define synthesizer status elements --
         self.refreshButton = QtGui.QPushButton('Refresh')
-        self.fullInfoButton = QtGui.QPushButton('Full Info')
+        self.moreInfoButton = QtGui.QPushButton('More Info')
         self.addressText = QtGui.QLabel()
         self.synRF = QtGui.QLabel()
         self.synPower = QtGui.QLabel()
@@ -70,8 +71,8 @@ class SynStatus(QtGui.QGroupBox):
         mainLayout = QtGui.QGridLayout()
         # first column
         mainLayout.addWidget(self.refreshButton, 0, 0, 1, 2)
-        mainLayout.addWidget(self.fullInfoButton, 0, 2, 1, 2)
-        mainLayout.addWidget(QtGui.QLabel('Inst. Address'), 1, 0)
+        mainLayout.addWidget(self.moreInfoButton, 0, 2, 1, 2)
+        mainLayout.addWidget(QtGui.QLabel('Inst. Name'), 1, 0)
         mainLayout.addWidget(self.addressText, 1, 1, 1, 3)
         mainLayout.addWidget(QtGui.QLabel('Frequency'), 2, 0)
         mainLayout.addWidget(self.synFreq, 2, 1, 1, 3)
@@ -91,8 +92,11 @@ class SynStatus(QtGui.QGroupBox):
         mainLayout.addWidget(QtGui.QLabel('Error Msg'), 7, 0)
         mainLayout.addWidget(self.synErrMsg, 7, 1, 1, 3)
 
+        # this dialog is a child class of the main window
+        self.infoDialog = Dialogs.SynInfoDialog(self.parent)
         ## -- Trigger status updates
         self.refreshButton.clicked.connect(self.update)
+        self.moreInfoButton.clicked.connect(self.show_info_dialog)
         # initial status
         self.update()
 
@@ -132,6 +136,10 @@ class SynStatus(QtGui.QGroupBox):
             self.synLFV.setText('N.A.')
             self.synErrMsg.setText('N.A.')
 
+    def show_info_dialog(self):
+
+        self.infoDialog.display()
+
 
 class LockinStatus(QtGui.QGroupBox):
     '''
@@ -148,7 +156,7 @@ class LockinStatus(QtGui.QGroupBox):
 
         ## -- Define synthesizer status elements --
         self.refreshButton = QtGui.QPushButton('Refresh')
-        self.fullInfoButton = QtGui.QPushButton('Full Info')
+        self.moreInfoButton = QtGui.QPushButton('More Info')
         self.addressText = QtGui.QLabel()
         self.lcHarm = QtGui.QLabel()
         self.lcPhase = QtGui.QLabel()
@@ -162,8 +170,8 @@ class LockinStatus(QtGui.QGroupBox):
         mainLayout = QtGui.QGridLayout()
         # first column
         mainLayout.addWidget(self.refreshButton, 0, 0, 1, 2)
-        mainLayout.addWidget(self.fullInfoButton, 0, 2, 1, 2)
-        mainLayout.addWidget(QtGui.QLabel('Inst. Address'), 1, 0)
+        mainLayout.addWidget(self.moreInfoButton, 0, 2, 1, 2)
+        mainLayout.addWidget(QtGui.QLabel('Inst. Name'), 1, 0)
         mainLayout.addWidget(self.addressText, 1, 1, 1, 3)
         mainLayout.addWidget(QtGui.QLabel('Harmonics'), 2, 0)
         mainLayout.addWidget(self.lcHarm, 2, 1)
@@ -182,8 +190,11 @@ class LockinStatus(QtGui.QGroupBox):
         mainLayout.addWidget(self.lcReserve, 5, 3)
         self.setLayout(mainLayout)
 
+        # this dialog is a child class of the main window
+        self.infoDialog = Dialogs.LockinInfoDialog(self.parent)
         ## -- Trigger status updates
         self.refreshButton.clicked.connect(self.update)
+        self.moreInfoButton.clicked.connect(self.show_info_dialog)
         # initial status
         self.update()
 
@@ -208,6 +219,10 @@ class LockinStatus(QtGui.QGroupBox):
             self.lcCouple.setText('N.A.')
             self.lcReserve.setText('N.A.')
 
+    def show_info_dialog(self):
+
+        self.infoDialog.display()
+
 
 class ScopeStatus(QtGui.QGroupBox):
     '''
@@ -224,14 +239,14 @@ class ScopeStatus(QtGui.QGroupBox):
 
         ## -- Define synthesizer status elements --
         self.refreshButton = QtGui.QPushButton('Refresh')
-        self.fullInfoButton = QtGui.QPushButton('Full Info')
+        self.moreInfoButton = QtGui.QPushButton('More Info')
         self.addressText = QtGui.QLabel()
 
         ## -- Set layout and add GUI elements
         mainLayout = QtGui.QGridLayout()
         mainLayout.addWidget(self.refreshButton, 0, 0, 1, 2)
-        mainLayout.addWidget(self.fullInfoButton, 0, 2, 1, 2)
-        mainLayout.addWidget(QtGui.QLabel('Inst. Address'), 1, 0)
+        mainLayout.addWidget(self.moreInfoButton, 0, 2, 1, 2)
+        mainLayout.addWidget(QtGui.QLabel('Inst. Name'), 1, 0)
         mainLayout.addWidget(self.addressText, 1, 1)
         self.setLayout(mainLayout)
 
