@@ -119,15 +119,13 @@ class MainWindow(QtGui.QMainWindow):
     def refresh_syn(self):
 
         self.synCtrl.check()
-        self.synStatus.update()
 
     def refresh_lockin(self):
-        self.lcStatus.update()
+
         self.lcCtrl.check()
 
     def refresh_scope(self):
 
-        self.scopeStatus.update()
         self.scopeCtrl.check()
 
     def refresh_motor(self):

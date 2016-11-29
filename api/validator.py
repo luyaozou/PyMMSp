@@ -1,6 +1,7 @@
 #! encoding = utf-8
 ''' A collection of user input validators.
     Always returns input status first, and converted  values, if possible.
+    Status Code: 0 - fatal; 1 - warning; 2 - safe
 '''
 
 from math import pi
@@ -42,7 +43,7 @@ def val_int(text):
 
     try:
         number = int(text)
-        return 0, number
+        return 2, number
     except ValueError:
         return 1, 0
 
@@ -52,7 +53,7 @@ def val_float(text):
 
     try:
         number = float(text)
-        return 0, number
+        return 2, number
     except ValueError:
         return 1, 0.
 
@@ -61,18 +62,18 @@ def val_lc_phase(text):
     ''' Validate locking phase input.
         Arguments: text: str
         Returns
-            status: int (0: safe; 1: error; 2: warning)
+            status: int (2: safe; 1: warning; 0: fatal)
             phase: float
     '''
 
     try:
         phase = float(text)
         if phase <= 180 and phase > -180:
-            return 0, phase
+            return 2, phase
         else:
-            return 2, wrap_phase(phase)
+            return 1, wrap_phase(phase)
     except ValueError:
-        return 1, 0
+        return 0, 0
 
 
 def val_lc_harm(harm_text, freq):
@@ -81,17 +82,17 @@ def val_lc_harm(harm_text, freq):
             harm_text: str, harmonics input text
             freq: float, locked frequency input
         Returns
-            status: int (0: safe; 1: error)
+            status: int (2: safe; 1: warning; 0: fatal)
             harm: int
     '''
     try:
         harm = int(harm_text)
         if harm > 0 and harm < (102000/freq):
-            return 0, harm
+            return 2, harm
         else:
-            return 1, 1
+            return 0, 1
     except (ValueError, ZeroDivisionError):
-        return 1, 1
+        return 0, 1
 
 
 def calc_syn_freq(probf, band_index):
@@ -113,7 +114,7 @@ def val_syn_freq(probf_text, band_index):
             probf_text: str, prob frequency input text
             band_index: int, VDI band index
         Returns
-            status: int (0: safe; 1: error)
+            status: int (2: safe; 1: warning; 0: fatal)
             syn_freq: float, synthesizer frequency
     '''
 
@@ -121,11 +122,11 @@ def val_syn_freq(probf_text, band_index):
         probf = float(probf_text)
         syn_freq = calc_syn_freq(probf, band_index)
         if syn_freq > 0 and syn_freq < 50000:
-            return 0, syn_freq
+            return 2, syn_freq
         else:
-            return 1, 50000
+            return 0, 50000
     except ValueError:
-        return 1, 50000
+        return 0, 50000
 
 
 def val_prob_freq(probf_text, band_index):
@@ -134,7 +135,7 @@ def val_prob_freq(probf_text, band_index):
             probf_text: str, prob frequency input text
             band_index: int, VDI band index
         Returns
-            status: int (0: safe; 1: error)
+            status: int (2: safe; 1: warning; 0: fatal)
             probf: float, probing frequency
     '''
 
@@ -142,11 +143,11 @@ def val_prob_freq(probf_text, band_index):
         probf = float(probf_text)
         syn_freq = calc_syn_freq(probf, band_index)
         if syn_freq > 0 and syn_freq < 50000:
-            return 0, probf
+            return 2, probf
         else:
-            return 1, 50000
+            return 0, 50000
     except ValueError:
-        return 1, 50000
+        return 0, 50000
 
 
 def val_syn_power(power):
@@ -158,9 +159,9 @@ def val_syn_power(power):
     '''
 
     if set_power <= 0 or set_power >= -20:
-        return 0
+        return 2
     else:
-        return 1
+        return 0
 
 
 def val_syn_mod_freq(freq_text, freq_unit_text):
@@ -169,16 +170,16 @@ def val_syn_mod_freq(freq_text, freq_unit_text):
             freq_text: str, modulation frequency user input
             freq_unit_text: str, modulation frequency unit
         Returns
-            status: int (0: safe; 1: error; 2: warning)
+            status: int (2: safe; 1: warning; 0: fatal)
             freq: float (Hz)
     '''
 
     modfreq = siEval(freq_text + freq_unit_text)
 
     if modfreq < 1e5 and modfreq >= 0:    # valid input
-        return 0, modfreq
+        return 2, modfreq
     else:               # out of range
-        return 1, 0
+        return 0, 0
 
 
 def val_syn_mod_depth(depth_text, depth_unit_text):
@@ -187,7 +188,7 @@ def val_syn_mod_depth(depth_text, depth_unit_text):
             depth_text: str, modulation depth user input
             depth_unit_text: int, modulation depth unit
         Returns
-            status: int (0: safe; 1: error; 2: warning)
+            status: int (2: safe; 1: warning; 0: fatal)
             freq: float (dimensionless for AM, Hz for FM)
     '''
 
@@ -195,19 +196,19 @@ def val_syn_mod_depth(depth_text, depth_unit_text):
         try:
             depth = float(depth_text) * 1e-2
             if depth <= 0.75 and depth >= 0:       # valid input
-                return 0, depth
+                return 2, depth
             else:
-                return 1, 0
+                return 0, 0
         except ValueError:
-            return 1, 0
+            return 0, 0
     else:
         depth = siEval(depth_text + depth_unit_text)
         if depth >= 0 and depth <= 5e6:       # valid input
-            return 0, depth
-        elif depth > 5e6:          # large depth, warning
             return 2, depth
+        elif depth > 5e6:          # large depth, warning
+            return 1, depth
         else:                       # invalid
-            return 1, 0
+            return 0, 0
 
 
 def val_syn_lf_vol(vol_text):
@@ -215,18 +216,18 @@ def val_syn_lf_vol(vol_text):
         Arguments
             vol_text: str, LF voltage user input
         Returns
-            status: int (0: safe; 1: error)
+            status: int (2: safe; 1: warning; 0: fatal)
             vol: float (V)
     '''
 
     try:
         vol = float(vol_text)
         if vol >=0 and vol < 3.5:
-            return 0, vol
+            return 2, vol
         else:
-            return 1, 0
+            return 0, 0
     except ValueError:
-        return 1, 0
+        return 0, 0
 
 
 def val_monitor_sample_len(len_text):
@@ -234,20 +235,20 @@ def val_monitor_sample_len(len_text):
         Arguments
             len_text: str, samplen length user input
         Returns
-            status: int (0: safe; 1: error; 2: warning)
+            status: int (2: safe; 1: warning; 0: fatal)
             slen: int
     '''
 
     try:
         slen = int(len_text)
         if slen>10 and slen<=1000:
-            return 0, slen
-        elif slen>1000 or (slen>0 and slen<=10):
             return 2, slen
+        elif slen>1000 or (slen>0 and slen<=10):
+            return 1, slen
         else:
-            return 1, 1
+            return 0, 1
     except ValueError:
-        return 1, 1
+        return 0, 1
 
 
 def val_lc_monitor_srate(srate_index, tc_index):
@@ -256,17 +257,19 @@ def val_lc_monitor_srate(srate_index, tc_index):
             srate_index: lc sample rate index, int
             tc_index: lc time constant index, int
         Returns
-            status: int (0: safe; 1: error)
+            status: int (2: safe; 1: warning; 0: fatal)
             waittime: screen update waittime in milliseconds, float
     '''
 
     waittime_list = [100, 200, 500, 1000, 2000, 5000, 10000]    # milliseconds
     waittime = waittime_list[srate_index]
     tc = LIATCLIST[tc_index]
-    if tc*2*pi < waittime:
-        return 0, waittime
+    if tc*4*pi < waittime:
+        return 2, waittime
+    elif tc*2*pi < waittime:
+        return 1, waittime
     else:
-        return 1, tc*2*pi
+        return 0, tc*2*pi
 
 
 def val_lc_waittime(text, tc_index):
@@ -276,7 +279,7 @@ def val_lc_waittime(text, tc_index):
             text: integration time user input, str
             tc_index: lc time constant index, int
         Returns
-            status: int (0: safe; 1: error)
+            status: int (2: safe; 1: warning; 0: fatal)
             waittime: wait time, float in ms
     '''
 
@@ -285,10 +288,10 @@ def val_lc_waittime(text, tc_index):
     try:
         waittime = float(text)
         if (waittime > time_const * 3 * pi):
-            return 0, waittime
-        elif (waittime > time_const * 2 * pi):
             return 2, waittime
+        elif (waittime > time_const * 2 * pi):
+            return 1, waittime
         else:
-            return 1, 0
+            return 0, 0
     except ValueError:
-        return 1, 0
+        return 0, 0

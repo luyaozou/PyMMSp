@@ -26,6 +26,15 @@ def query_inst_name(lcHandle):
         return 'N.A.'
 
 
+def query_err_msg(lcHandle):
+
+
+    try:
+        text = lcHandle.query('ERRS?')
+    except:
+        return 'N.A.'
+
+
 def read_freq(lcHandle):
     ''' Read current lockin frequency.
         Returns frequency in Hz (float)

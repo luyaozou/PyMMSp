@@ -253,7 +253,7 @@ class SynInfoDialog(QtGui.QDialog):
         rfGroupLayout.addWidget(QtGui.QLabel('Synth Frequency'), 0, 2)
         rfGroupLayout.addWidget(self.synFreqLabel, 0, 3)
         rfGroupLayout.addWidget(QtGui.QLabel('Modulation Output'), 0, 4)
-        rfGroupLayout.addWidget(self.modOutputLabel)
+        rfGroupLayout.addWidget(self.modOutputLabel, 0, 5)
         self.rfGroup.setLayout(rfGroupLayout)
 
         self.modGroup.setTitle('Modulation Settings')

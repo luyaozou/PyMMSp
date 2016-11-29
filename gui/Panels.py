@@ -46,8 +46,8 @@ class SynStatus(QtGui.QGroupBox):
         self.synFMFreq = QtGui.QLabel()
         self.synLF = QtGui.QLabel()
         self.synLFV = QtGui.QLabel()
-        self.synErrMsg = QtGui.QLabel()
-        synErrMsgBtn = QtGui.QPushButton('Pop Err Msg')
+        self.errMsgLabel = QtGui.QLabel()
+        errMsgBtn = QtGui.QPushButton('Pop Err Msg')
 
         # put modulation settings in a groupbox
         modGroup = QtGui.QGroupBox()
@@ -90,15 +90,15 @@ class SynStatus(QtGui.QGroupBox):
         self.setLayout(mainLayout)
         # second column
         mainLayout.addWidget(modGroup, 3, 2, 5, 2)
-        mainLayout.addWidget(synErrMsgBtn, 8, 0)
-        mainLayout.addWidget(self.synErrMsg, 8, 1, 1, 3)
+        mainLayout.addWidget(errMsgBtn, 8, 0)
+        mainLayout.addWidget(self.errMsgLabel, 8, 1, 1, 3)
 
         # this dialog is a child class of the main window
         self.infoDialog = Dialogs.SynInfoDialog(self.parent)
         ## -- Trigger status updates
         refreshButton.clicked.connect(self.update)
         moreInfoButton.clicked.connect(self.show_info_dialog)
-        synErrMsgBtn.clicked.connect(self.pop_err_msg)
+        errMsgBtn.clicked.connect(self.pop_err_msg)
         # initial status
         self.update()
 
@@ -115,13 +115,13 @@ class SynStatus(QtGui.QGroupBox):
             self.synAMStat.setText('On' if amstat else 'Off')
             self.synFMStat.setText('On' if fmstat else 'Off')
             self.synAMDepth.setText('{:.1f} %'.format(amdepth))
-            self.synAMFreq.setText(siFormat(amfreq, suffix='Hz', precision=4))
-            self.synFMDev.setText(siFormat(fmdev, suffix='Hz', precision=4))
-            self.synFMFreq.setText(siFormat(fmfreq, suffix='Hz', precision=4))
+            self.synAMFreq.setText(pg.siFormat(amfreq, suffix='Hz', precision=4))
+            self.synFMDev.setText(pg.siFormat(fmdev, suffix='Hz', precision=4))
+            self.synFMFreq.setText(pg.siFormat(fmfreq, suffix='Hz', precision=4))
             lf_vol, lf_status = apisyn.read_lf(self.parent.synHandle)
             self.synLF.setText('On' if lf_status else 'Off')
-            self.synLFV.setText(siFormat(lf_vol, suffix='V'))
-            self.synErrMsg.setText(apisyn.query_err_msg(self.parent.synHandle))
+            self.synLFV.setText(pg.siFormat(lf_vol, suffix='V'))
+            self.errMsgLabel.setText(apisyn.query_err_msg(self.parent.synHandle))
         else:
             self.addressText.setText('N.A.')
             self.synRF.setText('N.A.')
@@ -136,7 +136,7 @@ class SynStatus(QtGui.QGroupBox):
             self.synFMFreq.setText('N.A.')
             self.synLF.setText('N.A.')
             self.synLFV.setText('N.A.')
-            self.synErrMsg.setText('N.A.')
+            self.errMsgLabel.setText('N.A.')
 
     def show_info_dialog(self):
 
@@ -145,7 +145,7 @@ class SynStatus(QtGui.QGroupBox):
     def pop_err_msg(self):
         ''' Pop error message '''
         if self.parent.synHandle:
-            self.synErrMsg.setText(apisyn.query_err_msg(self.parent.synHandle))
+            self.errMsgLabel.setText(apisyn.query_err_msg(self.parent.synHandle))
         else:
             pass
 
@@ -166,6 +166,7 @@ class LockinStatus(QtGui.QGroupBox):
         ## -- Define synthesizer status elements --
         refreshButton = QtGui.QPushButton('Refresh')
         moreInfoButton = QtGui.QPushButton('More Info')
+        errMsgBtn = QtGui.QPushButton('Pop Err Msg')
         self.addressText = QtGui.QLabel()
         self.lcHarm = QtGui.QLabel()
         self.lcPhase = QtGui.QLabel()
@@ -174,6 +175,7 @@ class LockinStatus(QtGui.QGroupBox):
         self.lcTC = QtGui.QLabel()
         self.lcCouple = QtGui.QLabel()
         self.lcReserve = QtGui.QLabel()
+        self.errMsgLabel = QtGui.QLabel('N.A.')
 
         ## -- Set layout and add GUI elements
         mainLayout = QtGui.QGridLayout()
@@ -195,13 +197,16 @@ class LockinStatus(QtGui.QGroupBox):
         mainLayout.addWidget(self.lcSens, 3, 3)
         mainLayout.addWidget(QtGui.QLabel('Time Constant'), 4, 2)
         mainLayout.addWidget(self.lcTC, 4, 3)
-        mainLayout.addWidget(QtGui.QLabel('Reserve'), 5, 2)
-        mainLayout.addWidget(self.lcReserve, 5, 3)
+        mainLayout.addWidget(QtGui.QLabel('Reserve'), 5, 0)
+        mainLayout.addWidget(self.lcReserve, 5, 1)
+        mainLayout.addWidget(errMsgBtn, 6, 0)
+        mainLayout.addWidget(self.errMsgLabel, 6, 1, 1, 3)
         self.setLayout(mainLayout)
 
         # this dialog is a child class of the main window
         self.infoDialog = Dialogs.LockinInfoDialog(self.parent)
         ## -- Trigger status updates
+        errMsgBtn.clicked.connect(self.pop_err_msg)
         refreshButton.clicked.connect(self.update)
         moreInfoButton.clicked.connect(self.show_info_dialog)
         # initial status
@@ -232,6 +237,12 @@ class LockinStatus(QtGui.QGroupBox):
 
         self.infoDialog.display()
 
+    def pop_err_msg(self):
+        ''' Pop error message '''
+        if self.parent.lcHandle:
+            self.errMsgBtn.setText(apilc.query_err_msg(self.parent.lcHandle))
+        else:
+            pass
 
 class ScopeStatus(QtGui.QGroupBox):
     '''
@@ -409,8 +420,9 @@ class SynCtrl(QtGui.QGroupBox):
 
         if self.parent.synHandle:
             apisyn.init_syn(self.parent.synHandle)
+            self.setChecked(True)
         else:
-            pass
+            self.setChecked(False)
 
         self.parent.synStatus.update()
 
@@ -425,7 +437,7 @@ class SynCtrl(QtGui.QGroupBox):
         # set sheet border color by syn_stat
         self.probfreqFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
 
-        if not status:  # if status is safe
+        if status:  # if status is not fatal
             # call syn api and return communication status
             vCode = apisyn.set_syn_freq(self.parent.synHandle, synfreq)
             if vCode == pyvisa.constants.StatusCode.success:
@@ -564,7 +576,7 @@ class SynCtrl(QtGui.QGroupBox):
                                          self.modDepthUnitSel.currentText())
         self.modDepthFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(depth_status)))
 
-        if (not freq_status) and (not depth_status):
+        if freq_status and depth_status:
             if mod_index == 1:      # AM
                 vCode = apisyn.set_am(self.parent.synHandle, mod_freq,
                                       mod_depth, toggle_state)
@@ -642,7 +654,7 @@ class LockinCtrl(QtGui.QGroupBox):
         self.setTitle('Lockin Control')
         self.setAlignment(QtCore.Qt.AlignLeft)        # align left
         self.setCheckable(True)
-        self.check()
+        self.setChecked(False)
 
         ## -- Define layout elements --
         harmSelect = QtGui.QComboBox()
@@ -684,11 +696,14 @@ class LockinCtrl(QtGui.QGroupBox):
 
     def check(self):
         ''' Enable/disable this groupbox '''
+
         if self.parent.lcHandle:
-            self.setChecked(True)
             apilc.init_lia(self.parent.lcHandle)
+            self.setChecked(True)
         else:
             self.setChecked(False)
+
+        self.parent.lcStatus.update()
 
     def phaseComm(self, phase_text):
         '''
@@ -697,7 +712,7 @@ class LockinCtrl(QtGui.QGroupBox):
 
         status, phase = apival.val_lc_phase(phase_text)
         self.phaseFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
-        if status!= 1:
+        if status:
             vCode = apilc.set_phase(self.parent.lcHandle, phase)
             if vCode == pyvisa.constants.StatusCode.success:
                 self.parent.lcStatus.update()
@@ -715,7 +730,7 @@ class LockinCtrl(QtGui.QGroupBox):
         lc_freq = apilc.read_freq(self.parent.lcHandle)
         status, harm = apival.val_lc_harm(harm_text, lc_freq)
 
-        if not status:
+        if status:
             vCode = apilc.set_harm(self.parent.lcHandle, harm)
             if vCode == pyvisa.constants.StatusCode.success:
                 self.parent.lcStatus.update()
@@ -788,7 +803,7 @@ class ScopeCtrl(QtGui.QGroupBox):
         self.setTitle('Oscilloscope Control')
         self.setAlignment(QtCore.Qt.AlignLeft)
         self.setCheckable(True)
-        self.check()
+        self.setChecked(False)
 
         ## -- Define layout elements --
         self.srateFill = QtGui.QLineEdit()
@@ -895,7 +910,7 @@ class LockinMonitor(QtGui.QWidget):
 
         self.slenFill = QtGui.QLineEdit()
         self.slenFill.setText('100')
-        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(0)))
+        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(2)))
         self.data = np.empty(100)
         self.updateRate = QtGui.QComboBox()
         self.updateRate.addItems(['10 Hz', '5 Hz', '2 Hz', '1 Hz',
@@ -962,11 +977,12 @@ class LockinMonitor(QtGui.QWidget):
     def set_len(self, text):
         status, slen = apival.val_monitor_sample_len(text)
         self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
-        if status == 1:
-            self.stop()
-        elif slen > 0:
-            self.data = np.empty(slen)
-            self.restart()
+        if status:
+            if slen > 0:
+                self.data = np.empty(slen)
+                self.restart()
+            else:
+                self.stop()
         else:
             self.stop()
 
@@ -976,12 +992,12 @@ class LockinMonitor(QtGui.QWidget):
         status, waittime = apival.val_lc_monitor_srate(srate_index, apilc.read_tc(self.parent.lcHandle))
         self.timer.setInterval(waittime)
         if status:
-            msg = Shared.MsgWarning('Update speed warning!',
-                       '''The picked update speed is faster than the lockin time constant.
-                          Automatically reset the update speed to 2pi * time_constant ''')
-            msg.exec_()
-        else:
             pass
+        else:
+            msg = Shared.MsgWarning('Update speed warning!',
+            '''The picked update speed is faster than the lockin time constant.
+            Automatically reset the update speed to 2pi * time_constant ''')
+            msg.exec_()
 
     def daq(self):
         ''' If sampled points are less than the set length, fill up the array
