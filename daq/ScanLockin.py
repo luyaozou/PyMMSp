@@ -141,7 +141,7 @@ class JPLScanConfig(QtGui.QDialog):
                 tc_index = entry.tcSel.currentIndex()
                 status5, waittime = apival.val_lc_waittime(entry.waitTimeFill.text(), tc_index)
                 # put them into a setting tuple
-                if not (status1 or status2 or status3 or status4 or status5):
+                if status1 and status2 and status3 and status4 and status5:
                     no_error *= True
                     setting_entry = (start_freq, stop_freq, step, average,
                                      sens_index, tc_index, waittime)

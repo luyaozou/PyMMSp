@@ -425,7 +425,7 @@ class SynCtrl(QtGui.QGroupBox):
         # set sheet border color by syn_stat
         self.probfreqFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
 
-        if not status:  # if status is safe
+        if status:  # if status is not fatal
             # call syn api and return communication status
             vCode = apisyn.set_syn_freq(self.parent.synHandle, synfreq)
             if vCode == pyvisa.constants.StatusCode.success:
@@ -564,7 +564,7 @@ class SynCtrl(QtGui.QGroupBox):
                                          self.modDepthUnitSel.currentText())
         self.modDepthFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(depth_status)))
 
-        if (not freq_status) and (not depth_status):
+        if freq_status and depth_status:
             if mod_index == 1:      # AM
                 vCode = apisyn.set_am(self.parent.synHandle, mod_freq,
                                       mod_depth, toggle_state)
@@ -697,7 +697,7 @@ class LockinCtrl(QtGui.QGroupBox):
 
         status, phase = apival.val_lc_phase(phase_text)
         self.phaseFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
-        if status!= 1:
+        if status:
             vCode = apilc.set_phase(self.parent.lcHandle, phase)
             if vCode == pyvisa.constants.StatusCode.success:
                 self.parent.lcStatus.update()
@@ -715,7 +715,7 @@ class LockinCtrl(QtGui.QGroupBox):
         lc_freq = apilc.read_freq(self.parent.lcHandle)
         status, harm = apival.val_lc_harm(harm_text, lc_freq)
 
-        if not status:
+        if status:
             vCode = apilc.set_harm(self.parent.lcHandle, harm)
             if vCode == pyvisa.constants.StatusCode.success:
                 self.parent.lcStatus.update()
@@ -962,11 +962,12 @@ class LockinMonitor(QtGui.QWidget):
     def set_len(self, text):
         status, slen = apival.val_monitor_sample_len(text)
         self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
-        if status == 1:
-            self.stop()
-        elif slen > 0:
-            self.data = np.empty(slen)
-            self.restart()
+        if status:
+            if slen > 0:
+                self.data = np.empty(slen)
+                self.restart()
+            else:
+                self.stop()
         else:
             self.stop()
 
@@ -976,12 +977,12 @@ class LockinMonitor(QtGui.QWidget):
         status, waittime = apival.val_lc_monitor_srate(srate_index, apilc.read_tc(self.parent.lcHandle))
         self.timer.setInterval(waittime)
         if status:
-            msg = Shared.MsgWarning('Update speed warning!',
-                       '''The picked update speed is faster than the lockin time constant.
-                          Automatically reset the update speed to 2pi * time_constant ''')
-            msg.exec_()
-        else:
             pass
+        else:
+            msg = Shared.MsgWarning('Update speed warning!',
+            '''The picked update speed is faster than the lockin time constant.
+            Automatically reset the update speed to 2pi * time_constant ''')
+            msg.exec_()
 
     def daq(self):
         ''' If sampled points are less than the set length, fill up the array
