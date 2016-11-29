@@ -31,8 +31,8 @@ class SynStatus(QtGui.QGroupBox):
         self.setCheckable(False)
 
         ## -- Define synthesizer status elements --
-        self.refreshButton = QtGui.QPushButton('Refresh')
-        self.moreInfoButton = QtGui.QPushButton('More Info')
+        refreshButton = QtGui.QPushButton('Refresh')
+        moreInfoButton = QtGui.QPushButton('More Info')
         self.addressText = QtGui.QLabel()
         self.synRF = QtGui.QLabel()
         self.synPower = QtGui.QLabel()
@@ -47,6 +47,7 @@ class SynStatus(QtGui.QGroupBox):
         self.synLF = QtGui.QLabel()
         self.synLFV = QtGui.QLabel()
         self.synErrMsg = QtGui.QLabel()
+        synErrMsgBtn = QtGui.QPushButton('Pop Err Msg')
 
         # put modulation settings in a groupbox
         modGroup = QtGui.QGroupBox()
@@ -70,8 +71,8 @@ class SynStatus(QtGui.QGroupBox):
         ## -- Set layout and add GUI elements
         mainLayout = QtGui.QGridLayout()
         # first column
-        mainLayout.addWidget(self.refreshButton, 0, 0, 1, 2)
-        mainLayout.addWidget(self.moreInfoButton, 0, 2, 1, 2)
+        mainLayout.addWidget(refreshButton, 0, 0, 1, 2)
+        mainLayout.addWidget(moreInfoButton, 0, 2, 1, 2)
         mainLayout.addWidget(QtGui.QLabel('Inst. Name'), 1, 0)
         mainLayout.addWidget(self.addressText, 1, 1, 1, 3)
         mainLayout.addWidget(QtGui.QLabel('Frequency'), 2, 0)
@@ -80,23 +81,24 @@ class SynStatus(QtGui.QGroupBox):
         mainLayout.addWidget(self.synRF, 3, 1)
         mainLayout.addWidget(QtGui.QLabel('Power'), 4, 0)
         mainLayout.addWidget(self.synPower, 4, 1)
-        mainLayout.addWidget(QtGui.QLabel('LF Output'), 5, 0)
-        mainLayout.addWidget(self.synLF, 5, 1)
-        mainLayout.addWidget(QtGui.QLabel('LF Voltage'), 6, 0)
-        mainLayout.addWidget(self.synLFV, 6, 1)
+        mainLayout.addWidget(QtGui.QLabel('Modulation'), 5, 0)
+        mainLayout.addWidget(self.synMod, 5, 1)
+        mainLayout.addWidget(QtGui.QLabel('LF Output'), 6, 0)
+        mainLayout.addWidget(self.synLF, 6, 1)
+        mainLayout.addWidget(QtGui.QLabel('LF Voltage'), 7, 0)
+        mainLayout.addWidget(self.synLFV, 7, 1)
         self.setLayout(mainLayout)
         # second column
-        mainLayout.addWidget(QtGui.QLabel('Modulation'), 2, 2)
-        mainLayout.addWidget(self.synMod, 2, 3)
-        mainLayout.addWidget(modGroup, 3, 2, 4, 2)
-        mainLayout.addWidget(QtGui.QLabel('Error Msg'), 7, 0)
-        mainLayout.addWidget(self.synErrMsg, 7, 1, 1, 3)
+        mainLayout.addWidget(modGroup, 3, 2, 5, 2)
+        mainLayout.addWidget(synErrMsgBtn, 8, 0)
+        mainLayout.addWidget(self.synErrMsg, 8, 1, 1, 3)
 
         # this dialog is a child class of the main window
         self.infoDialog = Dialogs.SynInfoDialog(self.parent)
         ## -- Trigger status updates
-        self.refreshButton.clicked.connect(self.update)
-        self.moreInfoButton.clicked.connect(self.show_info_dialog)
+        refreshButton.clicked.connect(self.update)
+        moreInfoButton.clicked.connect(self.show_info_dialog)
+        synErrMsgBtn.clicked.connect(self.pop_err_msg)
         # initial status
         self.update()
 
@@ -113,12 +115,12 @@ class SynStatus(QtGui.QGroupBox):
             self.synAMStat.setText('On' if amstat else 'Off')
             self.synFMStat.setText('On' if fmstat else 'Off')
             self.synAMDepth.setText('{:.1f} %'.format(amdepth))
-            self.synAMFreq.setText('{:.3g} kHz'.format(amfreq))
-            self.synFMDev.setText('{:.3g} kHz'.format(fmdev))
-            self.synFMFreq.setText('{:.3g} kHz'.format(fmfreq))
+            self.synAMFreq.setText(siFormat(amfreq, suffix='Hz', precision=4))
+            self.synFMDev.setText(siFormat(fmdev, suffix='Hz', precision=4))
+            self.synFMFreq.setText(siFormat(fmfreq, suffix='Hz', precision=4))
             lf_vol, lf_status = apisyn.read_lf(self.parent.synHandle)
             self.synLF.setText('On' if lf_status else 'Off')
-            self.synLFV.setText('{:.3f} V'.format(lf_vol))
+            self.synLFV.setText(siFormat(lf_vol, suffix='V'))
             self.synErrMsg.setText(apisyn.query_err_msg(self.parent.synHandle))
         else:
             self.addressText.setText('N.A.')
@@ -140,6 +142,13 @@ class SynStatus(QtGui.QGroupBox):
 
         self.infoDialog.display()
 
+    def pop_err_msg(self):
+        ''' Pop error message '''
+        if self.parent.synHandle:
+            self.synErrMsg.setText(apisyn.query_err_msg(self.parent.synHandle))
+        else:
+            pass
+
 
 class LockinStatus(QtGui.QGroupBox):
     '''
@@ -155,8 +164,8 @@ class LockinStatus(QtGui.QGroupBox):
         self.setCheckable(False)
 
         ## -- Define synthesizer status elements --
-        self.refreshButton = QtGui.QPushButton('Refresh')
-        self.moreInfoButton = QtGui.QPushButton('More Info')
+        refreshButton = QtGui.QPushButton('Refresh')
+        moreInfoButton = QtGui.QPushButton('More Info')
         self.addressText = QtGui.QLabel()
         self.lcHarm = QtGui.QLabel()
         self.lcPhase = QtGui.QLabel()
@@ -169,8 +178,8 @@ class LockinStatus(QtGui.QGroupBox):
         ## -- Set layout and add GUI elements
         mainLayout = QtGui.QGridLayout()
         # first column
-        mainLayout.addWidget(self.refreshButton, 0, 0, 1, 2)
-        mainLayout.addWidget(self.moreInfoButton, 0, 2, 1, 2)
+        mainLayout.addWidget(refreshButton, 0, 0, 1, 2)
+        mainLayout.addWidget(moreInfoButton, 0, 2, 1, 2)
         mainLayout.addWidget(QtGui.QLabel('Inst. Name'), 1, 0)
         mainLayout.addWidget(self.addressText, 1, 1, 1, 3)
         mainLayout.addWidget(QtGui.QLabel('Harmonics'), 2, 0)
@@ -193,8 +202,8 @@ class LockinStatus(QtGui.QGroupBox):
         # this dialog is a child class of the main window
         self.infoDialog = Dialogs.LockinInfoDialog(self.parent)
         ## -- Trigger status updates
-        self.refreshButton.clicked.connect(self.update)
-        self.moreInfoButton.clicked.connect(self.show_info_dialog)
+        refreshButton.clicked.connect(self.update)
+        moreInfoButton.clicked.connect(self.show_info_dialog)
         # initial status
         self.update()
 
@@ -275,25 +284,24 @@ class SynCtrl(QtGui.QGroupBox):
         self.setTitle('Synthesizer Control')
         self.setAlignment(QtCore.Qt.AlignLeft)    # align left
         self.setCheckable(True)
-        self.check()
+        self.setChecked(False)
 
         ## -- Define synthesizer control elements --
         syn = QtGui.QWidget()
-        self.synfreq = QtGui.QLabel('30000')
+        self.synfreqLabel = QtGui.QLabel('{:.9f} MHz'.format(30000))
         self.probfreqFill = QtGui.QLineEdit()
         self.probfreqFill.setText('180000')
         self.bandSelect = Shared.VDIBandComboBox()
 
         ## -- Set up synthesizer control layout --
         synLayout = QtGui.QGridLayout()
-        synLayout.addWidget(QtGui.QLabel('Synthesizer Freq'), 0, 0)
-        synLayout.addWidget(self.synfreq, 0, 1)
-        synLayout.addWidget(QtGui.QLabel('MHz'), 0, 2)
-        synLayout.addWidget(QtGui.QLabel('Probing Freq'), 1, 0)
+        synLayout.addWidget(QtGui.QLabel('Synthesizer Frequency'), 0, 0)
+        synLayout.addWidget(self.synfreqLabel, 0, 1, 1, 2)
+        synLayout.addWidget(QtGui.QLabel('Probing Frequency'), 1, 0)
         synLayout.addWidget(self.probfreqFill, 1, 1)
         synLayout.addWidget(QtGui.QLabel('MHz'), 1, 2)
         synLayout.addWidget(QtGui.QLabel('VDI Band'), 2, 0)
-        synLayout.addWidget(self.bandSelect, 2, 1)
+        synLayout.addWidget(self.bandSelect, 2, 1, 1, 3)
         syn.setLayout(synLayout)
 
         # Set up modulation child widget
@@ -304,28 +312,28 @@ class SynCtrl(QtGui.QGroupBox):
         modLayout = QtGui.QGridLayout()
         modLayout.setSpacing(0)
 
-        self.modModeSelect = QtGui.QComboBox()
-        self.modModeSelect.addItems(['None', 'AM', 'FM'])
+        self.modModeSel = QtGui.QComboBox()
+        self.modModeSel.addItems(['None', 'AM', 'FM'])
 
         self.modFreq = QtGui.QWidget()
         self.modFreqFill = QtGui.QLineEdit()
-        self.modFreqUnit = QtGui.QComboBox()
-        self.modFreqUnit.addItems(['Hz', 'kHz', 'MHz'])
-        self.modFreqUnit.setCurrentIndex(1)
+        self.modFreqUnitSel = QtGui.QComboBox()
+        self.modFreqUnitSel.addItems(['Hz', 'kHz'])
+        self.modFreqUnitSel.setCurrentIndex(1)
         modFreqLayout = QtGui.QHBoxLayout()
         modFreqLayout.addWidget(QtGui.QLabel('Mod Freq'))
         modFreqLayout.addWidget(self.modFreqFill)
-        modFreqLayout.addWidget(self.modFreqUnit)
+        modFreqLayout.addWidget(self.modFreqUnitSel)
         self.modFreq.setLayout(modFreqLayout)
 
         self.modDepth = QtGui.QWidget()
         self.modDepthFill = QtGui.QLineEdit()
-        self.modDepthUnit = QtGui.QComboBox()
-        self.modDepthUnit.addItems('')
+        self.modDepthUnitSel = QtGui.QComboBox()
+        self.modDepthUnitSel.addItems('')
         modDepthLayout = QtGui.QHBoxLayout()
         modDepthLayout.addWidget(QtGui.QLabel('Mod Amp'))
         modDepthLayout.addWidget(self.modDepthFill)
-        modDepthLayout.addWidget(self.modDepthUnit)
+        modDepthLayout.addWidget(self.modDepthUnitSel)
         self.modDepth.setLayout(modDepthLayout)
 
         self.lfVol = QtGui.QWidget()
@@ -344,7 +352,7 @@ class SynCtrl(QtGui.QGroupBox):
         modLayout.addWidget(QtGui.QLabel('Mod Mode'), 0, 0)
         modLayout.addWidget(QtGui.QLabel('Mod Switch'), 1, 0)
         modLayout.addWidget(QtGui.QLabel('LF Switch'), 2, 0)
-        modLayout.addWidget(self.modModeSelect, 0, 1)
+        modLayout.addWidget(self.modModeSel, 0, 1)
         modLayout.addWidget(self.modSwitchBtn, 1, 1)
         modLayout.addWidget(self.lfSwitchBtn, 2, 1)
         modLayout.addWidget(self.modFreq, 0, 2, 1, 3)
@@ -376,31 +384,37 @@ class SynCtrl(QtGui.QGroupBox):
         self.setLayout(mainLayout)
 
         # Trigger frequency update and communication
-        self.probfreqFill.textChanged.connect(self.freqComm)
-        self.bandSelect.currentIndexChanged.connect(self.freqComm)
+        self.probfreqFill.textChanged.connect(self.tune_freq)
+        self.bandSelect.currentIndexChanged.connect(self.tune_freq)
 
         # Trigger modulation status update and communication
-        self.modModeSelect.currentIndexChanged.connect(self.modModeComm)
-        self.modFreqFill.textChanged.connect(self.modParComm)
-        self.modFreqUnit.currentIndexChanged.connect(self.modParComm)
-        self.modDepthFill.textChanged.connect(self.modParComm)
-        self.modSwitchBtn.clicked.connect(self.modSwitchBtnComm)
-        self.lfSwitchBtn.clicked.connect(self.lfSwitchBtnComm)
-        self.lfVolFill.textChanged.connect(self.modLFVolComm)
+        self.modModeSel.currentIndexChanged.connect(self.activate_modWidgets)
+        self.modFreqFill.textChanged.connect(self.tune_mod_parameter)
+        self.modFreqUnitSel.currentIndexChanged.connect(self.tune_mod_parameter)
+        self.modDepthFill.textChanged.connect(self.tune_mod_parameter)
+        self.modSwitchBtn.clicked.connect(self.switch_modulation)
+        self.lfSwitchBtn.clicked.connect(self.switch_lf)
+        self.lfVolFill.textChanged.connect(self.tune_lf)
 
         # Trigger synthesizer power toggle and communication
-        synPowerManualInput.clicked.connect(self.synPowerComm)
-        self.synPowerSwitchBtn.clicked.connect(self.synPowerOnOff)
+        synPowerManualInput.clicked.connect(self.tune_synRFPower)
+        self.synPowerSwitchBtn.clicked.connect(self.switch_synRFPower)
+        self.synPowerSwitchBtn.toggled.connect(self.set_synPowerSwitchBtn_label)
+
+        # Trigger groupbox check_state
+        self.clicked.connect(self.check)
 
     def check(self):
         ''' Enable/disable this groupbox '''
+
         if self.parent.synHandle:
-            self.setChecked(True)
             apisyn.init_syn(self.parent.synHandle)
         else:
-            self.setChecked(False)
+            pass
 
-    def freqComm(self):
+        self.parent.synStatus.update()
+
+    def tune_freq(self):
         '''
             Communicate with the synthesizer and update frequency setting.
         '''
@@ -415,14 +429,17 @@ class SynCtrl(QtGui.QGroupBox):
             # call syn api and return communication status
             vCode = apisyn.set_syn_freq(self.parent.synHandle, synfreq)
             if vCode == pyvisa.constants.StatusCode.success:
-                self.parent.synStatus.update()
+                pass
             else:
                 msg = Shared.InstStatus(self, vCode)
                 msg.exec_()
-        # update synthesizer frequency
-        self.synfreq.setText(pg.siFormat(apisyn.read_syn_freq(self.parent.synHandle), suffix='Hz', precision=12))
+            # update synthesizer status
+            self.parent.synStatus.update()
+            self.synfreqLabel.setText('{:.9f} MHz'.format(synfreq))
+        else:   # else ignore change
+            pass
 
-    def synPowerComm(self):
+    def tune_synRFPower(self):
         '''
             Communicate with the synthesizer and set up RF power
             (automatically turn RF on)
@@ -436,39 +453,76 @@ class SynCtrl(QtGui.QGroupBox):
         if okay:    # hopefully no error occurs
             vCode = apisyn.set_syn_power(self.parent.synHandle, set_power)
             if vCode == pyvisa.constants.StatusCode.success:
-                self.parent.synStatus.update()
-                self.synPowerSwitchBtn.setCheckState(True)
+                pass
             else:
                 msg = Shared.InstStatus(self, vCode)
                 msg.exec_()
+            # update synthesizer status
+            self.parent.synStatus.update()
+            self.synPowerSwitchBtn.setChecked(apisyn.read_power_toggle(self.parent.synHandle))
         else:
             pass
 
-    def synPowerOnOff(self, btn_pressed):
+    def switch_synRFPower(self, btn_pressed):
         '''
-            Triggered by the synthesizer power toggle
+            switch synthesizer RF on/off
         '''
 
-        vCode = apisyn.set_power_toggle(self.parent.synHandle, btn_pressed)
+        vCode = apisyn.set_power_toggle(self.parent.synHandle,
+                                        self.synPowerSwitchBtn.isChecked())
 
         if vCode == pyvisa.constants.StatusCode.success:
-            if btn_pressed:
-                self.synPowerSwitchBtn.setText('ON')
-            else:
-                self.synPowerSwitchBtn.setText('OFF')
+            pass
         else:
             msg = Shared.InstStatus(self, vCode)
             msg.exec_()
-            self.synPowerSwitchBtn.setText('OFF')
 
         self.parent.synStatus.update()
 
-    def modModeComm(self):
+    def set_synPowerSwitchBtn_label(self, toggle_state):
         '''
-            Communicate with the synthesizer and update modulation mode.
+            Set power switch button text
         '''
 
-        mod_index = self.modModeSelect.currentIndex()
+        if toggle_state:
+            self.synPowerSwitchBtn.setText('ON')
+        else:
+            self.synPowerSwitchBtn.setText('OFF')
+
+    def activate_modWidgets(self):
+        '''
+            Activate/deactivate modulation setting widgets
+        '''
+
+        mod_index = self.modModeSel.currentIndex()
+        self.tune_mod_mode(mod_index)
+
+        if mod_index == 1:
+            if self.modDepthUnitSel.count() == 1:  # it has been set to AM
+                pass
+            else:
+                for i in range(self.modDepthUnitSel.count()): # remove all items
+                    self.modDepthUnitSel.removeItem(0)
+                self.modDepthUnitSel.addItems(['%'])
+                # fill in default parameters
+                self.modFreqUnitSel.setCurrentIndex(1)
+                self.modDepthUnitSel.setCurrentIndex(0)
+                self.modFreqFill.setText('{:.3f}'.format(15))
+                self.modDepthFill.setText('{:.1f}'.format(0))
+        elif mod_index == 2:
+            if self.modDepthUnitSel.count() == 3:  # it has been set to FM
+                pass
+            else:
+                for i in range(self.modDepthUnitSel.count()): # remove all items
+                    self.modDepthUnitSel.removeItem(0)
+                    self.modDepthUnitSel.addItems(['Hz', 'kHz', 'MHz'])
+                # update parameters
+                self.modFreqUnitSel.setCurrentIndex(1)
+                self.modDepthUnitSel.setCurrentIndex(1)
+                self.modFreqFill.setText('{:.3f}'.format(15))
+                self.modDepthFill.setText('{:.3f}'.format(75))
+        else:
+            pass
 
         if mod_index:
             self.modFreq.show()     # Modulation selected. Show modulation widget
@@ -479,68 +533,56 @@ class SynCtrl(QtGui.QGroupBox):
             self.modDepth.hide()
             self.lfVol.hide()
 
+    def tune_mod_mode(self, mod_index):
+        '''
+            Communicate with the synthesizer and update modulation mode.
+        '''
+
         vCode = apisyn.set_mod_mode(self.parent.synHandle, mod_index)
         if vCode == pyvisa.constants.StatusCode.success:
-            self.parent.synStatus.update()
+            pass
         else:
             msg = Shared.InstStatus(self, vCode)
             msg.exec_()
 
-        if mod_index == 1:
-            if self.modDepthUnit.count() == 1:  # it is set to AM
-                pass
-            else:
-                for i in range(self.modDepthUnit.count()): # remove all items
-                    self.modDepthUnit.removeItem(0)
-                self.modDepthUnit.addItems(['%'])
-            freq, depth, status = apisyn.read_am_par(self.parent.synHandle)
-            # update parameters
-            self.modFreqFill.setText('{:.3f}'.format(freq))
-            self.modDepthFill.setText('{:.1f}'.format(depth))
-        elif mod_index == 2:
-            if self.modDepthUnit.count() == 2:  # it is set to AM
-                pass
-            else:
-                for i in range(self.modDepthUnit.count()): # remove all items
-                    self.modDepthUnit.removeItem(0)
-                self.modDepthUnit.addItems(['kHz', 'MHz'])
-            freq, depth, status = apisyn.read_fm_par(self.parent.synHandle)
-            # update parameters
-            self.modFreqFill.setText('{:.3f}'.format(freq))
-            self.modDepthFill.setText('{:.3f}'.format(depth))
-        else:
-            pass
+        self.parent.synStatus.update()
 
-    def modParComm(self):
+    def tune_mod_parameter(self):
         '''
             Communicate with the synthesizer and update modulation parameters
         '''
 
-        mod_index = self.modModeSelect.currentIndex()
-        toggle = self.modSwitchBtn.isChecked()
+        mod_index = self.modModeSel.currentIndex()
+        toggle_state = self.modSwitchBtn.isChecked()
 
         # convert input and set sheet border color by status
         freq_status, mod_freq = apival.val_syn_mod_freq(self.modFreqFill.text(),
-                                       self.modFreqUnit.currentText())
+                                       self.modFreqUnitSel.currentText())
         self.modFreqFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(freq_status)))
+
         depth_status, mod_depth = apival.val_syn_mod_depth(self.modDepthFill.text(),
-                                         self.modDepthUnit.currentText())
+                                         self.modDepthUnitSel.currentText())
         self.modDepthFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(depth_status)))
 
-        if mod_index == 1:      # AM
-            vCode = apisyn.set_am(self.parent.synHandle, mod_freq, mod_depth, toggle)
-        elif mod_index == 2:    # FM
-            vCode = apisyn.set_fm(self.parent.synHandle, mod_freq, mod_depth, toggle)
+        if (not freq_status) and (not depth_status):
+            if mod_index == 1:      # AM
+                vCode = apisyn.set_am(self.parent.synHandle, mod_freq,
+                                      mod_depth, toggle_state)
+            elif mod_index == 2:    # FM
+                vCode = apisyn.set_fm(self.parent.synHandle, mod_freq,
+                                      mod_depth, toggle_state)
+            else:
+                vCode = pyvisa.constants.StatusCode.success
+
+            if vCode == pyvisa.constants.StatusCode.success:
+                self.parent.synStatus.update()
+            else:
+                msg = Shared.InstStatus(self, vCode)
+                msg.exec_()
         else:
             pass
 
-        if vCode == pyvisa.constants.StatusCode.success:
-            self.parent.synStatus.update()
-        else:
-            msg = Shared.InstStatus(self, vCode)
-            msg.exec_()
-
-    def modSwitchBtnComm(self, btn_pressed):
+    def switch_modulation(self, btn_pressed):
         '''
             Communicate with the synthesizer and update modulation on/off toggle
         '''
@@ -555,7 +597,7 @@ class SynCtrl(QtGui.QGroupBox):
         self.parent.synStatus.update()
 
 
-    def lfSwitchBtnComm(self, btn_pressed):
+    def switch_lf(self, btn_pressed):
         '''
             Communicate with the synthesizer and update LF on/off toggle
         '''
@@ -571,8 +613,7 @@ class SynCtrl(QtGui.QGroupBox):
 
         self.parent.synStatus.update()
 
-
-    def modLFVolComm(self, vol_text):
+    def tune_lf(self, vol_text):
         '''
             Communicate with the synthesizer and update LF voltage
         '''
@@ -583,10 +624,11 @@ class SynCtrl(QtGui.QGroupBox):
         if status:
             vCode = apisyn.set_lf_amp(self.parent.synHandle, lf_vol)
             if vCode == pyvisa.constants.StatusCode.success:
-                self.parent.synStatus.update()
+                pass
             else:
                 msg = Shared.InstStatus(self, vCode)
                 msg.exec_()
+            self.parent.synStatus.update()
         else:
             pass
 

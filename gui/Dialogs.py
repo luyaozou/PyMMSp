@@ -224,7 +224,7 @@ class SynInfoDialog(QtGui.QDialog):
         QtGui.QDialog.__init__(self, parent)
         self.parent = parent
         self.setMinimumWidth(800)
-        self.setMinimumHeight(600)
+        self.setMinimumHeight(400)
         self.setWindowTitle('Synthesizer Settings')
 
         self.instGroup = QtGui.QGroupBox()
@@ -381,37 +381,37 @@ class SynInfoDialog(QtGui.QDialog):
         # update modulation setting panel
         self.am1StateLabel.setText('ON' if apisyn.read_am_state(self.parent.synHandle, 1) else 'OFF')
         self.am1SrcLabel.setText(apisyn.read_am_source(self.parent.synHandle, 1))
-        self.am1DepthLabel.setText('{:.1f} % ({:.0f} dB)'.format(apisyn.read_am_depth(self.parent.synHandle, 1)))
+        self.am1DepthLabel.setText('{:.1f} % ({:.0f} dB)'.format(*apisyn.read_am_depth(self.parent.synHandle, 1)))
         self.am1FreqLabel.setText(siFormat(apisyn.read_am_freq(self.parent.synHandle, 1), suffix='Hz'))
         self.am1WaveLabel.setText(apisyn.read_am_waveform(self.parent.synHandle, 1))
 
         self.am2StateLabel.setText('ON' if apisyn.read_am_state(self.parent.synHandle, 2) else 'OFF')
         self.am2SrcLabel.setText(apisyn.read_am_source(self.parent.synHandle, 2))
-        self.am2DepthLabel.setText('{:.1f} % ({:.0f} dB)'.format(apisyn.read_am_depth(self.parent.synHandle, 2)))
+        self.am2DepthLabel.setText('{:.1f} % ({:.0f} dB)'.format(*apisyn.read_am_depth(self.parent.synHandle, 2)))
         self.am2FreqLabel.setText(siFormat(apisyn.read_am_freq(self.parent.synHandle, 2), suffix='Hz'))
         self.am2WaveLabel.setText(apisyn.read_am_waveform(self.parent.synHandle, 2))
 
         self.fm1StateLabel.setText('ON' if apisyn.read_fm_state(self.parent.synHandle, 1) else 'OFF')
         self.fm1SrcLabel.setText(apisyn.read_fm_source(self.parent.synHandle, 1))
-        self.fm1DevLabel.setText(siFormat(apisyn.read_fm_depth(self.parent.synHandle, 1), suffix='Hz'))
+        self.fm1DevLabel.setText(siFormat(apisyn.read_fm_dev(self.parent.synHandle, 1), suffix='Hz'))
         self.fm1FreqLabel.setText(siFormat(apisyn.read_fm_freq(self.parent.synHandle, 1), suffix='Hz'))
         self.fm1WaveLabel.setText(apisyn.read_fm_waveform(self.parent.synHandle, 1))
 
         self.fm2StateLabel.setText('ON' if apisyn.read_fm_state(self.parent.synHandle, 2) else 'OFF')
         self.fm2SrcLabel.setText(apisyn.read_fm_source(self.parent.synHandle, 2))
-        self.fm2DevLabel.setText(siFormat(apisyn.read_fm_depth(self.parent.synHandle, 2), suffix='Hz'))
+        self.fm2DevLabel.setText(siFormat(apisyn.read_fm_dev(self.parent.synHandle, 2), suffix='Hz'))
         self.fm2FreqLabel.setText(siFormat(apisyn.read_fm_freq(self.parent.synHandle, 2), suffix='Hz'))
         self.fm2WaveLabel.setText(apisyn.read_fm_waveform(self.parent.synHandle, 2))
 
         self.pm1StateLabel.setText('ON' if apisyn.read_pm_state(self.parent.synHandle, 1) else 'OFF')
         self.pm1SrcLabel.setText(apisyn.read_pm_source(self.parent.synHandle, 1))
-        self.pm1DevLabel.setText(siFormat(apisyn.read_pm_depth(self.parent.synHandle, 1), suffix='Hz'))
+        self.pm1DevLabel.setText(siFormat(apisyn.read_pm_dev(self.parent.synHandle, 1), suffix='rad'))
         self.pm1FreqLabel.setText(siFormat(apisyn.read_pm_freq(self.parent.synHandle, 1), suffix='Hz'))
         self.pm1WaveLabel.setText(apisyn.read_pm_waveform(self.parent.synHandle, 1))
 
         self.pm2StateLabel.setText('ON' if apisyn.read_pm_state(self.parent.synHandle, 2) else 'OFF')
         self.pm2SrcLabel.setText(apisyn.read_pm_source(self.parent.synHandle, 2))
-        self.pm2DevLabel.setText(siFormat(apisyn.read_pm_depth(self.parent.synHandle, 2), suffix='Hz'))
+        self.pm2DevLabel.setText(siFormat(apisyn.read_pm_dev(self.parent.synHandle, 2), suffix='rad'))
         self.pm2FreqLabel.setText(siFormat(apisyn.read_pm_freq(self.parent.synHandle, 2), suffix='Hz'))
         self.pm2WaveLabel.setText(apisyn.read_pm_waveform(self.parent.synHandle, 2))
 
@@ -429,8 +429,8 @@ class LockinInfoDialog(QtGui.QDialog):
     def __init__(self, parent):
         QtGui.QDialog.__init__(self, parent)
         self.parent = parent
-        self.setMinimumWidth(800)
-        self.setMinimumHeight(600)
+        self.setMinimumWidth(600)
+        self.setMinimumHeight(400)
         self.setWindowTitle('Lockin Amplifier Settings')
 
         self.instGroup = QtGui.QGroupBox()

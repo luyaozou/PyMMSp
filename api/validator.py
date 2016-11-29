@@ -173,7 +173,7 @@ def val_syn_mod_freq(freq_text, freq_unit_text):
             freq: float (Hz)
     '''
 
-    freq = siEval(freq_text + freq_unit_text)
+    modfreq = siEval(freq_text + freq_unit_text)
 
     if modfreq < 1e5 and modfreq >= 0:    # valid input
         return 0, modfreq
@@ -181,17 +181,17 @@ def val_syn_mod_freq(freq_text, freq_unit_text):
         return 1, 0
 
 
-def val_syn_mod_depth(depth_text, depth_unit):
+def val_syn_mod_depth(depth_text, depth_unit_text):
     ''' Validate synthesizer modulation depth input.
         Arguments
             depth_text: str, modulation depth user input
-            depth_unit: int, modulation depth unit
+            depth_unit_text: int, modulation depth unit
         Returns
             status: int (0: safe; 1: error; 2: warning)
             freq: float (dimensionless for AM, Hz for FM)
     '''
 
-    if depth_unit == '%':
+    if depth_unit_text == '%':
         try:
             depth = float(depth_text) * 1e-2
             if depth <= 0.75 and depth >= 0:       # valid input

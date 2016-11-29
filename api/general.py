@@ -71,7 +71,7 @@ def close_inst(*inst_handle):
     status = False
 
     for inst in inst_handle:
-        if not inst:
+        if inst:
             try:
                 inst.close()
             except:

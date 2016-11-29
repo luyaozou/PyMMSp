@@ -22,7 +22,7 @@ class MainWindow(QtGui.QMainWindow):
         # Set global window properties
         self.setWindowTitle(self.title_text)
         self.setMinimumWidth(1500)
-        self.setMinimumHeight(800)
+        self.setMinimumHeight(820)
 
         # Initiate pyvisa instrument objects
         self.synHandle = None

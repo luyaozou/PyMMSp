@@ -58,13 +58,13 @@ def read_power_toggle(synHandle):
         return False
 
 
-def set_power_toggle(synHandle, toggle_stat):
+def set_power_toggle(synHandle, toggle_state):
     ''' Turn RF power on/off.
         Returns visaCode
     '''
 
     try:
-        if toggle_stat:     # user want to turn on RF
+        if toggle_state:     # user want to turn on RF
             num, vcode = synHandle.write(':OUTP 1')
             # only ramp up power if the RF is successfully turned on
             if vcode == pyvisa.constants.StatusCode.success:
@@ -180,15 +180,15 @@ def read_mod_toggle(synHandle):
         return False
 
 
-def set_mod_toggle(synHandle, toggle_stat):
+def set_mod_toggle(synHandle, toggle_state):
     ''' Turn on/off modulation.
         Arguments
-            toggle_stat: boolean
+            toggle_state: boolean
         Returns visaCode
     '''
 
     try:
-        num, vcode = synHandle.write(':OUTP:MOD {:d}'.format(toggle_stat))
+        num, vcode = synHandle.write(':OUTP:MOD {:d}'.format(toggle_state))
         return vcode
     except:
         return 'IOError'
@@ -197,7 +197,7 @@ def set_mod_toggle(synHandle, toggle_stat):
 def read_am_par(synHandle):
     ''' Read current amplitude modulation setting.
         Returns
-            freq:  mod freq, float (kHz)
+            freq:  mod freq, float (Hz)
             depth: mod depth, float (%)
             status: on/off, bool
     '''
@@ -298,18 +298,18 @@ def read_am_waveform(synHandle, channel):
         return 'N.A.'
 
 
-def set_am(synHandle, freq, depth, toggle_stat):
+def set_am(synHandle, freq, depth, toggle_state):
     ''' Set synthesizer AM to freq and depth.
         Arguments
             freq: float (Hz)
             depth: float
-            toggle_stat: boolean
+            toggle_state: boolean
         Returns visaCode
     '''
 
     try:
         # set up AM freq and depth
-        set_mod_toggle(synHandle, toggle_stat)
+        set_mod_toggle(synHandle, toggle_state)
         num, vcode = synHandle.write(':AM1:INT1:FREQ {:.9f}HZ; :AM1 {:.3f}'.format(freq, depth))
     except:
         vcode = 'IOError'
@@ -418,18 +418,18 @@ def read_fm_waveform(synHandle, channel):
         return 'N.A.'
 
 
-def set_fm(synHandle, freq, depth, toggle_stat):
+def set_fm(synHandle, freq, depth, toggle_state):
     ''' Set synthesizer FM to freq and depth.
         Arguments
             freq: float (Hz)
             depth: float (Hz)
-            toggle_stat: boolean
+            toggle_state: boolean
         Returns visaCode
     '''
 
     try:
         # set up FM freq and depth
-        set_mod_toggle(synHandle, toggle_stat)
+        set_mod_toggle(synHandle, toggle_state)
         num, vcode = synHandle.write(':FM1:INT1:FREQ {:.9f}HZ; :FM1:DEV {:.9f}HZ'.format(freq, depth))
     except:
         vcode = 'IOError'
@@ -548,15 +548,15 @@ def read_lf_source(synHandle):
         return 'N.A.'
 
 
-def set_lf_toggle(synHandle, toggle_stat):
+def set_lf_toggle(synHandle, toggle_state):
     ''' Turn on/off modulation.
         Arguments
-            toggle_stat: boolean
+            toggle_state: boolean
         Returns visaCode
     '''
 
     try:
-        num, vcode = synHandle.write(':LFO:STAT {:d}'.format(toggle_stat))
+        num, vcode = synHandle.write(':LFO:STAT {:d}'.format(toggle_state))
         return vcode
     except:
         return 'IOError'
