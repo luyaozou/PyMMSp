@@ -122,12 +122,12 @@ def set_syn_power(synHandle, set_power):
 
 def read_syn_freq(synHandle):
     ''' Read current synthesizer frequecy.
-        Returns current_freq, float (MHz)
+        Returns current_freq, float (Hz)
     '''
 
     try:
         text = synHandle.query(':FREQ:CW?')
-        current_freq = float(text.strip()) * 1e-6
+        current_freq = float(text.strip())
         return current_freq
     except:
         return 0
@@ -137,7 +137,7 @@ def set_syn_freq(synHandle, freq):
     ''' Set the synthesizer frequency to freq.
         Arguments
             synHandle: pyvisa.resources.Resource, synthesizer handle
-            freq: float
+            freq: float (MHz)
         Returns visaCode
     '''
 
@@ -301,8 +301,8 @@ def read_am_waveform(synHandle, channel):
 def set_am(synHandle, freq, depth, toggle_stat):
     ''' Set synthesizer AM to freq and depth.
         Arguments
-            freq: float (kHz)
-            depth: float ('%')
+            freq: float (Hz)
+            depth: float
             toggle_stat: boolean
         Returns visaCode
     '''
@@ -310,7 +310,7 @@ def set_am(synHandle, freq, depth, toggle_stat):
     try:
         # set up AM freq and depth
         set_mod_toggle(synHandle, toggle_stat)
-        num, vcode = synHandle.write(':AM1:INT1:FREQ {:.6f}KHZ; :AM1 {:.2f}'.format(freq, depth))
+        num, vcode = synHandle.write(':AM1:INT1:FREQ {:.9f}HZ; :AM1 {:.3f}'.format(freq, depth))
     except:
         vcode = 'IOError'
 
@@ -421,8 +421,8 @@ def read_fm_waveform(synHandle, channel):
 def set_fm(synHandle, freq, depth, toggle_stat):
     ''' Set synthesizer FM to freq and depth.
         Arguments
-            freq: float (kHz)
-            depth: float (kHz)
+            freq: float (Hz)
+            depth: float (Hz)
             toggle_stat: boolean
         Returns visaCode
     '''
@@ -430,7 +430,7 @@ def set_fm(synHandle, freq, depth, toggle_stat):
     try:
         # set up FM freq and depth
         set_mod_toggle(synHandle, toggle_stat)
-        num, vcode = synHandle.write(':FM1:INT1:FREQ {:.6f}KHZ; :FM1:DEV {:.6f}KHZ'.format(freq, depth))
+        num, vcode = synHandle.write(':FM1:INT1:FREQ {:.9f}HZ; :FM1:DEV {:.9f}HZ'.format(freq, depth))
     except:
         vcode = 'IOError'
 

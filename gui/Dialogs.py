@@ -245,12 +245,15 @@ class SynInfoDialog(QtGui.QDialog):
 
         self.rfGroup.setTitle('RF Settings')
         self.rfOutputLabel = QtGui.QLabel()
+        self.modOutputLabel = QtGui.QLabel()
         self.synFreqLabel = QtGui.QLabel()
         rfGroupLayout = QtGui.QGridLayout()
         rfGroupLayout.addWidget(QtGui.QLabel('RF Output'), 0, 0)
         rfGroupLayout.addWidget(self.rfOutputLabel, 0, 1)
         rfGroupLayout.addWidget(QtGui.QLabel('Synth Frequency'), 0, 2)
-        rfGroupLayout.addWidget(self.synFreqLabel)
+        rfGroupLayout.addWidget(self.synFreqLabel, 0, 3)
+        rfGroupLayout.addWidget(QtGui.QLabel('Modulation Output'), 0, 4)
+        rfGroupLayout.addWidget(self.modOutputLabel)
         self.rfGroup.setLayout(rfGroupLayout)
 
         self.modGroup.setTitle('Modulation Settings')
@@ -368,7 +371,7 @@ class SynInfoDialog(QtGui.QDialog):
         self.instNameLabel.setText(self.parent.synHandle.resource_name)
         self.instInterfaceLabel.setText(str(self.parent.synHandle.interface_type))
         self.instInterfaceNumLabel.setText(str(self.parent.synHandle.interface_number))
-        self.instRemoteDispLabel.setText(QtGui.QLabel('ON' if apisyn.read_remote_disp(self.parent.synHandle) else 'OFF'))
+        self.instRemoteDispLabel.setText('ON' if apisyn.read_remote_disp(self.parent.synHandle) else 'OFF')
 
         # update RF setting panel
         self.rfOutputLabel.setText('ON' if apisyn.read_power_toggle(self.parent.synHandle) else 'OFF')

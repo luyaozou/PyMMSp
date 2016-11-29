@@ -106,7 +106,7 @@ class SynStatus(QtGui.QGroupBox):
             self.addressText.setText(self.parent.synHandle.resource_name)
             self.synRF.setText('On' if apisyn.read_power_toggle(self.parent.synHandle) else 'Off')
             self.synPower.setText('{:.1f} dbm'.format(apisyn.read_syn_power(self.parent.synHandle)))
-            self.synFreq.setText('{:.9f} MHz'.format(apisyn.read_syn_freq(self.parent.synHandle)))
+            self.synFreq.setText(pg.siFormat(apisyn.read_syn_freq(self.parent.synHandle), suffix='Hz', precision=12))
             self.synMod.setText('On' if apisyn.read_mod_toggle(self.parent.synHandle) else 'Off')
             amfreq, amdepth, amstat = apisyn.read_am_par(self.parent.synHandle)
             fmfreq, fmdev, fmstat = apisyn.read_fm_par(self.parent.synHandle)
@@ -420,7 +420,7 @@ class SynCtrl(QtGui.QGroupBox):
                 msg = Shared.InstStatus(self, vCode)
                 msg.exec_()
         # update synthesizer frequency
-        self.synfreq.setText('{:.12f}'.format(apisyn.read_syn_freq(self.parent.synHandle)))
+        self.synfreq.setText(pg.siFormat(apisyn.read_syn_freq(self.parent.synHandle), suffix='Hz', precision=12))
 
     def synPowerComm(self):
         '''
@@ -545,18 +545,14 @@ class SynCtrl(QtGui.QGroupBox):
             Communicate with the synthesizer and update modulation on/off toggle
         '''
 
+        vCode = apisyn.set_mod_toggle(self.parent.synHandle, btn_pressed)
+
         if btn_pressed:
-            vCode = apisyn.set_mod_toggle(self.parent.synHandle, btn_pressed)
-            if vCode == pyvisa.constants.StatusCode.success:
-                self.parent.synStatus.update()
-                self.modSwitchBtn.setText('ON')
-            else:
-                msg = Shared.InstStatus(self, vCode)
-                msg.exec_()
-                self.modSwitchBtn.setText('OFF')
-                self.modSwitchBtn.setChecked(False)
+            self.modSwitchBtn.setText('ON')
         else:
             self.modSwitchBtn.setText('OFF')
+
+        self.parent.synStatus.update()
 
 
     def lfSwitchBtnComm(self, btn_pressed):
@@ -564,38 +560,33 @@ class SynCtrl(QtGui.QGroupBox):
             Communicate with the synthesizer and update LF on/off toggle
         '''
 
+        vCode = apisyn.set_lf_toggle(self.parent.synHandle, btn_pressed)
+
         if btn_pressed:
-            vCode = apisyn.set_lf_toggle(self.parent.synHandle, self.lfSwitchBtn.isChecked())
-            if vCode == pyvisa.constants.StatusCode.success:
-                self.parent.synStatus.update()
-                self.lfSwitchBtn.setText('ON')
-                self.lfVolFill.setText('0.1')   # default value
-            else:
-                msg = Shared.InstStatus(self, vCode)
-                msg.exec_()
-                self.lfSwitchBtn.setText('OFF')
-                self.lfSwitchBtn.setChecked(False)
+            self.lfSwitchBtn.setText('ON')
+            self.lfVolFill.setText('0.1')   # default value
         else:
             self.lfSwitchBtn.setText('OFF')
             self.lfVolFill.setText('0')
+
+        self.parent.synStatus.update()
+
 
     def modLFVolComm(self, vol_text):
         '''
             Communicate with the synthesizer and update LF voltage
         '''
 
-        if self.lfSwitchBtn.isChecked():
-            status, lf_vol = apival.val_syn_lf_vol(vol_text)
-            self.lfVolFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
-            if status:
-                vCode = apisyn.set_lf_amp(self.parent.synHandle, lf_vol)
-                if vCode == pyvisa.constants.StatusCode.success:
-                    self.parent.synStatus.update()
-                else:
-                    msg = Shared.InstStatus(self, vCode)
-                    msg.exec_()
+        status, lf_vol = apival.val_syn_lf_vol(vol_text)
+        self.lfVolFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
+
+        if status:
+            vCode = apisyn.set_lf_amp(self.parent.synHandle, lf_vol)
+            if vCode == pyvisa.constants.StatusCode.success:
+                self.parent.synStatus.update()
             else:
-                pass
+                msg = Shared.InstStatus(self, vCode)
+                msg.exec_()
         else:
             pass
 
