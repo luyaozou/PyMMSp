@@ -28,29 +28,26 @@ def query_inst_name(lcHandle):
 
 def read_freq(lcHandle):
     ''' Read current lockin frequency.
-        Returns frequency in kHz (float)
+        Returns frequency in Hz (float)
     '''
 
     try:
         text = lcHandle.query('FREQ?')
-        freq = float(text.strip()) * 1e-3
+        return float(text.strip())
     except:
-        freq = 0
-
-    return freq
+        return 0
 
 
 def read_harm(lcHandle):
     ''' Read current lockin harmonics.
-        Returns verbatim text
+        Returns harm: int
     '''
 
     try:
         text = lcHandle.query('HARM?')
+        return int(text.strip())
     except:
-        text = 'N.A.'
-
-    return text.strip()
+        return 0
 
 
 def set_harm(lcHandle, harm):
@@ -70,15 +67,14 @@ def set_harm(lcHandle, harm):
 
 def read_phase(lcHandle):
     ''' Read current lockin phase.
-        Returns verbatim text
+        Returns phase: float
     '''
 
     try:
         text = lcHandle.query('PHAS?')
+        return float(text.strip())
     except:
-        text = 'N.A.'
-
-    return text.strip()
+        return 0
 
 
 def set_phase(lcHandle, phase):
@@ -207,7 +203,7 @@ def read_reserve(lcHandle):
 
     a_dict = {'2': 'Low Noise',
               '1': 'Normal',
-              '0':'High Reserve'}
+              '0': 'High Reserve'}
 
     try:
         text = lcHandle.query('RMOD?')
@@ -254,5 +250,167 @@ def read_ref_source(lcHandle):
     try:
         text = lcHandle.query('FMOD?')
         return a_dict[int(text.strip())]
-    else:
+    except:
+        return 'N.A.'
+
+
+def read_input_config(lcHandle):
+    ''' Read input configuration
+        Returns
+            text: str
+    '''
+
+    a_dict = {0:'A', 1:'B', 2:'I (1 MΩ)', 3:'I (100 MΩ)'}
+    try:
+        text = lcHandle.query('ISRC?')
+        return a_dict[int(text.strip())]
+    except:
+        return 'N.A.'
+
+
+def read_input_grounding(lcHandle):
+    ''' Read input grounding
+        Returns
+            text: str
+    '''
+
+    a_dict = {0:'Float', 1:'Ground'}
+    try:
+        text = lcHandle.query('IGND?')
+        return a_dict[int(text.strip())]
+    except:
+        return 'N.A.'
+
+
+def read_input_coupling(lcHandle):
+    ''' Read input coupling
+        Returns
+            text: str
+    '''
+
+    a_dict = {0:'AC', 1:'DC'}
+    try:
+        text = lcHandle.query('ICPL?')
+        return a_dict[int(text.strip())]
+    except:
+        return 'N.A.'
+
+
+def read_input_filter(lcHandle):
+    ''' Read input notch filter
+        Returns
+            text: str
+    '''
+
+    a_dict = {0:'No filter', 1:'Line notch',
+              2:'2×Line notch', 3:'Both line notch'}
+    try:
+        text = lcHandle.query('ILIN?')
+        return a_dict[int(text.strip())]
+    except:
+        return 'N.A.'
+
+
+def read_lp_slope(lcHandle):
+    ''' Read low pass filter slope
+        Returns
+            text: str
+    '''
+
+    a_dict = {0:'6 dB/oct', 1:'12 dB/oct',
+              2:'18 dB/oct', 3:'24 dB/oct'}
+    try:
+        text = lcHandle.query('OFSL?')
+        return a_dict[int(text.strip())]
+    except:
+        return 'N.A.'
+
+
+def read_disp(lcHandle):
+    ''' Read display parameter
+        Returns
+            text1, text2: str, for CH1 & CH2
+    '''
+
+    a_dict = {0:'X', 1:'R', 2:'X Noise', 3:'Aux In 1', 4:'Aux In 2'}
+    b_dict = {0:'Y', 1:'θ', 2:'Y Noise', 3:'Aux In 3', 4:'Aux In 4'}
+
+    try:
+        text = lcHandle.query('DDEF?1')
+        j, k = text.strip().split(',')
+        ch1 = a_dict[int(j)]
+        if k:
+            ch1 += '; Ratio {:s}'.format(a_dict[k+2])
+        else:
+            pass
+    except:
+        ch1 = 'N.A.'
+
+    try:
+        text = lcHandle.query('DDEF?2')
+        j, k = text.strip().split(',')
+        ch2 = b_dict[int(j)]
+        if k:
+            ch2 += '; Ratio {:s}'.format(a_dict[k+2])
+        else:
+            pass
+    except:
+        ch2 = 'N.A.'
+
+    return ch1, ch2
+
+
+def read_front_panel(lcHandle):
+    ''' Read front panel output source, for CH1 & CH2
+        Returns
+            text1, text2: str
+    '''
+
+    a_dict = {(1, 0):'CH1 Display', (1, 1):'X',
+              (2, 0):'CH2 Display', (2, 1):'Y'}
+    try:
+        text = lcHandle.query('FPOP?1')
+        code = (1, int(text.strip()))
+        ch1 = a_dict[code]
+    except:
+        ch1 = 'N.A.'
+
+    try:
+        text = lcHandle.query('FPOP?2')
+        code = (2, int(text.strip()))
+        ch2 = a_dict[code]
+    except:
+        ch2 = 'N.A.'
+
+    return ch1, ch2
+
+
+def read_output_interface(lcHandle):
+    ''' Read output interface
+        Returns
+            text: str
+    '''
+
+    a_dict = {0:'RS232', '1':'GPIB'}
+
+    try:
+        text = lcHandle.query('OUTX?')
+        return a_dict[int(text.strip())]
+    except:
+        return 'N.A.'
+
+
+def read_sample_rate(lcHandle):
+    ''' Read the data sample rate
+        Returns:
+            index: int
+    '''
+
+    a_dict = {0:'per 16s', 1:'per 8s', 2:'per 4s', 3:'per 2s', 4:'1 Hz',
+              5:'2 Hz', 6:'4 Hz', 7:'8 Hz', 8:'16 Hz', 9:'32 Hz', 10:'64 Hz',
+              11:'128 Hz', 12:'256 Hz', 13:'512 Hz', 14:'Trigger'}
+    try:
+        text = lcHandle.query('SRAT?')
+        return a_dict[int(text.strip())]
+    except:
         return 'N.A.'

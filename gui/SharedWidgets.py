@@ -316,7 +316,6 @@ class FreqWinEntryNoCaption(QtGui.QWidget):
         text = self.waitTimeFill.text()
         tc_index = self.tcSel.currentIndex()
         status, waittime = apival.val_lc_waittime(text, tc_index)
-        status, waittime = apival.val_lc_waittime(text)
         self.waitTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
 

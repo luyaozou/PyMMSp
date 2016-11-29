@@ -202,9 +202,9 @@ class LockinStatus(QtGui.QGroupBox):
         ''' Update instrument information '''
         if self.parent.lcHandle:
             self.addressText.setText(self.parent.lcHandle.resource_name)
-            self.lcHarm.setText(apilc.read_harm(self.parent.lcHandle))
-            self.lcPhase.setText('{:s} deg'.format(apilc.read_phase(self.parent.lcHandle)))
-            self.lcFreq.setText('{:.3f} kHz'.format(apilc.read_freq(self.parent.lcHandle)))
+            self.lcHarm.setText('{:d}'.format(apilc.read_harm(self.parent.lcHandle)))
+            self.lcPhase.setText('{:.2f} deg'.format(apilc.read_phase(self.parent.lcHandle)))
+            self.lcFreq.setText(pg.siFormat(apilc.read_freq(self.parent.lcHandle), suffix='Hz'))
             self.lcSens.setText(Shared.LIASENSLIST[apilc.read_sens(self.parent.lcHandle)])
             self.lcTC.setText(Shared.LIATCLIST[apilc.read_tc(self.parent.lcHandle)])
             self.lcCouple.setText(apilc.read_couple(self.parent.lcHandle))

@@ -236,7 +236,6 @@ class SynInfoDialog(QtGui.QDialog):
         self.instInterfaceLabel = QtGui.QLabel()
         self.instInterfaceNumLabel = QtGui.QLabel()
         self.instRemoteDispLabel = QtGui.QLabel()
-
         instGroupLayout = QtGui.QFormLayout()
         instGroupLayout.addRow(QtGui.QLabel('Instrument Name'), self.instNameLabel)
         instGroupLayout.addRow(QtGui.QLabel('Interface Type'), self.instInterfaceLabel)
@@ -352,10 +351,10 @@ class SynInfoDialog(QtGui.QDialog):
     def display(self):
 
         if self.parent.synHandle:
+            self.update()
             self.instGroup.show()
             self.rfGroup.show()
             self.modGroup.show()
-            self.update()
         else:
             self.instGroup.hide()
             self.rfGroup.hide()
@@ -431,11 +430,85 @@ class LockinInfoDialog(QtGui.QDialog):
         self.setMinimumHeight(600)
         self.setWindowTitle('Lockin Amplifier Settings')
 
+        self.instGroup = QtGui.QGroupBox()
+        self.refGroup = QtGui.QGroupBox()
+        self.inputGroup = QtGui.QGroupBox()
+        self.gainGroup = QtGui.QGroupBox()
+        self.outputGroup = QtGui.QGroupBox()
+
+        self.instGroup.setTitle('Instrument Session')
+        self.instNameLabel = QtGui.QLabel()
+        self.instInterfaceLabel = QtGui.QLabel()
+        self.instInterfaceNumLabel = QtGui.QLabel()
+        instGroupLayout = QtGui.QFormLayout()
+        instGroupLayout.addRow(QtGui.QLabel('Instrument Name'), self.instNameLabel)
+        instGroupLayout.addRow(QtGui.QLabel('Interface Type'), self.instInterfaceLabel)
+        instGroupLayout.addRow(QtGui.QLabel('Interface Number'), self.instInterfaceNumLabel)
+        self.instGroup.setLayout(instGroupLayout)
+
+        self.refGroup.setTitle('Reference and Phase')
+        self.refSrcLabel = QtGui.QLabel()
+        self.refFreqLabel = QtGui.QLabel()
+        self.refHarmLabel = QtGui.QLabel()
+        self.refPhaseLabel = QtGui.QLabel()
+        refGroupLayout =  QtGui.QFormLayout()
+        refGroupLayout.addRow(QtGui.QLabel('Reference Source'), self.refSrcLabel)
+        refGroupLayout.addRow(QtGui.QLabel('Reference Freq'), self.refSrcLabel)
+        refGroupLayout.addRow(QtGui.QLabel('Harmonics'), self.refSrcLabel)
+        refGroupLayout.addRow(QtGui.QLabel('Phase'), self.refSrcLabel)
+        self.refGroup.setLayout(refGroupLayout)
+
+        self.inputGroup.setTitle('Input and Filter')
+        self.inputConfigLabel = QtGui.QLabel()
+        self.inputGroundingLabel = QtGui.QLabel()
+        self.inputCouplingLabel = QtGui.QLabel()
+        self.inputFilterLabel = QtGui.QLabel()
+        inputGroupLayout = QtGui.QFormLayout()
+        inputGroupLayout.addRow(QtGui.QLabel('Input Config'), self.inputConfigLabel)
+        inputGroupLayout.addRow(QtGui.QLabel('Input Grounding'), self.inputGroundingLabel)
+        inputGroupLayout.addRow(QtGui.QLabel('Input Coupling'), self.inputCouplingLabel)
+        inputGroupLayout.addRow(QtGui.QLabel('Input Filter'), self.inputFilterLabel)
+        self.inputGroup.setLayout(inputGroupLayout)
+
+        self.gainGroup.setTitle('Gain')
+        self.gainSensLabel = QtGui.QLabel()
+        self.gainReserveLabel = QtGui.QLabel()
+        self.gainTCLabel = QtGui.QLabel()
+        self.gainFilterLabel = QtGui.QLabel()
+        gainGroupLayout = QtGui.QFormLayout()
+        gainGroupLayout.addRow(QtGui.QLabel('Sensitivity'), self.gainSensLabel)
+        gainGroupLayout.addRow(QtGui.QLabel('Time Constant'), self.gainTCLabel)
+        gainGroupLayout.addRow(QtGui.QLabel('Reserve'), self.gainReserveLabel)
+        gainGroupLayout.addRow(QtGui.QLabel('Low-pass Filter Slope'), self.gainFilterLabel)
+        self.gainGroup.setLayout(gainGroupLayout)
+
+        self.outputGroup.setTitle('Display and Output')
+        self.outputDisp1Label = QtGui.QLabel()
+        self.outputDisp2Label = QtGui.QLabel()
+        self.outputFront1Label = QtGui.QLabel()
+        self.outputFront2Label = QtGui.QLabel()
+        self.outputSRateLabel = QtGui.QLabel()
+        outputGroupLayout = QtGui.QGridLayout()
+        outputGroupLayout.addWidget(QtGui.QLabel('Chanel 1'), 0, 1)
+        outputGroupLayout.addWidget(QtGui.QLabel('Chanel 2'), 0, 2)
+        outputGroupLayout.addWidget(QtGui.QLabel('Display'), 1, 0)
+        outputGroupLayout.addWidget(self.outputDisp1Label, 1, 1)
+        outputGroupLayout.addWidget(self.outputDisp2Label, 1, 2)
+        outputGroupLayout.addWidget(QtGui.QLabel('Front Panel Output'), 2, 0)
+        outputGroupLayout.addWidget(self.outputFront1Label, 2, 1)
+        outputGroupLayout.addWidget(self.outputFront2Label, 2, 2)
+        outputGroupLayout.addWidget(QtGui.QLabel('Sampling Rate'), 3, 0)
+        self.outputGroup.setLayout(outputGroupLayout)
+
         acceptButton = QtGui.QPushButton(Shared.btn_label('accept'))
 
         mainLayout = QtGui.QGridLayout()
-
-        mainLayout.addWidget(acceptButton)
+        mainLayout.addWidget(self.instGroup, 0, 0, 1, 6)
+        mainLayout.addWidget(self.inputGroup, 1, 0, 1, 3)
+        mainLayout.addWidget(self.outputGroup, 1, 3, 1, 3)
+        mainLayout.addWidget(self.refGroup, 2, 0, 1, 3)
+        mainLayout.addWidget(self.gainGroup, 2, 3, 1, 3)
+        mainLayout.addWidget(acceptButton, 3, 2, 1, 2)
         self.setLayout(mainLayout)
 
         acceptButton.clicked.connect(self.accept)
@@ -443,17 +516,51 @@ class LockinInfoDialog(QtGui.QDialog):
     def display(self):
 
         if self.parent.synHandle:
-            self.instGroup.show()
-            self.rfGroup.show()
-            self.modGroup.show()
             self.update()
+            self.instGroup.show()
+            self.refGroup.show()
+            self.gainGroup.show()
+            self.inputGroup.show()
+            self.outputGroup.show()
         else:
             self.instGroup.hide()
-            self.rfGroup.hide()
-            self.modGroup.hide()
+            self.refGroup.hide()
+            self.gainGroup.hide()
+            self.inputGroup.hide()
+            self.outputGroup.hide()
 
         self.exec_()
 
     def update(self):
 
-        pass
+        # update instrument panel
+        self.instNameLabel.setText(self.parent.lcHandle.resource_name)
+        self.instInterfaceLabel.setText(str(self.parent.lcHandle.interface_type))
+        self.instInterfaceNumLabel.setText(str(self.parent.lcHandle.interface_number))
+
+        # update ref group
+        self.refSrcLabel.setText(apilc.read_ref_source(self.parent.lcHandle))
+        self.refFreqLabel.setText(siFormat(apilc.read_freq(self.parent.lcHandle), suffix='Hz'))
+        self.refHarmLabel.setText('{:d}'.format(apilc.read_harm(self.parent.lcHandle)))
+        self.refPhaseLabel.setText('{:.2f} deg'.format(apilc.read_phase(self.parent.lcHandle)))
+
+        # update input group
+        self.inputConfigLabel.setText(apilc.read_input_config(self.parent.lcHandle))
+        self.inputGroundingLabel.setText(apilc.read_input_grounding(self.parent.lcHandle))
+        self.inputCouplingLabel.setText(apilc.read_input_coupling(self.parent.lcHandle))
+        self.inputFilterLabel.setText(apilc.read_input_filter(self.parent.lcHandle))
+
+        # update gain group
+        self.gainSensLabel.setText(Shared.LIASENSLIST[apilc.read_sens(self.parent.lcHandle)])
+        self.gainTCLabel.setText(Shared.LIATCLIST[apilc.read_tc(self.parent.lcHandle)])
+        self.gainReserveLabel.setText(apilc.read_reserve(self.parent.lcHandle))
+        self.gainFilterLabel.setText(apilc.read_lp_slope(self.parent.lcHandle))
+
+        # update output group
+        disp1, disp2 = apilc.read_disp(self.parent.lcHandle)
+        self.outputDisp1Label.setText(disp1)
+        self.outputDisp2Label.setText(disp2)
+        front1, front2 = apilc.read_front_panel(self.parent.lcHandle)
+        self.outputFront1Label.setText(front1)
+        self.outputFront2Label.setText(front2)
+        self.outputSRateLabel.setText(apilc.read_sample_rate(self.parent.lcHandle))
