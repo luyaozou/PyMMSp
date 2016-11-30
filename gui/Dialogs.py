@@ -23,8 +23,8 @@ class SelInstDialog(QtGui.QDialog):
         self.setWindowTitle('Select Instrument')
 
         refreshButton = QtGui.QPushButton('Refresh Available Instrument List')
-        acceptButton = QtGui.QPushButton('Ok')
-        cancelButton = QtGui.QPushButton('Cancel')
+        acceptButton = QtGui.QPushButton(Shared.btn_label('confirm'))
+        cancelButton = QtGui.QPushButton(Shared.btn_label('reject'))
 
         self.availableInst = QtGui.QLabel()
         instList, instStr = apigen.list_inst()

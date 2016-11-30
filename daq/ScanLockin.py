@@ -143,14 +143,8 @@ class JPLScanConfig(QtGui.QDialog):
 
     def set_file_directory(self):
 
-        d = QtGui.QFileDialog(self)
-        d.setAcceptMode(QtGui.QFileDialog.AcceptSave)
-        d.setFileMode(QtGui.QFileDialog.AnyFile)
-        d.setNameFilter("SMAP File (*.lwa)")
-        d.setDefaultSuffix("lwa")
-        d.exec_()
-        self.filename = d.selectedFiles()[0]
-        self.fileLabel.setText('Save Data to: {:s}'.format(self.filename))
+        self.filename = QtGui.QFileDialog.getSaveFileName(self, 'Save Data', '', 'SMAP File (*.lwa)')
+        self.fileLabel.setText('Data save to: {:s}'.format(self.filename))
 
     def get_settings(self):
         ''' Read batch settings from entries and proceed.

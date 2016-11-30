@@ -70,6 +70,7 @@ class SynStatus(QtGui.QGroupBox):
 
         ## -- Set layout and add GUI elements
         mainLayout = QtGui.QGridLayout()
+        mainLayout.setAlignment(QtCore.Qt.AlignTop)
         # first column
         mainLayout.addWidget(refreshButton, 0, 0, 1, 2)
         mainLayout.addWidget(moreInfoButton, 0, 2, 1, 2)
@@ -179,6 +180,7 @@ class LockinStatus(QtGui.QGroupBox):
 
         ## -- Set layout and add GUI elements
         mainLayout = QtGui.QGridLayout()
+        mainLayout.setAlignment(QtCore.Qt.AlignTop)
         # first column
         mainLayout.addWidget(refreshButton, 0, 0, 1, 2)
         mainLayout.addWidget(moreInfoButton, 0, 2, 1, 2)
@@ -264,6 +266,7 @@ class ScopeStatus(QtGui.QGroupBox):
 
         ## -- Set layout and add GUI elements
         mainLayout = QtGui.QGridLayout()
+        mainLayout.setAlignment(QtCore.Qt.AlignTop)
         mainLayout.addWidget(self.refreshButton, 0, 0, 1, 2)
         mainLayout.addWidget(self.moreInfoButton, 0, 2, 1, 2)
         mainLayout.addWidget(QtGui.QLabel('Inst. Name'), 1, 0)
@@ -389,6 +392,7 @@ class SynCtrl(QtGui.QGroupBox):
 
         ## -- Set up main layout
         mainLayout = QtGui.QVBoxLayout()
+        mainLayout.setAlignment(QtCore.Qt.AlignTop)
         mainLayout.addWidget(synPowerCtrl)
         mainLayout.addWidget(syn)
         mainLayout.addWidget(modGBox)
@@ -423,9 +427,9 @@ class SynCtrl(QtGui.QGroupBox):
             apisyn.init_syn(self.parent.synHandle)
             self.setChecked(True)
         else:
-            self.setChecked(False)
             msg = Shared.MsgError(self, 'No Instrument!', 'No synthesizer is connected!')
             msg.exec_()
+            self.setChecked(False)
 
         self.parent.synStatus.update()
 
@@ -677,6 +681,7 @@ class LockinCtrl(QtGui.QGroupBox):
 
         ## -- Set up main layout --
         mainLayout = QtGui.QGridLayout()
+        mainLayout.setAlignment(QtCore.Qt.AlignTop)
         mainLayout.addWidget(QtGui.QLabel('Harmonics'), 0, 0)
         mainLayout.addWidget(harmSelect, 0, 1)
         mainLayout.addWidget(QtGui.QLabel('Phase'), 1, 0)
@@ -698,6 +703,7 @@ class LockinCtrl(QtGui.QGroupBox):
         sensSelect.currentIndexChanged[int].connect(self.sensComm)
         coupleSelect.currentIndexChanged[str].connect(self.coupleComm)
         reserveSelect.currentIndexChanged[str].connect(self.reserveComm)
+        self.clicked.connect(self.check)
 
     def check(self):
         ''' Enable/disable this groupbox '''
@@ -706,9 +712,9 @@ class LockinCtrl(QtGui.QGroupBox):
             apilc.init_lia(self.parent.lcHandle)
             self.setChecked(True)
         else:
-            self.setChecked(False)
             msg = Shared.MsgError(self, 'No Instrument!', 'No lockin amplifier is connected!')
             msg.exec_()
+            self.setChecked(False)
 
         self.parent.lcStatus.update()
 
@@ -822,6 +828,7 @@ class ScopeCtrl(QtGui.QGroupBox):
 
         ## -- Set up main layout --
         mainLayout = QtGui.QFormLayout()
+        mainLayout.setAlignment(QtCore.Qt.AlignTop)
         mainLayout.addRow(QtGui.QLabel('Sample Rate (MHz)'), self.srateFill)
         mainLayout.addRow(QtGui.QLabel('Sample Length'), self.slenFill)
         mainLayout.addRow(QtGui.QLabel('Sensitivity'), sensSelect)
@@ -833,15 +840,16 @@ class ScopeCtrl(QtGui.QGroupBox):
         self.slenFill.textChanged.connect(self.lenComm)
         sensSelect.currentIndexChanged.connect(self.sensComm)
         self.avgFill.textChanged.connect(self.avgComm)
+        self.clicked.connect(self.check)
 
     def check(self):
         ''' Enable/disable this groupbox '''
         if self.parent.pciHandle:
             self.setChecked(True)
         else:
-            self.setChecked(False)
             msg = Shared.MsgError(self, 'No Instrument!', 'No oscilloscope is connected!')
             msg.exec_()
+            self.setChecked(False)
 
     def rateComm(self, rate_text):
 
@@ -873,7 +881,6 @@ class MotorCtrl(QtGui.QGroupBox):
         self.setTitle('Cavity Control')
         self.setAlignment(QtCore.Qt.AlignLeft)
         self.setCheckable(True)
-        self.check()
 
         tuneButton = QtGui.QPushButton('Tune Cavity')
         mainLayout = QtGui.QHBoxLayout()
@@ -882,12 +889,15 @@ class MotorCtrl(QtGui.QGroupBox):
 
         ## -- Trigger settings and motor communication
         tuneButton.clicked.connect(self.tune_cavity)
+        self.clicked.connect(self.check)
 
     def check(self):
         ''' Enable/disable this groupbox '''
         if self.parent.motorHandle:
             self.setChecked(True)
         else:
+            msg = Shared.MsgError(self, 'No Instrument!', 'No oscilloscope is connected!')
+            msg.exec_()
             self.setChecked(False)
 
     def tune_cavity(self):
@@ -903,6 +913,7 @@ class ScopeMonitor(QtGui.QWidget):
 
         self.pgPlot = pg.PlotWidget(title='Oscilloscope Monitor')
         mainLayout = QtGui.QGridLayout()
+        mainLayout.setAlignment(QtCore.Qt.AlignTop)
         mainLayout.addWidget(self.pgPlot, 0, 0)
         self.setLayout(mainLayout)
 
@@ -920,7 +931,7 @@ class LockinMonitor(QtGui.QWidget):
         self.slenFill = QtGui.QLineEdit()
         self.slenFill.setText('100')
         self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(2)))
-        self.data = np.empty(100)
+        self.data = np.zeros(100)
         self.updateRate = QtGui.QComboBox()
         self.updateRate.addItems(['10 Hz', '5 Hz', '2 Hz', '1 Hz',
                                    '0.5 Hz', '0.2 Hz', '0.1 Hz'])
@@ -941,7 +952,9 @@ class LockinMonitor(QtGui.QWidget):
         settingPanel.setLayout(panelLayout)
 
         self.pgPlot = pg.PlotWidget(title='Lockin Monitor')
+        self.curve = self.pgPlot.plot(self.data)
         mainLayout = QtGui.QVBoxLayout()
+        mainLayout.setAlignment(QtCore.Qt.AlignTop)
         mainLayout.addWidget(self.pgPlot)
         mainLayout.addWidget(settingPanel)
         self.setLayout(mainLayout)
@@ -962,23 +975,21 @@ class LockinMonitor(QtGui.QWidget):
 
         if btn_pressed:
             self.startButton.setText('Pause')
+            self.timer.start()
         else:
             self.startButton.setText('Continue')
-
-        self.timer.start()
+            self.timer.stop()
 
     def restart(self):
 
         self.counter = 0    # reset counter
         self.startButton.setChecked(True)   # retrigger start button
         self.startButton.setText('Pause')
-        self.pgPlot.clear()
         self.timer.start()
 
     def stop(self):
 
         self.timer.stop()
-        self.pgPlot.clear()
         self.counter = 0
         self.startButton.setChecked(False)  # reset start button
         self.startButton.setText('Start')
@@ -987,11 +998,8 @@ class LockinMonitor(QtGui.QWidget):
         status, slen = apival.val_monitor_sample_len(text)
         self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
         if status:
-            if slen > 0:
-                self.data = np.empty(slen)
-                self.restart()
-            else:
-                self.stop()
+            self.data = np.zeros(slen)
+            self.restart()
         else:
             self.stop()
 
@@ -1024,7 +1032,7 @@ class LockinMonitor(QtGui.QWidget):
     def update_plot(self):
         self.daq()
         if self.counter < len(self.data):
-            self.curve = self.pgPlot.plot(self.data[0:self.counter])
+            self.curve.setData(self.data[0:self.counter])
         else:
             self.curve.setData(self.data)
 
@@ -1037,6 +1045,7 @@ class SpectrumMonitor(QtGui.QWidget):
 
         self.pgPlot = pg.PlotWidget(title='Spectrum Monitor')
         mainLayout = QtGui.QGridLayout()
+        mainLayout.setAlignment(QtCore.Qt.AlignTop)
         mainLayout.addWidget(self.pgPlot, 0, 0)
         self.setLayout(mainLayout)
 
