@@ -174,7 +174,10 @@ def val_syn_mod_freq(freq_text, freq_unit_text):
             freq: float (Hz)
     '''
 
-    modfreq = siEval(freq_text + freq_unit_text)
+    if freq_text:   # if not empty string
+        modfreq = siEval(freq_text + freq_unit_text)
+    else:
+        return 0, 0
 
     if modfreq < 1e5 and modfreq >= 0:    # valid input
         return 2, modfreq
@@ -202,7 +205,10 @@ def val_syn_mod_depth(depth_text, depth_unit_text):
         except ValueError:
             return 0, 0
     else:
-        depth = siEval(depth_text + depth_unit_text)
+        if depth_text:  # if not empty string
+            depth = siEval(depth_text + depth_unit_text)
+        else:
+            return 0, 0
         if depth >= 0 and depth <= 5e6:       # valid input
             return 2, depth
         elif depth > 5e6:          # large depth, warning

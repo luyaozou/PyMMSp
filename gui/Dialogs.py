@@ -22,7 +22,7 @@ class SelInstDialog(QtGui.QDialog):
         self.setMinimumHeight(400)
         self.setWindowTitle('Select Instrument')
 
-        refreshButton = QtGui.QPushButton('Refresh')
+        refreshButton = QtGui.QPushButton('Refresh Available Instrument List')
         acceptButton = QtGui.QPushButton('Ok')
         cancelButton = QtGui.QPushButton('Cancel')
 
@@ -51,13 +51,13 @@ class SelInstDialog(QtGui.QDialog):
         selInst.setLayout(selInstLayout)
 
         # Set main layout
-        mainLayout = QtGui.QVBoxLayout()
-        mainLayout.addWidget(QtGui.QLabel('Reselecting instrument will reset instrument settings to default values.'))
-        mainLayout.addWidget(self.availableInst)
-        mainLayout.addWidget(refreshButton)
-        mainLayout.addWidget(selInst)
-        mainLayout.addWidget(cancelButton)
-        mainLayout.addWidget(acceptButton)
+        mainLayout = QtGui.QGridLayout()
+        mainLayout.addWidget(QtGui.QLabel('Reselecting instrument will reset instrument settings to default values.'), 0, 0, 1, 2)
+        mainLayout.addWidget(self.availableInst, 1, 0, 1, 2)
+        mainLayout.addWidget(refreshButton, 2, 0, 1, 2)
+        mainLayout.addWidget(selInst, 3, 0, 1, 2)
+        mainLayout.addWidget(cancelButton, 4, 0)
+        mainLayout.addWidget(acceptButton, 4, 1)
 
         self.setLayout(mainLayout)
 
@@ -167,6 +167,7 @@ class CloseSelInstDialog(QtGui.QDialog):
         okButton = QtGui.QPushButton(Shared.btn_label('complete'))
         mainLayout = QtGui.QVBoxLayout()
         mainLayout.addWidget(inst)
+        mainLayout.addWidget(QtGui.QLabel('No command will be sent before you hit the accept button'))
         mainLayout.addWidget(okButton)
         self.setLayout(mainLayout)
 

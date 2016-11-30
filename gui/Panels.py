@@ -55,8 +55,8 @@ class SynStatus(QtGui.QGroupBox):
         modGroup.setAlignment(QtCore.Qt.AlignLeft)
         modGroup.setCheckable(False)
         modGroupLayout = QtGui.QGridLayout()
-        modGroupLayout.addWidget(QtGui.QLabel('AM'), 0, 1)
-        modGroupLayout.addWidget(QtGui.QLabel('FM'), 0, 2)
+        modGroupLayout.addWidget(QtGui.QLabel('AM1'), 0, 1)
+        modGroupLayout.addWidget(QtGui.QLabel('FM1'), 0, 2)
         modGroupLayout.addWidget(QtGui.QLabel('Status'), 1, 0)
         modGroupLayout.addWidget(self.synAMStat, 1, 1)
         modGroupLayout.addWidget(self.synFMStat, 1, 2)
@@ -403,6 +403,7 @@ class SynCtrl(QtGui.QGroupBox):
         self.modFreqFill.textChanged.connect(self.tune_mod_parameter)
         self.modFreqUnitSel.currentIndexChanged.connect(self.tune_mod_parameter)
         self.modDepthFill.textChanged.connect(self.tune_mod_parameter)
+        self.modDepthUnitSel.currentIndexChanged.connect(self.tune_mod_parameter)
         self.modSwitchBtn.clicked.connect(self.switch_modulation)
         self.lfSwitchBtn.clicked.connect(self.switch_lf)
         self.lfVolFill.textChanged.connect(self.tune_lf)
@@ -423,6 +424,8 @@ class SynCtrl(QtGui.QGroupBox):
             self.setChecked(True)
         else:
             self.setChecked(False)
+            msg = Shared.MsgError(self, 'No Instrument!', 'No synthesizer is connected!')
+            msg.exec_()
 
         self.parent.synStatus.update()
 
@@ -513,36 +516,38 @@ class SynCtrl(QtGui.QGroupBox):
             if self.modDepthUnitSel.count() == 1:  # it has been set to AM
                 pass
             else:
+                self.modFreqFill.setText('{:.3f}'.format(15))
+                self.modDepthFill.setText('{:.1f}'.format(0))
                 for i in range(self.modDepthUnitSel.count()): # remove all items
                     self.modDepthUnitSel.removeItem(0)
                 self.modDepthUnitSel.addItems(['%'])
                 # fill in default parameters
                 self.modFreqUnitSel.setCurrentIndex(1)
                 self.modDepthUnitSel.setCurrentIndex(0)
-                self.modFreqFill.setText('{:.3f}'.format(15))
-                self.modDepthFill.setText('{:.1f}'.format(0))
         elif mod_index == 2:
             if self.modDepthUnitSel.count() == 3:  # it has been set to FM
                 pass
             else:
+                self.modFreqFill.setText('{:.3f}'.format(15))
+                self.modDepthFill.setText('{:.3f}'.format(75))
                 for i in range(self.modDepthUnitSel.count()): # remove all items
                     self.modDepthUnitSel.removeItem(0)
-                    self.modDepthUnitSel.addItems(['Hz', 'kHz', 'MHz'])
+                self.modDepthUnitSel.addItems(['Hz', 'kHz', 'MHz'])
                 # update parameters
                 self.modFreqUnitSel.setCurrentIndex(1)
                 self.modDepthUnitSel.setCurrentIndex(1)
-                self.modFreqFill.setText('{:.3f}'.format(15))
-                self.modDepthFill.setText('{:.3f}'.format(75))
         else:
             pass
 
         if mod_index:
             self.modFreq.show()     # Modulation selected. Show modulation widget
             self.modDepth.show()
+            self.lfSwitchBtn.show()
             self.lfVol.show()
         else:
             self.modFreq.hide()     # No modulation. Hide modulation widget
             self.modDepth.hide()
+            self.lfSwitchBtn.hide()
             self.lfVol.hide()
 
     def tune_mod_mode(self, mod_index):
@@ -702,6 +707,8 @@ class LockinCtrl(QtGui.QGroupBox):
             self.setChecked(True)
         else:
             self.setChecked(False)
+            msg = Shared.MsgError(self, 'No Instrument!', 'No lockin amplifier is connected!')
+            msg.exec_()
 
         self.parent.lcStatus.update()
 
@@ -833,6 +840,8 @@ class ScopeCtrl(QtGui.QGroupBox):
             self.setChecked(True)
         else:
             self.setChecked(False)
+            msg = Shared.MsgError(self, 'No Instrument!', 'No oscilloscope is connected!')
+            msg.exec_()
 
     def rateComm(self, rate_text):
 

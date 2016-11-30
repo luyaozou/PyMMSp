@@ -219,8 +219,7 @@ def read_am_source(synHandle, channel):
         Arguments
             synHandle: pyvisa.resources.Resource
             channel: int
-        Returns
-            text: str
+        Returns text: str
     '''
 
     try:
@@ -235,8 +234,7 @@ def read_am_state(synHandle, channel):
         Arguments
             synHandle: pyvisa.resources.Resource
             channel: int
-        Returns
-            status: boolean
+        Returns status: boolean
     '''
 
     try:
@@ -258,9 +256,9 @@ def read_am_depth(synHandle, channel):
 
     try:
         text = synHandle.query(':AM{:d}:DEPT?'.format(channel))
-        depth_linear = float(text) * 100
+        depth_linear = float(text.strip()) * 100
         text = synHandle.query(':AM{:d}:DEPT:EXP?'.format(channel))
-        depth_exp = float(text)
+        depth_exp = float(text.strip())
         return depth_linear, depth_exp
     except:
         return 0, 0
@@ -271,13 +269,12 @@ def read_am_freq(synHandle, channel):
         Arguments
             synHandle: pyvisa.resources.Resource
             channel: int
-        Returns
-            freq: float
+        Returns freq: float
     '''
 
     try:
         text = synHandle.query(':AM{:d}:INT{:d}:FREQ?'.format(channel, channel))
-        return float(text)
+        return float(text.strip())
     except:
         return 0
 
@@ -287,8 +284,7 @@ def read_am_waveform(synHandle, channel):
         Arguments
             synHandle: pyvisa.resources.Resource
             channel: int
-        Returns
-            text: str
+        Returns text: str
     '''
 
     try:
@@ -320,16 +316,16 @@ def set_am(synHandle, freq, depth, toggle_state):
 def read_fm_par(synHandle):
     ''' Read current frequency modulation setting.
         Returns
-            freq:  mod freq, float (kHz)
-            depth: mod depth, float (kHz)
+            freq:  mod freq, float (Hz)
+            depth: mod depth, float (Hz)
             status: on/off, bool
     '''
 
     try:
         text = synHandle.query(':FM1:INT1:FREQ?')
-        freq = float(text.strip()) * 1e-3
+        freq = float(text.strip())
         text = synHandle.query(':FM1:DEV?')
-        depth = float(text.strip()) * 1e-3
+        depth = float(text.strip())
         text = synHandle.query(':FM1:STAT?')
         status = bool(int(text.strip()))
         return freq, depth, status
@@ -342,8 +338,7 @@ def read_fm_source(synHandle, channel):
         Arguments
             synHandle: pyvisa.resources.Resource
             channel: int
-        Returns
-            text: str
+        Returns text: str
     '''
 
     try:
@@ -358,8 +353,7 @@ def read_fm_state(synHandle, channel):
         Arguments
             synHandle: pyvisa.resources.Resource
             channel: int
-        Returns
-            status: boolean
+        Returns status: boolean
     '''
 
     try:
@@ -374,14 +368,12 @@ def read_fm_dev(synHandle, channel):
         Arguments
             synHandle: pyvisa.resources.Resource
             channel: int
-        Returns
-            dev: float
+        Returns dev: float
     '''
 
     try:
         text = synHandle.query(':FM{:d}:DEV?'.format(channel))
-        dev = float(text)
-        return dev
+        return float(text.strip())
     except:
         return 0
 
@@ -391,13 +383,12 @@ def read_fm_freq(synHandle, channel):
         Arguments
             synHandle: pyvisa.resources.Resource
             channel: int
-        Returns
-            freq: float
+        Returns freq: float
     '''
 
     try:
         text = synHandle.query(':AM{:d}:INT{:d}:FREQ?'.format(channel, channel))
-        return float(text)
+        return float(text.strip())
     except:
         return 0
 
@@ -407,8 +398,7 @@ def read_fm_waveform(synHandle, channel):
         Arguments
             synHandle: pyvisa.resources.Resource
             channel: int
-        Returns
-            text: str
+        Returns text: str
     '''
 
     try:
@@ -442,8 +432,7 @@ def read_pm_source(synHandle, channel):
         Arguments
             synHandle: pyvisa.resources.Resource
             channel: int
-        Returns
-            text: str
+        Returns text: str
     '''
 
     try:
@@ -458,8 +447,7 @@ def read_pm_state(synHandle, channel):
         Arguments
             synHandle: pyvisa.resources.Resource
             channel: int
-        Returns
-            status: boolean
+        Returns status: boolean
     '''
 
     try:
@@ -474,14 +462,12 @@ def read_pm_dev(synHandle, channel):
         Arguments
             synHandle: pyvisa.resources.Resource
             channel: int
-        Returns
-            dev: float
+        Returns dev: float
     '''
 
     try:
         text = synHandle.query(':PM{:d}:DEV?'.format(channel))
-        dev = float(text)
-        return dev
+        return float(text.strip())
     except:
         return 0
 
@@ -570,7 +556,7 @@ def set_lf_amp(synHandle, lf_amp):
     '''
 
     try:
-        num, vcode = synHandle.write(':LFO:AMPL {.3f}VP'.format(lf_amp))
+        num, vcode = synHandle.write(':LFO:AMPL {:.3f}VP'.format(lf_amp))
         return vcode
     except:
         return 'IOError'
@@ -579,7 +565,7 @@ def set_lf_amp(synHandle, lf_amp):
 def query_err_msg(synHandle):
     ''' Query the most recent error message. Keep doing it can clear all
         error messages.
-        Returns msg, str
+        Returns msg: str
     '''
 
     try:
