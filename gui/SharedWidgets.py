@@ -134,7 +134,7 @@ class lcTcBox(QtGui.QComboBox):
         self.setCurrentIndex(5)
 
 
-class FreqWinEntryCaption(QtGui.QWidget):
+class ScanEntry(QtGui.QWidget):
     ''' Frequency window entry for scanning job configuration with captions '''
 
     def __init__(self, main):
@@ -152,140 +152,12 @@ class FreqWinEntryCaption(QtGui.QWidget):
         # validate default values
         self.val_waittime()
 
-        startFreq = QtGui.QWidget()
-        startFreqLayout = QtGui.QFormLayout()
-        startFreqLayout.setRowWrapPolicy(2)
-        startFreqLayout.addRow(QtGui.QLabel('Start Freq (MHz)'), self.startFreqFill)
-        startFreq.setLayout(startFreqLayout)
-
-        stopFreq = QtGui.QWidget()
-        stopFreqLayout = QtGui.QFormLayout()
-        stopFreqLayout.setRowWrapPolicy(2)
-        stopFreqLayout.addRow(QtGui.QLabel('Stop Freq (MHz)'), self.stopFreqFill)
-        stopFreq.setLayout(stopFreqLayout)
-
-        step = QtGui.QWidget()
-        stepLayout = QtGui.QFormLayout()
-        stepLayout.setRowWrapPolicy(2)
-        stepLayout.addRow(QtGui.QLabel('Step Size (MHz)'), self.stepFill)
-        step.setLayout(stepLayout)
-
-        avg = QtGui.QWidget()
-        avgLayout = QtGui.QFormLayout()
-        avgLayout.setRowWrapPolicy(2)
-        avgLayout.addRow(QtGui.QLabel('Average'), self.avgFill)
-        avg.setLayout(avgLayout)
-
-        sens = QtGui.QWidget()
-        sensLayout = QtGui.QFormLayout()
-        sensLayout.setRowWrapPolicy(2)
-        sensLayout.addRow(QtGui.QLabel('Sensitivity'), self.sensSel)
-        sens.setLayout(sensLayout)
-
-        tc = QtGui.QWidget()
-        tcLayout = QtGui.QFormLayout()
-        tcLayout.setRowWrapPolicy(2)
-        tcLayout.addRow(QtGui.QLabel('Time Constant'), self.tcSel)
-        tc.setLayout(tcLayout)
-
-        waitTime = QtGui.QWidget()
-        waitTimeLayout = QtGui.QFormLayout()
-        waitTimeLayout.setRowWrapPolicy(2)
-        waitTimeLayout.addRow(QtGui.QLabel('Wait Time (ms)'), self.waitTimeFill)
-        waitTime.setLayout(waitTimeLayout)
-
-        mainLayout = QtGui.QHBoxLayout()
-        mainLayout.addWidget(startFreq)
-        mainLayout.addWidget(stopFreq)
-        mainLayout.addWidget(step)
-        mainLayout.addWidget(avg)
-        mainLayout.addWidget(sens)
-        mainLayout.addWidget(tc)
-        mainLayout.addWidget(waitTime)
-        self.setLayout(mainLayout)
-
         self.startFreqFill.textChanged.connect(self.val_start_freq)
         self.stopFreqFill.textChanged.connect(self.val_stop_freq)
         self.stepFill.textChanged.connect(self.val_step)
         self.avgFill.textChanged.connect(self.val_avg)
         self.tcSel.currentIndexChanged.connect(self.val_waittime)
         self.waitTimeFill.textChanged.connect(self.val_waittime)
-
-    def setDefault(self):
-        pass
-
-    def val_start_freq(self, text):
-
-        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
-        status, freq = apival.val_syn_freq(text, vdi_index)
-        self.startFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
-
-    def val_stop_freq(self, text):
-
-        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
-        status, freq = apival.val_syn_freq(text, vdi_index)
-        self.stopFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
-
-    def val_step(self, text):
-
-        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
-        status, number = apival.val_float(text)
-        self.stepFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
-
-    def val_avg(self, text):
-
-        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
-        status, number = apival.val_int(text)
-        self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
-
-    def val_waittime(self):
-
-        text = self.waitTimeFill.text()
-        tc_index = self.tcSel.currentIndex()
-        status, waittime = apival.val_lc_waittime(text, tc_index)
-        self.waitTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
-
-
-class FreqWinEntryNoCaption(QtGui.QWidget):
-    ''' Frequency window entry for scanning job configuration without captions '''
-
-    def __init__(self, main):
-        QtGui.QWidget.__init__(self, parent=None)
-        self.main = main
-
-        self.startFreqFill = QtGui.QLineEdit()
-        self.stopFreqFill = QtGui.QLineEdit()
-        self.stepFill = QtGui.QLineEdit()
-        self.avgFill = QtGui.QLineEdit()
-        self.tcSel = lcTcBox()
-        self.sensSel = lcSensBox()
-        self.waitTimeFill = QtGui.QLineEdit()
-        self.waitTimeFill.setText('30')         # default value
-        # validate default values
-        self.val_waittime()
-
-
-        mainLayout = QtGui.QHBoxLayout()
-        mainLayout.setSpacing(25)
-        mainLayout.addWidget(self.startFreqFill)
-        mainLayout.addWidget(self.stopFreqFill)
-        mainLayout.addWidget(self.stepFill)
-        mainLayout.addWidget(self.avgFill)
-        mainLayout.addWidget(self.sensSel)
-        mainLayout.addWidget(self.tcSel)
-        mainLayout.addWidget(self.waitTimeFill)
-        self.setLayout(mainLayout)
-
-        self.startFreqFill.textChanged.connect(self.val_start_freq)
-        self.stopFreqFill.textChanged.connect(self.val_stop_freq)
-        self.stepFill.textChanged.connect(self.val_step)
-        self.avgFill.textChanged.connect(self.val_avg)
-        self.tcSel.currentIndexChanged.connect(self.val_waittime)
-        self.waitTimeFill.textChanged.connect(self.val_waittime)
-
-    def setDefault(self):
-        ''' Set default values if specified '''
-        pass
 
     def val_start_freq(self, text):
 

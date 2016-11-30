@@ -24,7 +24,7 @@ class JPLScanConfig(QtGui.QDialog):
         QtGui.QDialog.__init__(self, parent)
         self.parent = parent
         self.setWindowTitle('Lockin scan configuration (JPL style)')
-        self.setMinimumSize(900, 350)
+        self.setMinimumSize(900, 600)
 
         # Add top buttons
         addBatchButton = QtGui.QPushButton('Add batch')
@@ -52,12 +52,18 @@ class JPLScanConfig(QtGui.QDialog):
 
         # Add freq config entries
         self.entryWidgetList = []
-        self.entryWidgetList.append(Shared.FreqWinEntryCaption(self.parent))
+        self.entryLayout = QtGui.QGridLayout()
+        self.entryLayout.setAlignment(QtCore.Qt.AlignTop)
+        # add entries
+        self.entryLayout.addWidget(QtGui.QLabel('Start Freq (MHz)'), 0, 0)
+        self.entryLayout.addWidget(QtGui.QLabel('Stop Freq (MHz)'), 0, 1)
+        self.entryLayout.addWidget(QtGui.QLabel('Step (MHz)'), 0, 2)
+        self.entryLayout.addWidget(QtGui.QLabel('Averages'), 0, 3)
+        self.entryLayout.addWidget(QtGui.QLabel('Sensitivity'), 0, 4)
+        self.entryLayout.addWidget(QtGui.QLabel('Time Constant'), 0, 5)
+        self.entryLayout.addWidget(QtGui.QLabel('Wait time (ms)'), 0, 6)
 
-        self.entryLayout = QtGui.QVBoxLayout()
-        self.entryLayout.setSpacing(0)
-        for freqEntry in self.entryWidgetList:
-            self.entryLayout.addWidget(freqEntry)
+        self.add_entry()
 
         entryWidgets = QtGui.QWidget()
         entryWidgets.setLayout(self.entryLayout)
@@ -84,10 +90,29 @@ class JPLScanConfig(QtGui.QDialog):
         ''' Add batch entry to this dialog window '''
 
         # generate a new batch entry
-        entry = Shared.FreqWinEntryNoCaption(self.parent)
+        entry = Shared.ScanEntry(self.parent)
+
+        # get the current last entry
+        if self.entryWidgetList:
+            last_entry = self.entryWidgetList[-1]
+            # set default values to be the same as the last one
+            entry.stepFill.setText(last_entry.stepFill.text())
+            entry.avgFill.setText(last_entry.avgFill.text())
+            entry.sensSel.setCurrentIndex(last_entry.sensSel.currentIndex())
+            entry.tcSel.setCurrentIndex(last_entry.tcSel.currentIndex())
+            entry.waitTimeFill.setText(last_entry.waitTimeFill.text())
+        else:
+            pass
         # add this entry to the layout and to the entry list
         self.entryWidgetList.append(entry)
-        self.entryLayout.addWidget(entry)
+        row = len(self.entryWidgetList)
+        self.entryLayout.addWidget(entry.startFreqFill, row, 0)
+        self.entryLayout.addWidget(entry.stopFreqFill, row, 1)
+        self.entryLayout.addWidget(entry.stepFill, row, 2)
+        self.entryLayout.addWidget(entry.avgFill, row, 3)
+        self.entryLayout.addWidget(entry.sensSel, row, 4)
+        self.entryLayout.addWidget(entry.tcSel, row, 5)
+        self.entryLayout.addWidget(entry.waitTimeFill, row, 6)
 
     def remove_entry(self):
         ''' Remove last batch entry in this dialog window '''
@@ -100,7 +125,20 @@ class JPLScanConfig(QtGui.QDialog):
         else:
             # remove this entry
             entry = self.entryWidgetList.pop()
-            self.entryLayout.removeWidget(entry)
+            self.entryLayout.removeWidget(entry.startFreqFill)
+            entry.startFreqFill.deleteLater()
+            self.entryLayout.removeWidget(entry.stopFreqFill)
+            entry.stopFreqFill.deleteLater()
+            self.entryLayout.removeWidget(entry.stepFill)
+            entry.stepFill.deleteLater()
+            self.entryLayout.removeWidget(entry.avgFill)
+            entry.avgFill.deleteLater()
+            self.entryLayout.removeWidget(entry.sensSel)
+            entry.sensSel.deleteLater()
+            self.entryLayout.removeWidget(entry.tcSel)
+            entry.tcSel.deleteLater()
+            self.entryLayout.removeWidget(entry.waitTimeFill)
+            entry.waitTimeFill.deleteLater()
             entry.deleteLater()
 
     def set_file_directory(self):
@@ -449,17 +487,17 @@ class SingleScan(QtGui.QWidget):
 
         if btn_pressed:
             self.pauseButton.setText('Resume Current Scan')
-            print('pause')
+            #print('pause')
             self.waitTimer.stop()
         else:
             self.pauseButton.setText('Pause Current Scan')
-            print('resume')
+            #print('resume')
             self.waitTimer.start()
 
     def redo_current(self):
         ''' Erase current y array and restart a scan '''
 
-        print('redo current')
+        #print('redo current')
         self.waitTimer.stop()
         if self.pauseButton.isChecked():
             self.pauseButton.click()
@@ -482,7 +520,7 @@ class SingleScan(QtGui.QWidget):
                        QtGui.QMessageBox.No, QtGui.QMessageBox.No)
 
         if q == QtGui.QMessageBox.Yes:
-            print('restart average')
+            #print('restart average')
             self.waitTimer.stop()
             self.acquired_avg = 0
             self.current_x_index = 0
@@ -508,12 +546,12 @@ class SingleScan(QtGui.QWidget):
                        QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Yes)
 
         if q == QtGui.QMessageBox.Yes:
-            print('abort current')
+            #print('abort current')
             self.waitTimer.stop()
             self.parent.batch_pts_taken += len(self.x)*self.target_avg
             self.save_data()
         elif q == QtGui.QMessageBox.No:
-            print('abort current')
+            #print('abort current')
             self.waitTimer.stop()
             self.parent.batch_pts_taken += len(self.x)*self.target_avg
             self.parent.move_to_next_entry.emit()
@@ -614,16 +652,16 @@ class TestClass(QtGui.QWidget):
         self.parent.currentProgBar.setRange(0, ceil(total_pts*self.waittime*1e-3))
         self.parent.currentProgBar.setValue(ceil(self.pts_taken*self.waittime*1e-3))
 
-        print('tune lockin sensitivity to {:s}'.format(Shared.LIASENSLIST[self.sens_index]))
-        print('tune lockin time constant to {:s}'.format(Shared.LIATCLIST[self.tc_index]))
+        #print('tune lockin sensitivity to {:s}'.format(Shared.LIASENSLIST[self.sens_index]))
+        #print('tune lockin time constant to {:s}'.format(Shared.LIATCLIST[self.tc_index]))
         self.tune_syn()
 
     def tune_syn(self):
-        print('tune syn freq to {:.3f} MHz'.format(self.x[self.current_x_index]/self.multiplier))
+        #print('tune syn freq to {:.3f} MHz'.format(self.x[self.current_x_index]/self.multiplier))
         self.waitTimer.start()
 
     def query_lockin(self):
-        print('query_lockin_buffer')
+        #print('query_lockin_buffer')
         # append data to data list
         y_avg = np.random.random_sample()
         self.y[self.current_x_index] = y_avg
@@ -675,24 +713,25 @@ class TestClass(QtGui.QWidget):
         self.ySumCurve.setData(self.x, self.y_sum)
 
     def save_data(self):
-        print('save data')
+        #print('save data')
+        pass
 
     def pause_current(self, btn_pressed):
         ''' Pause/resume data acquisition '''
 
         if btn_pressed:
             self.pauseButton.setText('Resume Current Scan')
-            print('pause')
+            #print('pause')
             self.waitTimer.stop()
         else:
             self.pauseButton.setText('Pause Current Scan')
-            print('resume')
+            #print('resume')
             self.waitTimer.start()
 
     def redo_current(self):
         ''' Erase current y array and restart a scan '''
 
-        print('redo current')
+        #print('redo current')
         self.waitTimer.stop()
         if self.pauseButton.isChecked():
             self.pauseButton.click()
@@ -715,7 +754,7 @@ class TestClass(QtGui.QWidget):
                        QtGui.QMessageBox.No, QtGui.QMessageBox.No)
 
         if q == QtGui.QMessageBox.Yes:
-            print('restart average')
+            #print('restart average')
             self.waitTimer.stop()
             self.acquired_avg = 0
             self.current_x_index = 0
@@ -741,12 +780,12 @@ class TestClass(QtGui.QWidget):
                        QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Yes)
 
         if q == QtGui.QMessageBox.Yes:
-            print('abort current')
+            #print('abort current')
             self.waitTimer.stop()
             self.parent.batch_pts_taken += len(self.x)*self.target_avg
             self.save_data()
         elif q == QtGui.QMessageBox.No:
-            print('abort current')
+            #print('abort current')
             self.waitTimer.stop()
             self.parent.batch_pts_taken += len(self.x)*self.target_avg
             self.parent.move_to_next_entry.emit()
