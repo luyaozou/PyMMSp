@@ -400,6 +400,16 @@ class SynCtrl(QtGui.QGroupBox):
         synPowerCtrl = QtGui.QWidget()
         synPowerCtrl.setLayout(synPowerLayout)
 
+        self.powerSwitchTimer = QtCore.QTimer()
+        self.powerSwitchTimer.setInterval(1000)
+        self.powerSwitchTimer.setSingleShot(True)
+        self.powerSwitchProgBar = QtGui.QProgressBar()
+        self.progDialog = QtGui.QDialog()
+        self.progDialog.setWindowTitle('RF Ramp')
+        progDialogLayout = QtGui.QVBoxLayout()
+        progDialogLayout.addWidget(self.powerSwitchProgBar)
+        self.progDialog.setLayout(progDialogLayout)
+
         ## -- Set up main layout
         mainLayout = QtGui.QVBoxLayout()
         mainLayout.setAlignment(QtCore.Qt.AlignTop)
@@ -423,9 +433,10 @@ class SynCtrl(QtGui.QGroupBox):
         self.lfVolFill.textChanged.connect(self.tune_lf)
 
         # Trigger synthesizer power toggle and communication
-        synPowerManualInput.clicked.connect(self.tune_synRFPower)
-        self.synPowerSwitchBtn.clicked.connect(self.switch_synRFPower)
+        synPowerManualInput.clicked.connect(self.synRFPower_manual)
+        self.synPowerSwitchBtn.clicked.connect(self.synRFPower_auto)
         self.synPowerSwitchBtn.toggled.connect(self.set_synPowerSwitchBtn_label)
+        self.powerSwitchTimer.timeout.connect(self.ramp_synRFPower)
 
         # Trigger groupbox check_state
         self.clicked.connect(self.check)
@@ -467,7 +478,30 @@ class SynCtrl(QtGui.QGroupBox):
         else:   # else ignore change
             pass
 
-    def tune_synRFPower(self):
+    def ramp_synRFPower(self):
+        '''
+            The actual synthesizer api command.
+            Triggered by self.powerSwitchTimer.timeout
+            Returns successful status
+        '''
+
+        try:
+            this_power = next(self.ramper)
+            vCode = apisyn.set_syn_power(self.parent.synHandle, this_power)
+            if vCode == pyvisa.constants.StatusCode.success:
+                self.parent.synStatus.update()
+                self.powerSwitchProgBar.setValue(self.powerSwitchProgBar.value() + 1)
+                # start timer
+                self.powerSwitchTimer.start()
+            else:
+                self.powerSwitchTimer.stop()
+                msg = Shared.InstStatus(self, vCode)
+                msg.exec_()
+        except StopIteration:
+            self.powerSwitchTimer.stop()
+            self.progDialog.accept()
+
+    def synRFPower_manual(self):
         '''
             Communicate with the synthesizer and set up RF power
             (automatically turn RF on)
@@ -476,34 +510,53 @@ class SynCtrl(QtGui.QGroupBox):
         # Get current syn power
         current_power = apisyn.read_syn_power(self.parent.synHandle)
         # Grab manual input power
-        set_power, okay = QtGui.QInputDialog.getInt(self, 'Synthesizer RF Power',
-                                'Manual Input (-20 to 0)', current_power, -20, 0, 1)
+        target_power, okay = QtGui.QInputDialog.getInt(self, 'RF Power',
+                        'Manual Input (-20 to 0)', current_power, -20, 0, 1)
+
         if okay:    # hopefully no error occurs
-            vCode = apisyn.set_syn_power(self.parent.synHandle, set_power)
-            if vCode == pyvisa.constants.StatusCode.success:
-                pass
+            # turn on RF toggle first
+            apisyn.set_power_toggle(self.parent.synHandle, True)
+            self.synPowerSwitchBtn.setChecked(True)
+            self.powerSwitchProgBar.setRange(0, abs(current_power - target_power))
+            self.powerSwitchProgBar.setValue(0)
+            if current_power > target_power:
+                self.ramper = apisyn.ramp_down(current_power, target_power)
             else:
-                msg = Shared.InstStatus(self, vCode)
-                msg.exec_()
-            # update synthesizer status
-            self.parent.synStatus.update()
-            self.synPowerSwitchBtn.setChecked(apisyn.read_power_toggle(self.parent.synHandle))
+                self.ramper = apisyn.ramp_up(current_power, target_power)
+            self.ramp_synRFPower()
+            self.progDialog.exec_()
         else:
             pass
 
-    def switch_synRFPower(self, btn_pressed):
+    def synRFPower_auto(self, btn_pressed):
         '''
-            switch synthesizer RF on/off
+            Automatically switch synthesizer RF on/off
         '''
 
-        vCode = apisyn.set_power_toggle(self.parent.synHandle,
-                                        self.synPowerSwitchBtn.isChecked())
+        # Get current syn power
+        current_power = apisyn.read_syn_power(self.parent.synHandle)
 
-        if vCode == pyvisa.constants.StatusCode.success:
-            pass
-        else:
-            msg = Shared.InstStatus(self, vCode)
-            msg.exec_()
+        if btn_pressed: # user wants to turn on
+            apisyn.set_power_toggle(self.parent.synHandle, True)
+            self.ramper = apisyn.ramp_up(current_power, 0)
+            self.powerSwitchProgBar.setRange(0, abs(current_power))
+            self.powerSwitchProgBar.setValue(0)
+            self.ramp_synRFPower()
+            self.progDialog.exec_()
+        else:   # user wants to turn off
+            self.ramper = apisyn.ramp_down(current_power, -20)
+            self.powerSwitchProgBar.setRange(0, abs(current_power + 20))
+            self.powerSwitchProgBar.setValue(0)
+            self.ramp_synRFPower()
+            result = self.progDialog.exec_()
+            # RF protection before turn off
+            current_power = apisyn.read_syn_power(self.parent.synHandle)
+            if result and (current_power <= -20):
+            # safely turn off RF
+                apisyn.set_power_toggle(self.parent.synHandle, False)
+                self.synPowerSwitchBtn.setChecked(False)
+            else:
+                self.synPowerSwitchBtn.setChecked(True)
 
         self.parent.synStatus.update()
 
@@ -694,7 +747,7 @@ class LockinCtrl(QtGui.QGroupBox):
         filterSelect.addItems(['None', 'Line notch', '2× Line notch', 'Both'])
         filterSelect.setCurrentIndex(1)
         autoPhaseBtn = QtGui.QPushButton('Auto Phase')
-        autoGainBtn = QtGui.QPushButton('Auto Gain')
+        resetBtn = QtGui.QPushButton('Reset')
 
         ## -- Set up main layout --
         mainLayout = QtGui.QGridLayout()
@@ -716,7 +769,7 @@ class LockinCtrl(QtGui.QGroupBox):
         mainLayout.addWidget(QtGui.QLabel('Input Filter'), 3, 2)
         mainLayout.addWidget(filterSelect, 3, 3)
         mainLayout.addWidget(autoPhaseBtn, 4, 0)
-        mainLayout.addWidget(autoGainBtn, 4, 2)
+        mainLayout.addWidget(resetBtn, 4, 2)
         self.setLayout(mainLayout)
 
         ## -- Trigger setting status and communication
@@ -727,9 +780,9 @@ class LockinCtrl(QtGui.QGroupBox):
         coupleSelect.currentIndexChanged[str].connect(self.tune_coupling)
         reserveSelect.currentIndexChanged[str].connect(self.tune_reserve)
         groundingSelect.currentIndexChanged[str].connect(self.tune_grounding)
-        filterSelect.currentIndexChanged[str].connect(self.tune_filter)
+        filterSelect.currentIndexChanged[int].connect(self.tune_filter)
         autoPhaseBtn.clicked.connect(self.auto_phase)
-        autoGainBtn.clicked.connect(self.auto_gain)
+        resetBtn.clicked.connect(self.reset)
         self.clicked.connect(self.check)
 
     def check(self):
@@ -846,12 +899,12 @@ class LockinCtrl(QtGui.QGroupBox):
             msg = Shared.InstStatus(self, vCode)
             msg.exec_()
 
-    def tune_filter(self, filter_text):
+    def tune_filter(self, filter_int):
         '''
             Communicate with the lockin and set input notch filter
         '''
 
-        vCode = apilc.set_input_filter(self.parent.lcHandle, filter_text)
+        vCode = apilc.set_input_filter(self.parent.lcHandle, filter_int)
 
         if vCode == pyvisa.constants.StatusCode.success:
             self.parent.lcStatus.update()
@@ -872,13 +925,11 @@ class LockinCtrl(QtGui.QGroupBox):
             msg.exec_()
 
 
-    def auto_gain(self):
+    def reset(self):
 
-        vCode = apilc.auto_gain(self.parent.lcHandle)
+        vCode = apilc.reset(self.parent.lcHandle)
         if vCode == pyvisa.constants.StatusCode.success:
             self.parent.lcStatus.update()
-            sens_index = apilc.read_sens(self.parent.lcHandle)
-            self.sensSelect.setCurrentIndex(sens_index)
         else:
             msg = Shared.InstStatus(self, vCode)
             msg.exec_()

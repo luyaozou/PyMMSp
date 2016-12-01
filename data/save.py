@@ -20,7 +20,7 @@ def save_lwa(filename, y, h_info):
     itgtime, sens, tc, mod_freq, mod_depth, start_freq, step, avg = h_info
     comments = ''
 
-    with open(filename, 'w+') as f:
+    with open(filename, 'a') as f:
         # write first line
         f.write('DATE ' + d.strftime('%m-%d-%Y'))
         f.write(' TIME ' + d.strftime('%H:%M:%S'))

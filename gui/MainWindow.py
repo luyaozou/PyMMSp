@@ -139,6 +139,9 @@ class MainWindow(QtGui.QMainWindow):
             # simply uncheck panels to prevent the warning dialog
             if self.synHandle:
                 apisyn.init_syn(self.synHandle)
+                # check RF toggle state
+                toggle_state = apisyn.read_power_toggle(self.synHandle)
+                self.synCtrl.synPowerSwitchBtn.setChecked(toggle_state)
             else:
                 pass
             if self.lcHandle:

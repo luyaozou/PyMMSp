@@ -1,5 +1,4 @@
 #! encoding = utf-8
-import time
 import pyvisa
 
 
@@ -66,18 +65,8 @@ def set_power_toggle(synHandle, toggle_state):
     try:
         if toggle_state:     # user want to turn on RF
             num, vcode = synHandle.write(':OUTP 1')
-            # only ramp up power if the RF is successfully turned on
-            if vcode == pyvisa.constants.StatusCode.success:
-                vcode = set_syn_power(synHandle, 0)
-            else:
-                pass
         else:               # user want to turn off RF
-            vcode = set_syn_power(synHandle, -20)
-            # only turn off RF if power is successfully ramped down
-            if vcode == pyvisa.constants.StatusCode.success:
-                num, vcode = synHandle.write(':OUTP 0')
-            else:
-                pass
+            num, vcode = synHandle.write(':OUTP 0')
         return vcode
     except:
         return 'IOError'
@@ -90,8 +79,7 @@ def read_syn_power(synHandle):
 
     try:
         text = synHandle.query(':POW?')
-        current_power = float(text.strip())
-        return current_power
+        return float(text.strip())
     except:
         return -20
 
@@ -101,20 +89,16 @@ def set_syn_power(synHandle, set_power):
         Returns visaCode
     '''
 
-    current_power = read_syn_power(synHandle)
+    # the ultimate protection
+    if set_power > 0:
+        set_power = 0
+    elif (set_power > -20) and (not read_power_toggle(synHandle)):
+        return 'Error: RF not on'
+    else:
+        pass
 
     try:
-        if set_power > current_power:
-            # turn on RF
-            for n in ramp_up(current_power, set_power):
-                num, vcode = synHandle.write(':POW {:g}DBM'.format(n))
-                time.sleep(0.5)   # pause 0.5 second
-        elif set_power < current_power:
-            for n in ramp_down(current_power, set_power):
-                num, vcode = synHandle.write(':POW {:g}DBM'.format(n))
-                time.sleep(0.5)   # pause 0.5 second
-        else:
-            vcode = pyvisa.constants.StatusCode.success
+        num, vcode = synHandle.write(':POW {:g}DBM'.format(set_power))
         return vcode
     except:
         return 'IOError'

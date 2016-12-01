@@ -14,6 +14,19 @@ def init_lia(lcHandle):
     return vcode
 
 
+def reset(lcHandle):
+    ''' Reset lockin to default values
+        Returns visaCode
+    '''
+
+    try:
+        num, vcode = lcHandle.write('*RST')
+        vcode = init_lia(lcHandle)
+        return vcode
+    except:
+        return 'IOError'
+
+
 def query_inst_name(lcHandle):
     ''' Query instrument name
         Returns instrument name, str

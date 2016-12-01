@@ -340,18 +340,20 @@ class SynInfoDialog(QtGui.QDialog):
         modGroupLayout.addWidget(self.lfVolLabel, 7, 3)
         self.modGroup.setLayout(modGroupLayout)
 
-        acceptButton = QtGui.QPushButton(Shared.btn_label('accept'))
+        self.acceptButton = QtGui.QPushButton(Shared.btn_label('accept'))
 
         mainLayout = QtGui.QGridLayout()
         mainLayout.addWidget(self.instGroup, 0, 0, 1, 5)
         mainLayout.addWidget(self.rfGroup, 1, 0, 1, 5)
         mainLayout.addWidget(self.modGroup, 2, 0, 1, 5)
-        mainLayout.addWidget(acceptButton, 3, 2, 1, 1)
+        mainLayout.addWidget(self.acceptButton, 3, 2, 1, 1)
         self.setLayout(mainLayout)
 
-        acceptButton.clicked.connect(self.accept)
+        self.acceptButton.clicked.connect(self.accept)
 
     def display(self):
+
+        self.acceptButton.setText(Shared.btn_label('accept'))
 
         if self.parent.synHandle:
             self.update()
@@ -504,7 +506,7 @@ class LockinInfoDialog(QtGui.QDialog):
         outputGroupLayout.addWidget(self.outputSRateLabel, 3, 1, 1, 2)
         self.outputGroup.setLayout(outputGroupLayout)
 
-        acceptButton = QtGui.QPushButton(Shared.btn_label('accept'))
+        self.acceptButton = QtGui.QPushButton(Shared.btn_label('accept'))
 
         mainLayout = QtGui.QGridLayout()
         mainLayout.addWidget(self.instGroup, 0, 0, 1, 6)
@@ -512,12 +514,14 @@ class LockinInfoDialog(QtGui.QDialog):
         mainLayout.addWidget(self.outputGroup, 1, 3, 1, 3)
         mainLayout.addWidget(self.refGroup, 2, 0, 1, 3)
         mainLayout.addWidget(self.gainGroup, 2, 3, 1, 3)
-        mainLayout.addWidget(acceptButton, 3, 2, 1, 2)
+        mainLayout.addWidget(self.acceptButton, 3, 2, 1, 2)
         self.setLayout(mainLayout)
 
-        acceptButton.clicked.connect(self.accept)
+        self.acceptButton.clicked.connect(self.accept)
 
     def display(self):
+
+        self.acceptButton.setText(Shared.btn_label('accept'))
 
         if self.parent.lcHandle:
             self.update()
