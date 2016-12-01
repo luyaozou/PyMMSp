@@ -192,13 +192,13 @@ def val_syn_mod_depth(depth_text, depth_unit_text):
             depth_unit_text: int, modulation depth unit
         Returns
             status: int (2: safe; 1: warning; 0: fatal)
-            freq: float (dimensionless for AM, Hz for FM)
+            freq: float ('%' for AM, Hz for FM)
     '''
 
     if depth_unit_text == '%':
         try:
-            depth = float(depth_text) * 1e-2
-            if depth <= 0.75 and depth >= 0:       # valid input
+            depth = float(depth_text)
+            if depth <= 75 and depth >= 0:       # valid input
                 return 2, depth
             else:
                 return 0, 0

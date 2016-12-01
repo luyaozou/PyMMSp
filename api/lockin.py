@@ -9,7 +9,7 @@ def init_lia(lcHandle):
     '''
 
     num, vcode = lcHandle.write('OUTX1')      # GPIB output
-    num, vcode = lcHandle.write('FMOD0;ISRC0;IGND1;DDEF1,0,0;DDEF2,1,0;FPOP1,1')
+    num, vcode = lcHandle.write('FMOD0;ISRC0;ICPL1;IGND1;HARM1;DDEF1,0,0;DDEF2,1,0;FPOP1,1')
 
     return vcode
 
@@ -108,6 +108,18 @@ def auto_phase(lcHandle):
 
     try:
         num, vcode = lcHandle.write('APHS')
+        return vcode
+    except:
+        return 'IOError'
+
+
+def auto_gain(lcHandle):
+    ''' Autogain in lockin.
+        Returns visaCode
+    '''
+
+    try:
+        num, vcode = lcHandle.write('AGAN')
         return vcode
     except:
         return 'IOError'
@@ -291,18 +303,17 @@ def read_input_grounding(lcHandle):
         return 'N.A.'
 
 
-def read_input_coupling(lcHandle):
-    ''' Read input coupling
-        Returns
-            text: str
+def set_input_grounding(lcHandle, gnd_text):
+    ''' Set input grounding
+        Returns visaCode
     '''
 
-    a_dict = {0:'AC', 1:'DC'}
+    a_dict = {'Float':'IGND0', 'Ground':'IGND1'}
     try:
-        text = lcHandle.query('ICPL?')
-        return a_dict[int(text.strip())]
+        num, vcode = lcHandle.write(a_dict[gnd_text])
+        return vcode
     except:
-        return 'N.A.'
+        return 'IOError'
 
 
 def read_input_filter(lcHandle):
@@ -311,13 +322,25 @@ def read_input_filter(lcHandle):
             text: str
     '''
 
-    a_dict = {0:'No filter', 1:'Line notch',
-              2:'2×Line notch', 3:'Both line notch'}
+    a_dict = {0:'No filter', 1:'1× Line notch',
+              2:'2× Line notch', 3:'1× & 2× Line notch'}
     try:
         text = lcHandle.query('ILIN?')
         return a_dict[int(text.strip())]
     except:
         return 'N.A.'
+
+
+def set_input_filter(lcHandle, filter_index):
+    ''' Set input notch filter
+        Returns visaCode
+    '''
+
+    try:
+        num, vcode = lcHandle.write('ILIN{:d}'.format(filter_index))
+        return vcode
+    except:
+        return 'IOError'
 
 
 def read_lp_slope(lcHandle):
@@ -349,7 +372,7 @@ def read_disp(lcHandle):
         j, k = text.strip().split(',')
         ch1 = a_dict[int(j)]
         if k:
-            ch1 += '; Ratio {:s}'.format(a_dict[k+2])
+            ch1 += '; Ratio {:s}'.format(a_dict[int(k) + 2])
         else:
             pass
     except:
@@ -360,7 +383,7 @@ def read_disp(lcHandle):
         j, k = text.strip().split(',')
         ch2 = b_dict[int(j)]
         if k:
-            ch2 += '; Ratio {:s}'.format(a_dict[k+2])
+            ch2 += '; Ratio {:s}'.format(a_dict[int(k) + 2])
         else:
             pass
     except:

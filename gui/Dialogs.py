@@ -52,12 +52,11 @@ class SelInstDialog(QtGui.QDialog):
 
         # Set main layout
         mainLayout = QtGui.QGridLayout()
-        mainLayout.addWidget(QtGui.QLabel('Reselecting instrument will reset instrument settings to default values.'), 0, 0, 1, 2)
-        mainLayout.addWidget(self.availableInst, 1, 0, 1, 2)
-        mainLayout.addWidget(refreshButton, 2, 0, 1, 2)
-        mainLayout.addWidget(selInst, 3, 0, 1, 2)
-        mainLayout.addWidget(cancelButton, 4, 0)
-        mainLayout.addWidget(acceptButton, 4, 1)
+        mainLayout.addWidget(self.availableInst, 0, 0, 1, 2)
+        mainLayout.addWidget(refreshButton, 1, 0, 1, 2)
+        mainLayout.addWidget(selInst, 2, 0, 1, 2)
+        mainLayout.addWidget(cancelButton, 3, 0)
+        mainLayout.addWidget(acceptButton, 3, 1)
 
         self.setLayout(mainLayout)
 
@@ -457,9 +456,9 @@ class LockinInfoDialog(QtGui.QDialog):
         self.refPhaseLabel = QtGui.QLabel()
         refGroupLayout =  QtGui.QFormLayout()
         refGroupLayout.addRow(QtGui.QLabel('Reference Source'), self.refSrcLabel)
-        refGroupLayout.addRow(QtGui.QLabel('Reference Freq'), self.refSrcLabel)
-        refGroupLayout.addRow(QtGui.QLabel('Harmonics'), self.refSrcLabel)
-        refGroupLayout.addRow(QtGui.QLabel('Phase'), self.refSrcLabel)
+        refGroupLayout.addRow(QtGui.QLabel('Reference Freq'), self.refFreqLabel)
+        refGroupLayout.addRow(QtGui.QLabel('Harmonics'), self.refHarmLabel)
+        refGroupLayout.addRow(QtGui.QLabel('Phase'), self.refPhaseLabel)
         self.refGroup.setLayout(refGroupLayout)
 
         self.inputGroup.setTitle('Input and Filter')
@@ -495,13 +494,14 @@ class LockinInfoDialog(QtGui.QDialog):
         outputGroupLayout = QtGui.QGridLayout()
         outputGroupLayout.addWidget(QtGui.QLabel('Chanel 1'), 0, 1)
         outputGroupLayout.addWidget(QtGui.QLabel('Chanel 2'), 0, 2)
-        outputGroupLayout.addWidget(QtGui.QLabel('Display'), 1, 0)
+        outputGroupLayout.addWidget(QtGui.QLabel('Display Output'), 1, 0)
         outputGroupLayout.addWidget(self.outputDisp1Label, 1, 1)
         outputGroupLayout.addWidget(self.outputDisp2Label, 1, 2)
         outputGroupLayout.addWidget(QtGui.QLabel('Front Panel Output'), 2, 0)
         outputGroupLayout.addWidget(self.outputFront1Label, 2, 1)
         outputGroupLayout.addWidget(self.outputFront2Label, 2, 2)
         outputGroupLayout.addWidget(QtGui.QLabel('Sampling Rate'), 3, 0)
+        outputGroupLayout.addWidget(self.outputSRateLabel, 3, 1, 1, 2)
         self.outputGroup.setLayout(outputGroupLayout)
 
         acceptButton = QtGui.QPushButton(Shared.btn_label('accept'))
@@ -519,7 +519,7 @@ class LockinInfoDialog(QtGui.QDialog):
 
     def display(self):
 
-        if self.parent.synHandle:
+        if self.parent.lcHandle:
             self.update()
             self.instGroup.show()
             self.refGroup.show()
@@ -551,7 +551,7 @@ class LockinInfoDialog(QtGui.QDialog):
         # update input group
         self.inputConfigLabel.setText(apilc.read_input_config(self.parent.lcHandle))
         self.inputGroundingLabel.setText(apilc.read_input_grounding(self.parent.lcHandle))
-        self.inputCouplingLabel.setText(apilc.read_input_coupling(self.parent.lcHandle))
+        self.inputCouplingLabel.setText(apilc.read_couple(self.parent.lcHandle))
         self.inputFilterLabel.setText(apilc.read_input_filter(self.parent.lcHandle))
 
         # update gain group

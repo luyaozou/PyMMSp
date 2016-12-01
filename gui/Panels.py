@@ -169,13 +169,15 @@ class LockinStatus(QtGui.QGroupBox):
         moreInfoButton = QtGui.QPushButton('More Info')
         errMsgBtn = QtGui.QPushButton('Pop Err Msg')
         self.addressText = QtGui.QLabel()
-        self.lcHarm = QtGui.QLabel()
-        self.lcPhase = QtGui.QLabel()
-        self.lcFreq = QtGui.QLabel()
-        self.lcSens = QtGui.QLabel()
-        self.lcTC = QtGui.QLabel()
-        self.lcCouple = QtGui.QLabel()
-        self.lcReserve = QtGui.QLabel()
+        self.lcHarmLabel = QtGui.QLabel()
+        self.lcPhaseLabel = QtGui.QLabel()
+        self.lcFreqLabel = QtGui.QLabel()
+        self.lcSensLabel = QtGui.QLabel()
+        self.lcTCLabel = QtGui.QLabel()
+        self.lcCoupleLabel = QtGui.QLabel()
+        self.lcReserveLabel = QtGui.QLabel()
+        self.lcGroundingLabel = QtGui.QLabel()
+        self.lcFilterLabel = QtGui.QLabel()
         self.errMsgLabel = QtGui.QLabel('N.A.')
 
         ## -- Set layout and add GUI elements
@@ -187,22 +189,26 @@ class LockinStatus(QtGui.QGroupBox):
         mainLayout.addWidget(QtGui.QLabel('Inst. Name'), 1, 0)
         mainLayout.addWidget(self.addressText, 1, 1, 1, 3)
         mainLayout.addWidget(QtGui.QLabel('Harmonics'), 2, 0)
-        mainLayout.addWidget(self.lcHarm, 2, 1)
+        mainLayout.addWidget(self.lcHarmLabel, 2, 1)
         mainLayout.addWidget(QtGui.QLabel('Phase'), 3, 0)
-        mainLayout.addWidget(self.lcPhase, 3, 1)
-        mainLayout.addWidget(QtGui.QLabel('Couple'), 4, 0)
-        mainLayout.addWidget(self.lcCouple, 4, 1)
+        mainLayout.addWidget(self.lcPhaseLabel, 3, 1)
+        mainLayout.addWidget(QtGui.QLabel('Sensitivity'), 4, 0)
+        mainLayout.addWidget(self.lcSensLabel, 4, 1)
+        mainLayout.addWidget(QtGui.QLabel('Time Constant'), 5, 0)
+        mainLayout.addWidget(self.lcTCLabel, 5, 1)
+        mainLayout.addWidget(QtGui.QLabel('Locked Freq'), 6, 0)
+        mainLayout.addWidget(self.lcFreqLabel, 6, 1)
+        mainLayout.addWidget(errMsgBtn, 7, 0)
+        mainLayout.addWidget(self.errMsgLabel, 7, 1, 1, 3)
         # second column
-        mainLayout.addWidget(QtGui.QLabel('Locked Freq'), 2, 2)
-        mainLayout.addWidget(self.lcFreq, 2, 3)
-        mainLayout.addWidget(QtGui.QLabel('Sensitivity'), 3, 2)
-        mainLayout.addWidget(self.lcSens, 3, 3)
-        mainLayout.addWidget(QtGui.QLabel('Time Constant'), 4, 2)
-        mainLayout.addWidget(self.lcTC, 4, 3)
-        mainLayout.addWidget(QtGui.QLabel('Reserve'), 5, 0)
-        mainLayout.addWidget(self.lcReserve, 5, 1)
-        mainLayout.addWidget(errMsgBtn, 6, 0)
-        mainLayout.addWidget(self.errMsgLabel, 6, 1, 1, 3)
+        mainLayout.addWidget(QtGui.QLabel('Couple'), 2, 2)
+        mainLayout.addWidget(self.lcCoupleLabel, 2, 3)
+        mainLayout.addWidget(QtGui.QLabel('Reserve'), 3, 2)
+        mainLayout.addWidget(self.lcReserveLabel, 3, 3)
+        mainLayout.addWidget(QtGui.QLabel('Grouding'), 4, 2)
+        mainLayout.addWidget(self.lcGroundingLabel, 4, 3)
+        mainLayout.addWidget(QtGui.QLabel('Filter'), 5, 2)
+        mainLayout.addWidget(self.lcFilterLabel, 5, 3)
         self.setLayout(mainLayout)
 
         # this dialog is a child class of the main window
@@ -218,22 +224,26 @@ class LockinStatus(QtGui.QGroupBox):
         ''' Update instrument information '''
         if self.parent.lcHandle:
             self.addressText.setText(self.parent.lcHandle.resource_name)
-            self.lcHarm.setText('{:d}'.format(apilc.read_harm(self.parent.lcHandle)))
-            self.lcPhase.setText('{:.2f} deg'.format(apilc.read_phase(self.parent.lcHandle)))
-            self.lcFreq.setText(pg.siFormat(apilc.read_freq(self.parent.lcHandle), suffix='Hz'))
-            self.lcSens.setText(Shared.LIASENSLIST[apilc.read_sens(self.parent.lcHandle)])
-            self.lcTC.setText(Shared.LIATCLIST[apilc.read_tc(self.parent.lcHandle)])
-            self.lcCouple.setText(apilc.read_couple(self.parent.lcHandle))
-            self.lcReserve.setText(apilc.read_reserve(self.parent.lcHandle))
+            self.lcHarmLabel.setText('{:d}'.format(apilc.read_harm(self.parent.lcHandle)))
+            self.lcPhaseLabel.setText('{:.2f} deg'.format(apilc.read_phase(self.parent.lcHandle)))
+            self.lcFreqLabel.setText(pg.siFormat(apilc.read_freq(self.parent.lcHandle), suffix='Hz'))
+            self.lcSensLabel.setText(Shared.LIASENSLIST[apilc.read_sens(self.parent.lcHandle)])
+            self.lcTCLabel.setText(Shared.LIATCLIST[apilc.read_tc(self.parent.lcHandle)])
+            self.lcCoupleLabel.setText(apilc.read_couple(self.parent.lcHandle))
+            self.lcReserveLabel.setText(apilc.read_reserve(self.parent.lcHandle))
+            self.lcGroundingLabel.setText(apilc.read_input_grounding(self.parent.lcHandle))
+            self.lcFilterLabel.setText(apilc.read_input_filter(self.parent.lcHandle))
         else:
             self.addressText.setText('N.A.')
-            self.lcHarm.setText('N.A.')
-            self.lcPhase.setText('N.A.')
-            self.lcFreq.setText('N.A.')
-            self.lcSens.setText('N.A.')
-            self.lcTC.setText('N.A.')
-            self.lcCouple.setText('N.A.')
-            self.lcReserve.setText('N.A.')
+            self.lcHarmLabel.setText('N.A.')
+            self.lcPhaseLabel.setText('N.A.')
+            self.lcFreqLabel.setText('N.A.')
+            self.lcSensLabel.setText('N.A.')
+            self.lcTCLabel.setText('N.A.')
+            self.lcCoupleLabel.setText('N.A.')
+            self.lcReserveLabel.setText('N.A.')
+            self.lcGroundingLabel.setText('N.A.')
+            self.lcFilterLabel.setText('N.A.')
 
     def show_info_dialog(self):
 
@@ -424,7 +434,6 @@ class SynCtrl(QtGui.QGroupBox):
         ''' Enable/disable this groupbox '''
 
         if self.parent.synHandle:
-            apisyn.init_syn(self.parent.synHandle)
             self.setChecked(True)
         else:
             msg = Shared.MsgError(self, 'No Instrument!', 'No synthesizer is connected!')
@@ -668,9 +677,9 @@ class LockinCtrl(QtGui.QGroupBox):
         ## -- Define layout elements --
         harmSelect = QtGui.QComboBox()
         harmSelect.addItems(['1', '2', '3', '4'])
-        harmSelect.setCurrentIndex(1)
-        self.phaseFill = QtGui.QLineEdit()
-        sensSelect = Shared.lcSensBox()
+        harmSelect.setCurrentIndex(0)
+        self.phaseFill = QtGui.QLineEdit('0')
+        self.sensSelect = Shared.lcSensBox()
         tcSelect = Shared.lcTcBox()
         coupleSelect = QtGui.QComboBox()
         coupleSelect.addItems(['AC', 'DC'])
@@ -678,6 +687,14 @@ class LockinCtrl(QtGui.QGroupBox):
         reserveSelect = QtGui.QComboBox()
         reserveSelect.addItems(['High Reserve', 'Normal', 'Low Noise'])
         reserveSelect.setCurrentIndex(1)
+        groundingSelect = QtGui.QComboBox()
+        groundingSelect.addItems(['Float', 'Ground'])
+        groundingSelect.setCurrentIndex(1)
+        filterSelect = QtGui.QComboBox()
+        filterSelect.addItems(['None', 'Line notch', '2× Line notch', 'Both'])
+        filterSelect.setCurrentIndex(1)
+        autoPhaseBtn = QtGui.QPushButton('Auto Phase')
+        autoGainBtn = QtGui.QPushButton('Auto Gain')
 
         ## -- Set up main layout --
         mainLayout = QtGui.QGridLayout()
@@ -687,22 +704,32 @@ class LockinCtrl(QtGui.QGroupBox):
         mainLayout.addWidget(QtGui.QLabel('Phase'), 1, 0)
         mainLayout.addWidget(self.phaseFill, 1, 1)
         mainLayout.addWidget(QtGui.QLabel('Sensitivity'), 2, 0)
-        mainLayout.addWidget(sensSelect, 2, 1)
-        mainLayout.addWidget(QtGui.QLabel('Time Constant'), 0, 2)
-        mainLayout.addWidget(tcSelect, 0, 3)
-        mainLayout.addWidget(QtGui.QLabel('Couple'), 1, 2)
-        mainLayout.addWidget(coupleSelect, 1, 3)
-        mainLayout.addWidget(QtGui.QLabel('Reserve'), 2, 2)
-        mainLayout.addWidget(reserveSelect, 2, 3)
+        mainLayout.addWidget(self.sensSelect, 2, 1)
+        mainLayout.addWidget(QtGui.QLabel('Time Constant'), 3, 0)
+        mainLayout.addWidget(tcSelect, 3, 1)
+        mainLayout.addWidget(QtGui.QLabel('Couple'), 0, 2)
+        mainLayout.addWidget(coupleSelect, 0, 3)
+        mainLayout.addWidget(QtGui.QLabel('Reserve'), 1, 2)
+        mainLayout.addWidget(reserveSelect, 1, 3)
+        mainLayout.addWidget(QtGui.QLabel('Grouding'), 2, 2)
+        mainLayout.addWidget(groundingSelect, 2, 3)
+        mainLayout.addWidget(QtGui.QLabel('Input Filter'), 3, 2)
+        mainLayout.addWidget(filterSelect, 3, 3)
+        mainLayout.addWidget(autoPhaseBtn, 4, 0)
+        mainLayout.addWidget(autoGainBtn, 4, 2)
         self.setLayout(mainLayout)
 
         ## -- Trigger setting status and communication
-        self.phaseFill.textChanged.connect(self.phaseComm)
-        harmSelect.currentIndexChanged[int].connect(self.harmComm)
-        tcSelect.currentIndexChanged[int].connect(self.tcComm)
-        sensSelect.currentIndexChanged[int].connect(self.sensComm)
-        coupleSelect.currentIndexChanged[str].connect(self.coupleComm)
-        reserveSelect.currentIndexChanged[str].connect(self.reserveComm)
+        self.phaseFill.textChanged.connect(self.tune_phase)
+        harmSelect.currentIndexChanged[str].connect(self.tune_harmonics)
+        tcSelect.currentIndexChanged[int].connect(self.tune_time_const)
+        self.sensSelect.currentIndexChanged[int].connect(self.tune_sensitivity)
+        coupleSelect.currentIndexChanged[str].connect(self.tune_coupling)
+        reserveSelect.currentIndexChanged[str].connect(self.tune_reserve)
+        groundingSelect.currentIndexChanged[str].connect(self.tune_grounding)
+        filterSelect.currentIndexChanged[str].connect(self.tune_filter)
+        autoPhaseBtn.clicked.connect(self.auto_phase)
+        autoGainBtn.clicked.connect(self.auto_gain)
         self.clicked.connect(self.check)
 
     def check(self):
@@ -718,7 +745,7 @@ class LockinCtrl(QtGui.QGroupBox):
 
         self.parent.lcStatus.update()
 
-    def phaseComm(self, phase_text):
+    def tune_phase(self, phase_text):
         '''
             Communicate with the lockin and set phase
         '''
@@ -735,7 +762,7 @@ class LockinCtrl(QtGui.QGroupBox):
         else:
             pass
 
-    def harmComm(self, harm_text):
+    def tune_harmonics(self, harm_text):
         '''
             Communicate with the lockin and set Harmonics
         '''
@@ -754,7 +781,7 @@ class LockinCtrl(QtGui.QGroupBox):
             msg = Shared.MsgError(self, 'Out of Range!', 'Input harmonics exceed legal range!')
             msg.exec_()
 
-    def sensComm(self, sens_index):
+    def tune_sensitivity(self, sens_index):
         '''
             Communicate with the lockin and set sensitivity
         '''
@@ -767,7 +794,7 @@ class LockinCtrl(QtGui.QGroupBox):
             msg = Shared.InstStatus(self, vCode)
             msg.exec_()
 
-    def tcComm(self, tc_index):
+    def tune_time_const(self, tc_index):
         '''
             Communicate with the lockin and set sensitivity
         '''
@@ -780,7 +807,7 @@ class LockinCtrl(QtGui.QGroupBox):
             msg = Shared.InstStatus(self, vCode)
             msg.exec_()
 
-    def coupleComm(self, couple_text):
+    def tune_coupling(self, couple_text):
         '''
             Communicate with the lockin and set couple mode
         '''
@@ -793,7 +820,7 @@ class LockinCtrl(QtGui.QGroupBox):
             msg = Shared.InstStatus(self, vCode)
             msg.exec_()
 
-    def reserveComm(self, reserve_text):
+    def tune_reserve(self, reserve_text):
         '''
             Communicate with the lockin and set reserve
         '''
@@ -802,6 +829,56 @@ class LockinCtrl(QtGui.QGroupBox):
 
         if vCode == pyvisa.constants.StatusCode.success:
             self.parent.lcStatus.update()
+        else:
+            msg = Shared.InstStatus(self, vCode)
+            msg.exec_()
+
+    def tune_grounding(self, gnd_text):
+        '''
+            Communicate with the lockin and set input grounding
+        '''
+
+        vCode = apilc.set_input_grounding(self.parent.lcHandle, gnd_text)
+
+        if vCode == pyvisa.constants.StatusCode.success:
+            self.parent.lcStatus.update()
+        else:
+            msg = Shared.InstStatus(self, vCode)
+            msg.exec_()
+
+    def tune_filter(self, filter_text):
+        '''
+            Communicate with the lockin and set input notch filter
+        '''
+
+        vCode = apilc.set_input_filter(self.parent.lcHandle, filter_text)
+
+        if vCode == pyvisa.constants.StatusCode.success:
+            self.parent.lcStatus.update()
+        else:
+            msg = Shared.InstStatus(self, vCode)
+            msg.exec_()
+
+
+    def auto_phase(self):
+
+        vCode = apilc.auto_phase(self.parent.lcHandle)
+        if vCode == pyvisa.constants.StatusCode.success:
+            self.parent.lcStatus.update()
+            phase = apilc.read_phase(self.parent.lcHandle)
+            self.phaseFill.setText('{:.2f}'.format(phase))
+        else:
+            msg = Shared.InstStatus(self, vCode)
+            msg.exec_()
+
+
+    def auto_gain(self):
+
+        vCode = apilc.auto_gain(self.parent.lcHandle)
+        if vCode == pyvisa.constants.StatusCode.success:
+            self.parent.lcStatus.update()
+            sens_index = apilc.read_sens(self.parent.lcHandle)
+            self.sensSelect.setCurrentIndex(sens_index)
         else:
             msg = Shared.InstStatus(self, vCode)
             msg.exec_()
@@ -838,7 +915,7 @@ class ScopeCtrl(QtGui.QGroupBox):
         ## -- Trigger setting status and communication
         self.srateFill.textChanged.connect(self.rateComm)
         self.slenFill.textChanged.connect(self.lenComm)
-        sensSelect.currentIndexChanged.connect(self.sensComm)
+        sensSelect.currentIndexChanged.connect(self.tune_sensitivity)
         self.avgFill.textChanged.connect(self.avgComm)
         self.clicked.connect(self.check)
 
@@ -861,7 +938,7 @@ class ScopeCtrl(QtGui.QGroupBox):
         status = apipci.set_sampling_len(len_text)
         self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
 
-    def sensComm(self, sens_index):
+    def tune_sensitivity(self, sens_index):
 
         status = apipci.set_sens(sens_index)
 
@@ -881,6 +958,7 @@ class MotorCtrl(QtGui.QGroupBox):
         self.setTitle('Cavity Control')
         self.setAlignment(QtCore.Qt.AlignLeft)
         self.setCheckable(True)
+        self.setChecked(False)
 
         tuneButton = QtGui.QPushButton('Tune Cavity')
         mainLayout = QtGui.QHBoxLayout()

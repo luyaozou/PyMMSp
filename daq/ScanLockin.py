@@ -358,10 +358,10 @@ class SingleScan(QtGui.QWidget):
         self.ySumPlot = pgWin.addPlot(0, 0, title='Sum sweep')
         self.ySumPlot.setLabels(left='Intensity')
         self.yCurve = self.yPlot.plot()
-        self.yCurve.setDownsampling(auto=True)
+        self.yCurve.setDownsampling(auto=True, method='peak')
         self.yCurve.setPen(pg.mkPen(220, 220, 220))
         self.ySumCurve = self.ySumPlot.plot()
-        self.ySumCurve.setDownsampling(auto=True)
+        self.ySumCurve.setDownsampling(auto=True, method='peak')
         self.ySumCurve.setPen(pg.mkPen(219, 112, 147))
         mainLayout = QtGui.QVBoxLayout()
         mainLayout.addWidget(pgWin)
@@ -383,6 +383,8 @@ class SingleScan(QtGui.QWidget):
         '''
 
         self.x = Shared.gen_x_array(*entry_setting[0:3])
+        self.x_min = min(entry_setting[0], entry_setting[1])
+        self.step = entry_setting[2]
         self.current_x_index = 0
         self.target_avg = entry_setting[3]
         self.acquired_avg = 0
@@ -467,8 +469,7 @@ class SingleScan(QtGui.QWidget):
         tc = apilc.read_tc(self.main.lcHandle)
 
         h_info = (self.waittime, apival.LIASENSLIST[self.sens_index],
-                  apival.LIATCLIST[tc]*1e-3, 15, 75, self.entry_setting[0],
-                  self.entry_setting[2], self.acquired_avg)
+                  apival.LIATCLIST[tc]*1e-3, 15, 75, self.x_min, self.step, self.acquired_avg)
 
         # if already finishes at least one sweep
         if self.acquired_avg > 0:
@@ -607,10 +608,10 @@ class TestClass(QtGui.QWidget):
         self.ySumPlot = pgWin.addPlot(0, 0, title='Sum sweep')
         self.ySumPlot.setLabels(left='Intensity')
         self.yCurve = self.yPlot.plot()
-        self.yCurve.setDownsampling(auto=True)
+        self.yCurve.setDownsampling(auto=True, method='peak')
         self.yCurve.setPen(pg.mkPen(220, 220, 220))
         self.ySumCurve = self.ySumPlot.plot()
-        self.ySumCurve.setDownsampling(auto=True)
+        self.ySumCurve.setDownsampling(auto=True, method='peak')
         self.ySumCurve.setPen(pg.mkPen(219, 112, 147))
         mainLayout = QtGui.QVBoxLayout()
         mainLayout.addWidget(pgWin)
@@ -640,6 +641,7 @@ class TestClass(QtGui.QWidget):
         self.waitTimer.setInterval(self.waittime)
         self.y = np.zeros_like(self.x)
         self.y_sum = np.zeros_like(self.x)
+        # calculate downsamping factor
         self.ySumCurve.setData(self.x, self.y_sum)
         total_pts =  len(self.x) * self.target_avg
         self.pts_taken = 0

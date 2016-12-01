@@ -26,7 +26,8 @@ def list_inst():
             temp = rm.open_resource(inst)
             # If the instrument is GPIB, query for the instrument name
             if int(temp.interface_type) == 1:
-                inst_dict[inst] = temp.query('*IDN?')
+                text = temp.query('*IDN?')
+                inst_dict[inst] = text.strip()
             else:
                 inst_dict[inst] = inst
             # close instrument right way in case of unexpected crashes

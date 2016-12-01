@@ -8,6 +8,8 @@ from gui import Panels
 from gui import Dialogs
 from daq import ScanLockin
 from api import general as apigen
+from api import synthesizer as apisyn
+from api import lockin as apilc
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -116,21 +118,15 @@ class MainWindow(QtGui.QMainWindow):
         self.mainWidget.setLayout(self.mainLayout)
         self.setCentralWidget(self.mainWidget)
 
-    def refresh_syn(self):
+    def refresh_inst(self):
 
-        self.synCtrl.check()
-
-    def refresh_lockin(self):
-
-        self.lcCtrl.check()
-
-    def refresh_scope(self):
-
-        self.scopeCtrl.check()
-
-    def refresh_motor(self):
-
-        self.motorCtrl.check()
+        self.synCtrl.setChecked(not(self.synHandle is None))
+        self.lcCtrl.setChecked(not(self.lcHandle is None))
+        self.scopeCtrl.setChecked(not(self.pciHandle is None))
+        self.motorCtrl.setChecked(not(self.motorHandle is None))
+        self.synStatus.update()
+        self.lcStatus.update()
+        self.scopeStatus.update()
 
     def on_exit(self):
         self.close()
@@ -140,10 +136,16 @@ class MainWindow(QtGui.QMainWindow):
         result = d.exec_()
 
         if result:
-            self.refresh_syn()
-            self.refresh_lockin()
-            self.refresh_scope()
-            self.refresh_motor()
+            # simply uncheck panels to prevent the warning dialog
+            if self.synHandle:
+                apisyn.init_syn(self.synHandle)
+            else:
+                pass
+            if self.lcHandle:
+                apilc.init_lia(self.lcHandle)
+            else:
+                pass
+            self.refresh_inst()
         else:
             pass
 
@@ -155,12 +157,13 @@ class MainWindow(QtGui.QMainWindow):
         d = Dialogs.CloseSelInstDialog(self)
         d.exec_()
 
-        self.refresh_syn()
-        self.refresh_lockin()
-        self.refresh_scope()
-        self.refresh_motor()
+        # simply uncheck panels to prevent the warning dialog
+        self.refresh_inst()
 
     def on_scan_jpl(self):
+
+        # when invoke this dialog, pause live lockin monitor in the main panel
+        self.lcMonitor.stop()
 
         dconfig = ScanLockin.JPLScanConfig(self)
         entry_settings = None
