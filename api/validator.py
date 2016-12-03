@@ -1,10 +1,11 @@
 #! encoding = utf-8
 ''' A collection of user input validators.
-    Always returns input status first, and converted  values, if possible.
+    Always returns status code first, and converted values, if possible.
     Status Code: 0 - fatal; 1 - warning; 2 - safe
 '''
 
 from math import pi
+import operator
 from pyqtgraph import siEval
 
 # VDI MULTIPLICATION FACTOR
@@ -16,6 +17,18 @@ LIASENSLIST = [2e-9, 5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7,
                ]
 # LOCKIN AMPLIFIER TIME CONSTANT LIST (IN MILLISECONDS)
 LIATCLIST = [1e-2, 3e-2, 1e-1, 3e-1, 1, 3, 10, 30, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4]
+
+
+def compare(num1, op, num2):
+    ''' An comparison operator generator '''
+
+    ops = {'>': operator.gt,
+           '<': operator.lt,
+           '>=': operator.ge,
+           '<=': operator.le,
+           '==': operator.eq}
+
+    return ops[op](num1, num2)
 
 
 def wrap_phase(phase):
@@ -38,31 +51,65 @@ def wrap_phase(phase):
     return phase
 
 
-def val_int(text):
-    ''' General validator for int number '''
+def val_int(text, safe=[], warning=[]):
+    ''' General validator for int number.
+        Comparison operators can be passed through safe & warning
+        Each comparison list contains tuples of (op, num)
+    '''
 
     try:
         number = int(text)
-        return 2, number
+        # 1st test if the number is in the safe range
+        boolean = True
+        for op, num in safe:
+            boolean *= compare(number, op, num)
+        if boolean:
+            code = 2
+        else:
+            boolean = True
+            for op, num in warning:
+                boolean *= compare(number, op, num)
+            if boolean and warning: # make sure there is something to compare
+                code = 1
+            else:
+                code = 0
+        return code, number
     except ValueError:
-        return 1, 0
+        return 0, 0
 
 
-def val_float(text):
-    ''' General validator for float number '''
+def val_float(text, safe=[], warning=[]):
+    ''' General validator for int number.
+        Comparison operators can be passed through safe & warning
+        Each comparison list contains tuples of (op, num)
+    '''
 
     try:
         number = float(text)
-        return 2, number
+        # 1st test if the number is in the safe range
+        boolean = True
+        for op, num in safe:
+            boolean *= compare(number, op, num)
+        if boolean:
+            code = 2
+        else:
+            boolean = True
+            for op, num in warning:
+                boolean *= compare(number, op, num)
+            if boolean:
+                code = 1
+            else:
+                code = 0
+        return code, number
     except ValueError:
-        return 1, 0.
+        return 0, 0
 
 
 def val_lc_phase(text):
     ''' Validate locking phase input.
         Arguments: text: str
         Returns
-            status: int (2: safe; 1: warning; 0: fatal)
+            code: int (2: safe; 1: warning; 0: fatal)
             phase: float
     '''
 
@@ -82,9 +129,10 @@ def val_lc_harm(harm_text, freq):
             harm_text: str, harmonics input text
             freq: float, locked frequency input
         Returns
-            status: int (2: safe; 1: warning; 0: fatal)
+            code: int (2: safe; 1: warning; 0: fatal)
             harm: int
     '''
+
     try:
         harm = int(harm_text)
         if harm > 0 and harm < (102000/freq):
@@ -114,7 +162,7 @@ def val_syn_freq(probf_text, band_index):
             probf_text: str, prob frequency input text
             band_index: int, VDI band index
         Returns
-            status: int (2: safe; 1: warning; 0: fatal)
+            code: int (2: safe; 1: warning; 0: fatal)
             syn_freq: float, synthesizer frequency
     '''
 
@@ -134,9 +182,7 @@ def val_prob_freq(probf_text, band_index):
         Arguments
             probf_text: str, prob frequency input text
             band_index: int, VDI band index
-        Returns
-            status: int (2: safe; 1: warning; 0: fatal)
-            probf: float, probing frequency
+        Safe range: (0, 50000]
     '''
 
     try:
@@ -150,39 +196,21 @@ def val_prob_freq(probf_text, band_index):
         return 0, 50000
 
 
-def val_syn_power(power):
-    ''' Validate synthesizer power input.
-        Arguments
-            power: int
-        Returns
-            status: int
-    '''
-
-    if set_power <= 0 or set_power >= -20:
-        return 2
-    else:
-        return 0
-
-
 def val_syn_mod_freq(freq_text, freq_unit_text):
     ''' Validate synthesizer modulation frequency input.
         Arguments
             freq_text: str, modulation frequency user input
             freq_unit_text: str, modulation frequency unit
-        Returns
-            status: int (2: safe; 1: warning; 0: fatal)
-            freq: float (Hz)
+        Safe range: [0, 1e5] Hz
     '''
 
     if freq_text:   # if not empty string
-        modfreq = siEval(freq_text + freq_unit_text)
+        freq_num = siEval(freq_text + freq_unit_text)
     else:
         return 0, 0
 
-    if modfreq < 1e5 and modfreq >= 0:    # valid input
-        return 2, modfreq
-    else:               # out of range
-        return 0, 0
+    code, freq = val_float(freq_num, safe=[('>=', 0), ('<=', 1e5)])
+    return code, freq
 
 
 def val_syn_mod_depth(depth_text, depth_unit_text):
@@ -190,71 +218,46 @@ def val_syn_mod_depth(depth_text, depth_unit_text):
         Arguments
             depth_text: str, modulation depth user input
             depth_unit_text: int, modulation depth unit
-        Returns
-            status: int (2: safe; 1: warning; 0: fatal)
-            freq: float ('%' for AM, Hz for FM)
+        Safe range: [0, 75]'%' for AM
+                    [0, 5e6] Hz for FM
+        Warning range: (5e6, 64e6] Hz for FM (max 64 MHz)
     '''
 
     if depth_unit_text == '%':
-        try:
-            depth = float(depth_text)
-            if depth <= 75 and depth >= 0:       # valid input
-                return 2, depth
-            else:
-                return 0, 0
-        except ValueError:
-            return 0, 0
+        code, depth = val_float(depth_text, safe=[('>=', 0), ('<=', 75)])
     else:
         if depth_text:  # if not empty string
-            depth = siEval(depth_text + depth_unit_text)
+            depth_num = siEval(depth_text + depth_unit_text)
         else:
             return 0, 0
-        if depth >= 0 and depth <= 5e6:       # valid input
-            return 2, depth
-        elif depth > 5e6:          # large depth, warning
-            return 1, depth
-        else:                       # invalid
-            return 0, 0
+
+        code, depth = val_float(depth_num, safe=[('>=', 0), ('<=', 5e6)],
+                                warning=[('>', 5e6), ('<=', 6.4e7)])
+    return code, depth
 
 
 def val_syn_lf_vol(vol_text):
     ''' Validate synthesizer LF output voltage.
         Arguments
             vol_text: str, LF voltage user input
-        Returns
-            status: int (2: safe; 1: warning; 0: fatal)
-            vol: float (V)
+        Safe range: (0, 3.5)
     '''
 
-    try:
-        vol = float(vol_text)
-        if vol >=0 and vol < 3.5:
-            return 2, vol
-        else:
-            return 0, 0
-    except ValueError:
-        return 0, 0
+    code, volt = val_float(vol_text, safe=[('>', 0), ('<', 3.5)])
+    return code, volt
 
 
 def val_monitor_sample_len(len_text):
     ''' Validate sample length for real-time monitor.
         Arguments
             len_text: str, samplen length user input
-        Returns
-            status: int (2: safe; 1: warning; 0: fatal)
-            slen: int
+        Safe range: [20, 500]
+        Warning range: > 0
     '''
 
-    try:
-        slen = int(len_text)
-        if slen>10 and slen<=1000:
-            return 2, slen
-        elif slen>1000 or (slen>0 and slen<=10):
-            return 1, slen
-        else:
-            return 0, 1
-    except ValueError:
-        return 0, 1
+    code, slen = val_int(len_text, safe=[('>=', 20), ('<=', 500)],
+                           warning=[('>', 0)])
+    return code, slen
 
 
 def val_lc_monitor_srate(srate_index, tc_index):
@@ -262,20 +265,20 @@ def val_lc_monitor_srate(srate_index, tc_index):
         Arguments
             srate_index: lc sample rate index, int
             tc_index: lc time constant index, int
-        Returns
-            status: int (2: safe; 1: warning; 0: fatal)
-            waittime: screen update waittime in milliseconds, float
+        Safe range: > 3pi*tc
+        Warning range: > 2pi*tc
     '''
 
     waittime_list = [100, 200, 500, 1000, 2000, 5000, 10000]    # milliseconds
     waittime = waittime_list[srate_index]
     tc = LIATCLIST[tc_index]
-    if tc*4*pi < waittime:
-        return 2, waittime
-    elif tc*2*pi < waittime:
-        return 1, waittime
+
+    code, waittime = val_float(text, safe=[('>', time_const*3*pi + 10)],
+                                 warning=[('>', time_const*2*pi + 10)])
+    if code:
+        return code, waittime
     else:
-        return 0, tc*2*pi
+        return code, tc*3*pi
 
 
 def val_lc_waittime(text, tc_index):
@@ -284,20 +287,11 @@ def val_lc_waittime(text, tc_index):
         Arguments
             text: integration time user input, str
             tc_index: lc time constant index, int
-        Returns
-            status: int (2: safe; 1: warning; 0: fatal)
-            waittime: wait time, float in ms
+        Safe range: > 3pi*tc
+        Warning range: > 2pi*tc
     '''
 
     time_const = LIATCLIST[tc_index]
-
-    try:
-        waittime = float(text)
-        if (waittime > time_const * 3 * pi):
-            return 2, waittime
-        elif (waittime > time_const * 2 * pi):
-            return 1, waittime
-        else:
-            return 0, 0
-    except ValueError:
-        return 0, 0
+    code, waittime = val_float(text, safe=[('>', time_const*3*pi + 10)],
+                                 warning=[('>', time_const*2*pi + 10)])
+    return code, waittime

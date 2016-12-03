@@ -174,14 +174,13 @@ class ScanEntry(QtGui.QWidget):
 
     def val_step(self, text):
 
-        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
-        status, number = apival.val_float(text)
+        status, number = apival.val_float(text, safe=[('>=', 0.01)], warning=[('>', 0)])
         self.stepFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
     def val_avg(self, text):
 
         vdi_index = self.main.synCtrl.bandSelect.currentIndex()
-        status, number = apival.val_int(text)
+        status, number = apival.val_int(text, safe=[('>', 0)])
         self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
     def val_waittime(self):

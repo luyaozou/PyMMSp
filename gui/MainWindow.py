@@ -192,7 +192,7 @@ class MainWindow(QtGui.QMainWindow):
             else:
                 result = dconfig.exec_()
 
-        if entry_settings:
+        if entry_settings and result:
             dscan = ScanLockin.JPLScanWindow(self, entry_settings, filename)
             dscan.exec_()
         else:
