@@ -2,7 +2,7 @@
 ''' Dialog windows for system menues '''
 
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore
 from api import general as api_gen
 from api import synthesizer as api_syn
 from api import lockin as api_lia

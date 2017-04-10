@@ -1,6 +1,6 @@
 #! encoding = utf-8
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore
 import random
 from math import ceil
 import numpy as np

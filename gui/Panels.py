@@ -2,8 +2,8 @@
 ''' GUI Panels. '''
 
 # import standard libraries
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import QObject
+from PyQt5 import QtGui, QtCore
+from PyQt5.QtCore import QObject
 import pyqtgraph as pg
 import pyvisa
 import numpy as np
@@ -353,7 +353,7 @@ class SynCtrl(QtGui.QGroupBox):
         self.modDepth = QtGui.QWidget()
         self.modDepthFill = QtGui.QLineEdit()
         self.modDepthUnitSel = QtGui.QComboBox()
-        self.modDepthUnitSel.addItems('')
+        self.modDepthUnitSel.addItems([''])
         modDepthLayout = QtGui.QHBoxLayout()
         modDepthLayout.addWidget(QtGui.QLabel('Mod Amp'))
         modDepthLayout.addWidget(self.modDepthFill)

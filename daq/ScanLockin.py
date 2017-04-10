@@ -3,7 +3,7 @@
 ''' Lockin scanning routine in JPL style '''
 
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore
 import numpy as np
 from math import ceil
 import pyqtgraph as pg

@@ -1,7 +1,7 @@
 #! encoding = utf-8
 
 import sys
-from PyQt4 import QtGui
+from PyQt5 import QtGui
 
 import gui.MainWindow
 
