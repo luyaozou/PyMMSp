@@ -7,9 +7,9 @@ from gui import SharedWidgets as Shared
 from gui import Panels
 from gui import Dialogs
 from daq import ScanLockin
-from api import general as apigen
-from api import synthesizer as apisyn
-from api import lockin as apilc
+from api import general as api_gen
+from api import synthesizer as api_syn
+from api import lockin as api_lia
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -28,7 +28,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Initiate pyvisa instrument objects
         self.synHandle = None
-        self.lcHandle = None
+        self.liaHandle = None
         self.pciHandle = None
         self.motorHandle = None
 
@@ -89,28 +89,28 @@ class MainWindow(QtGui.QMainWindow):
 
         # Set main window widgets
         self.synStatus = Panels.SynStatus(self)
-        self.lcStatus = Panels.LockinStatus(self)
+        self.liaStatus = Panels.LockinStatus(self)
         self.scopeStatus = Panels.ScopeStatus(self)
         self.synCtrl = Panels.SynCtrl(self)
-        self.lcCtrl = Panels.LockinCtrl(self)
+        self.liaCtrl = Panels.LockinCtrl(self)
         self.scopeCtrl = Panels.ScopeCtrl(self)
         self.motorCtrl = Panels.MotorCtrl(self)
         self.scopeMonitor = Panels.ScopeMonitor(self)
-        self.lcMonitor = Panels.LockinMonitor(self)
+        self.liaMonitor = Panels.LockinMonitor(self)
         self.specMonitor = Panels.SpectrumMonitor(self)
 
         # Set main window layout
         self.mainLayout = QtGui.QGridLayout()
         self.mainLayout.setSpacing(6)
         self.mainLayout.addWidget(self.synStatus, 0, 0, 1, 2)
-        self.mainLayout.addWidget(self.lcStatus, 1, 0, 1, 2)
+        self.mainLayout.addWidget(self.liaStatus, 1, 0, 1, 2)
         self.mainLayout.addWidget(self.scopeStatus, 2, 0, 1, 2)
         self.mainLayout.addWidget(self.synCtrl, 0, 2, 1, 3)
-        self.mainLayout.addWidget(self.lcCtrl, 1, 2, 1, 3)
+        self.mainLayout.addWidget(self.liaCtrl, 1, 2, 1, 3)
         self.mainLayout.addWidget(self.scopeCtrl, 2, 2, 1, 3)
         self.mainLayout.addWidget(self.motorCtrl, 3, 2, 1, 3)
         self.mainLayout.addWidget(self.scopeMonitor, 0, 5, 1, 4)
-        self.mainLayout.addWidget(self.lcMonitor, 1, 5, 1, 4)
+        self.mainLayout.addWidget(self.liaMonitor, 1, 5, 1, 4)
         self.mainLayout.addWidget(self.specMonitor, 2, 5, 1, 4)
 
         # Enable main window
@@ -121,11 +121,11 @@ class MainWindow(QtGui.QMainWindow):
     def refresh_inst(self):
 
         self.synCtrl.setChecked(not(self.synHandle is None))
-        self.lcCtrl.setChecked(not(self.lcHandle is None))
+        self.liaCtrl.setChecked(not(self.liaHandle is None))
         self.scopeCtrl.setChecked(not(self.pciHandle is None))
         self.motorCtrl.setChecked(not(self.motorHandle is None))
         self.synStatus.update()
-        self.lcStatus.update()
+        self.liaStatus.update()
         self.scopeStatus.update()
 
     def on_exit(self):
@@ -138,14 +138,14 @@ class MainWindow(QtGui.QMainWindow):
         if result:
             # simply uncheck panels to prevent the warning dialog
             if self.synHandle:
-                apisyn.init_syn(self.synHandle)
+                api_syn.init_syn(self.synHandle)
                 # check RF toggle state
-                toggle_state = apisyn.read_power_toggle(self.synHandle)
+                toggle_state = api_syn.read_power_toggle(self.synHandle)
                 self.synCtrl.synPowerSwitchBtn.setChecked(toggle_state)
             else:
                 pass
-            if self.lcHandle:
-                apilc.init_lia(self.lcHandle)
+            if self.liaHandle:
+                api_lia.init_lia(self.liaHandle)
             else:
                 pass
             self.refresh_inst()
@@ -166,7 +166,7 @@ class MainWindow(QtGui.QMainWindow):
     def on_scan_jpl(self):
 
         # when invoke this dialog, pause live lockin monitor in the main panel
-        self.lcMonitor.stop()
+        self.liaMonitor.stop()
 
         dconfig = ScanLockin.JPLScanConfig(self)
         entry_settings = None
@@ -217,7 +217,7 @@ class MainWindow(QtGui.QMainWindow):
                        'Are you sure to quit?', QtGui.QMessageBox.Yes |
                        QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
         if q == QtGui.QMessageBox.Yes:
-            status = apigen.close_inst(self.synHandle, self.lcHandle,
+            status = api_gen.close_inst(self.synHandle, self.liaHandle,
                                        self.pciHandle, self.motorHandle)
             if not status:    # safe to close
                 self.close()

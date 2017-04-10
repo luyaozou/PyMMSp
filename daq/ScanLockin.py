@@ -8,10 +8,10 @@ import numpy as np
 from math import ceil
 import pyqtgraph as pg
 from gui import SharedWidgets as Shared
-from api import general as apigen
-from api import validator as apival
-from api import lockin as apilc
-from api import synthesizer as apisyn
+from api import general as api_gen
+from api import validator as api_val
+from api import lockin as api_lia
+from api import synthesizer as api_syn
 from data import save
 
 
@@ -154,7 +154,7 @@ class JPLScanConfig(QtGui.QDialog):
         '''
 
         vdi_index = self.parent.synCtrl.bandSelect.currentIndex()
-        tc_index = apilc.read_tc(self.parent.lcHandle)
+        tc_index = api_lia.read_tc(self.parent.liaHandle)
         entry_settings = []
 
         no_error = True
@@ -165,13 +165,13 @@ class JPLScanConfig(QtGui.QDialog):
             # get settings from entry
             for entry in self.entryWidgetList:
                 # read settings
-                status1, start_freq = apival.val_prob_freq(entry.startFreqFill.text(), vdi_index)
-                status2, stop_freq = apival.val_prob_freq(entry.stopFreqFill.text(), vdi_index)
-                status3, step = apival.val_float(entry.stepFill.text())
-                status4, average = apival.val_int(entry.avgFill.text())
+                status1, start_freq = api_val.val_prob_freq(entry.startFreqFill.text(), vdi_index)
+                status2, stop_freq = api_val.val_prob_freq(entry.stopFreqFill.text(), vdi_index)
+                status3, step = api_val.val_float(entry.stepFill.text())
+                status4, average = api_val.val_int(entry.avgFill.text())
                 sens_index = entry.sensSel.currentIndex()
                 tc_index = entry.tcSel.currentIndex()
-                status5, waittime = apival.val_lc_waittime(entry.waitTimeFill.text(), tc_index)
+                status5, waittime = api_val.val_lia_waittime(entry.waitTimeFill.text(), tc_index)
                 # put them into a setting tuple
                 if status1 and status2 and status3 and status4 and status5:
                     no_error *= True
@@ -318,7 +318,7 @@ class SingleScan(QtGui.QWidget):
         self.filename = filename
 
         # Initialize shared settings
-        self.multiplier = apival.MULTIPLIER[self.main.synCtrl.bandSelect.currentIndex()]
+        self.multiplier = api_val.MULTIPLIER[self.main.synCtrl.bandSelect.currentIndex()]
 
         # Initialize scan entry settings
         self.start_rf_freq = 0
@@ -401,21 +401,21 @@ class SingleScan(QtGui.QWidget):
         self.parent.currentProgBar.setValue(ceil(self.pts_taken*self.waittime*1e-3))
 
         # set lockin properties
-        apilc.set_sens(self.main.lcHandle, self.sens_index)
-        apilc.set_tc(self.main.lcHandle, self.tc_index)
+        api_lia.set_sens(self.main.liaHandle, self.sens_index)
+        api_lia.set_tc(self.main.liaHandle, self.tc_index)
         self.tune_syn()
 
     def tune_syn(self):
         ''' Tune synthesizer frequency '''
 
-        apisyn.set_syn_freq(self.main.synHandle, self.x[self.current_x_index]/self.multiplier)
+        api_syn.set_syn_freq(self.main.synHandle, self.x[self.current_x_index]/self.multiplier)
         self.waitTimer.start()
 
     def query_lockin(self):
         ''' Query lockin data. Triggered by waitTimer.timeout() '''
 
         # append data to data list
-        self.y[self.current_x_index] = apilc.query_single_x(self.main.lcHandle)
+        self.y[self.current_x_index] = api_lia.query_single_x(self.main.liaHandle)
         # update plot
         self.yCurve.setData(self.x, self.y)
         # move to the next frequency, update freq index and average counter
@@ -466,10 +466,10 @@ class SingleScan(QtGui.QWidget):
     def save_data(self):
         ''' Save data array '''
 
-        tc = apilc.read_tc(self.main.lcHandle)
+        tc = api_lia.read_tc(self.main.liaHandle)
 
-        h_info = (self.waittime, apival.LIASENSLIST[self.sens_index],
-                  apival.LIATCLIST[tc]*1e-3, 15, 75, self.x_min, self.step, self.acquired_avg)
+        h_info = (self.waittime, api_val.LIASENSLIST[self.sens_index],
+                  api_val.LIATCLIST[tc]*1e-3, 15, 75, self.x_min, self.step, self.acquired_avg)
 
         # if already finishes at least one sweep
         if self.acquired_avg > 0:

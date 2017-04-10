@@ -105,7 +105,7 @@ def val_float(text, safe=[], warning=[]):
         return 0, 0
 
 
-def val_lc_phase(text):
+def val_lia_phase(text):
     ''' Validate locking phase input.
         Arguments: text: str
         Returns
@@ -123,7 +123,7 @@ def val_lc_phase(text):
         return 0, 0
 
 
-def val_lc_harm(harm_text, freq):
+def val_lia_harm(harm_text, freq):
     ''' Validate locking phase input.
         Arguments
             harm_text: str, harmonics input text
@@ -260,11 +260,11 @@ def val_monitor_sample_len(len_text):
     return code, slen
 
 
-def val_lc_monitor_srate(srate_index, tc_index):
+def val_lia_monitor_srate(srate_index, tc_index):
     ''' Validate screen update speed of the lockin monitor.
         Arguments
-            srate_index: lc sample rate index, int
-            tc_index: lc time constant index, int
+            srate_index: LIA sample rate index, int
+            tc_index: LIA time constant index, int
         Safe range: > 3pi*tc
         Warning range: > 2pi*tc
     '''
@@ -281,12 +281,12 @@ def val_lc_monitor_srate(srate_index, tc_index):
         return code, tc*3*pi
 
 
-def val_lc_waittime(text, tc_index):
+def val_lia_waittime(text, tc_index):
     ''' Validate the wait time setting for lockin scans. The wait
         time must be longer than 2pi*time_const. Best > 3pi*time_const
         Arguments
             text: integration time user input, str
-            tc_index: lc time constant index, int
+            tc_index: LIA time constant index, int
         Safe range: > 3pi*tc
         Warning range: > 2pi*tc
     '''

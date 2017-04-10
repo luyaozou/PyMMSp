@@ -4,7 +4,7 @@ from PyQt4 import QtGui, QtCore
 import random
 from math import ceil
 import numpy as np
-from api import validator as apival
+from api import validator as api_val
 
 
 # LOCKIN AMPLIFIER SENSTIVITY LIST
@@ -115,7 +115,7 @@ class VDIBandComboBox(QtGui.QComboBox):
         self.setCurrentIndex(4)
 
 
-class lcSensBox(QtGui.QComboBox):
+class liaSensBox(QtGui.QComboBox):
     ''' Lockin sensitivity selection box '''
 
     def __init__(self):
@@ -125,7 +125,7 @@ class lcSensBox(QtGui.QComboBox):
         self.setCurrentIndex(26)
 
 
-class lcTcBox(QtGui.QComboBox):
+class liaTCBox(QtGui.QComboBox):
     ''' Lockin time constant selection box '''
 
     def __init__(self):
@@ -146,8 +146,8 @@ class ScanEntry(QtGui.QWidget):
         self.stopFreqFill = QtGui.QLineEdit()
         self.stepFill = QtGui.QLineEdit()
         self.avgFill = QtGui.QLineEdit()
-        self.sensSel = lcSensBox()
-        self.tcSel = lcTcBox()
+        self.sensSel = liaSensBox()
+        self.tcSel = liaTCBox()
         self.waitTimeFill = QtGui.QLineEdit()
         self.waitTimeFill.setText('30')         # default value
         # validate default values
@@ -163,31 +163,31 @@ class ScanEntry(QtGui.QWidget):
     def val_start_freq(self, text):
 
         vdi_index = self.main.synCtrl.bandSelect.currentIndex()
-        status, freq = apival.val_syn_freq(text, vdi_index)
+        status, freq = api_val.val_syn_freq(text, vdi_index)
         self.startFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
     def val_stop_freq(self, text):
 
         vdi_index = self.main.synCtrl.bandSelect.currentIndex()
-        status, freq = apival.val_syn_freq(text, vdi_index)
+        status, freq = api_val.val_syn_freq(text, vdi_index)
         self.stopFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
     def val_step(self, text):
 
-        status, number = apival.val_float(text, safe=[('>=', 0.01)], warning=[('>', 0)])
+        status, number = api_val.val_float(text, safe=[('>=', 0.01)], warning=[('>', 0)])
         self.stepFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
     def val_avg(self, text):
 
         vdi_index = self.main.synCtrl.bandSelect.currentIndex()
-        status, number = apival.val_int(text, safe=[('>', 0)])
+        status, number = api_val.val_int(text, safe=[('>', 0)])
         self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
     def val_waittime(self):
 
         text = self.waitTimeFill.text()
         tc_index = self.tcSel.currentIndex()
-        status, waittime = apival.val_lc_waittime(text, tc_index)
+        status, waittime = api_val.val_lia_waittime(text, tc_index)
         self.waitTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
 
