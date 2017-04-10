@@ -20,9 +20,9 @@ class JPLScanConfig(QtGui.QDialog):
         Configuration window preparing for the scan
     '''
 
-    def __init__(self, parent):
-        QtGui.QDialog.__init__(self, parent)
-        self.parent = parent
+    def __init__(self, main=None):
+        QtGui.QDialog.__init__(self, main)
+        self.main = main
         self.setWindowTitle('Lockin scan configuration (JPL style)')
         self.setMinimumSize(900, 600)
 
@@ -30,12 +30,13 @@ class JPLScanConfig(QtGui.QDialog):
         addBatchButton = QtGui.QPushButton('Add batch')
         removeBatchButton = QtGui.QPushButton('Remove last batch')
         saveButton = QtGui.QPushButton('Set File Directory')
-        self.fileLabel = QtGui.QLabel('Save Data to: ')
-        self.filename = ''
+        self.filename = 'default.lwa'
+        self.fileLabel = QtGui.QLabel('Save Data to: {:s}'.format(self.filename))
+        self.fileLabel.setStyleSheet('QLabel {color: #003366}')
         topButtonLayout = QtGui.QGridLayout()
-        topButtonLayout.addWidget(addBatchButton, 0, 0)
-        topButtonLayout.addWidget(removeBatchButton, 0, 1)
-        topButtonLayout.addWidget(saveButton, 0, 2)
+        topButtonLayout.addWidget(saveButton, 0, 0)
+        topButtonLayout.addWidget(addBatchButton, 0, 1)
+        topButtonLayout.addWidget(removeBatchButton, 0, 2)
         topButtonLayout.addWidget(self.fileLabel, 1, 0, 1, 3)
         topButtons = QtGui.QWidget()
         topButtons.setLayout(topButtonLayout)
@@ -90,7 +91,10 @@ class JPLScanConfig(QtGui.QDialog):
         ''' Add batch entry to this dialog window '''
 
         # generate a new batch entry
-        entry = Shared.ScanEntry(self.parent)
+        if self.main.testModeAction.isChecked():
+            entry = Shared.ScanEntry(self.main, init_setting=(6, 120, 1, 1, 0, 0, 1000))
+        else:
+            entry = Shared.ScanEntry(self.main)
 
         # get the current last entry
         if self.entryWidgetList:
@@ -119,7 +123,7 @@ class JPLScanConfig(QtGui.QDialog):
 
         # if there is only one entry, skip and pop up warning
         if len(self.entryWidgetList) == 1:
-            msg = Shared.MsgWarning(self.parent, 'Cannot remove batch!',
+            msg = Shared.MsgWarning(self.main, 'Cannot remove batch!',
                              'At least one batch entry is required!')
             msg.exec_()
         else:
@@ -143,7 +147,7 @@ class JPLScanConfig(QtGui.QDialog):
 
     def set_file_directory(self):
 
-        self.filename = QtGui.QFileDialog.getSaveFileName(self, 'Save Data', '', 'SMAP File (*.lwa)')
+        self.filename, _ = QtGui.QFileDialog.getSaveFileName(self, 'Save Data', '', 'SMAP File (*.lwa)')
         self.fileLabel.setText('Data save to: {:s}'.format(self.filename))
 
     def get_settings(self):
@@ -153,10 +157,13 @@ class JPLScanConfig(QtGui.QDialog):
              itgtime <ms>, waittime <ms>, lockin sens_index <int>)
         '''
 
-        vdi_index = self.parent.synCtrl.bandSelect.currentIndex()
-        tc_index = api_lia.read_tc(self.parent.liaHandle)
-        entry_settings = []
+        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
+        if self.main.testModeAction.isChecked():
+            pass
+        else:
+            tc_index = api_lia.read_tc(self.main.liaHandle)
 
+        entry_settings = []
         no_error = True
 
         if self.filename == '':
@@ -185,7 +192,7 @@ class JPLScanConfig(QtGui.QDialog):
         if no_error:
             return entry_settings, self.filename
         else:
-            msg = Shared.MsgError(self.parent, 'Invalid input!', 'Please fix invalid inputs before proceeding.')
+            msg = Shared.MsgError(self.main, 'Invalid input!', 'Please fix invalid inputs before proceeding.')
             msg.exec_()
             return None, None
 
@@ -196,9 +203,9 @@ class JPLScanWindow(QtGui.QDialog):
     # define a pyqt signal to control batch scans
     move_to_next_entry = QtCore.pyqtSignal()
 
-    def __init__(self, parent, entry_settings, filename):
-        QtGui.QWidget.__init__(self, parent)
-        self.parent = parent
+    def __init__(self, entry_settings, filename, main=None):
+        QtGui.QWidget.__init__(self, main)
+        self.main = main
         self.setWindowTitle('Lockin scan monitor')
         self.setMinimumSize(800, 600)
 
@@ -227,7 +234,10 @@ class JPLScanWindow(QtGui.QDialog):
         batchDisplay.setLayout(batchLayout)
 
         # set up single scan monitor + daq class
-        self.singleScan = TestClass(self, parent, filename)
+        if self.main.testModeAction.isChecked():
+            self.singleScan = SingleScanTestMode(filename, parent=self, main=self.main)
+        else:
+            self.singleScan = SingleScan(filename, parent=self, main=self.main)
 
         # set up progress bar
         currentProgress = QtGui.QWidget()
@@ -308,7 +318,7 @@ class JPLScanWindow(QtGui.QDialog):
 class SingleScan(QtGui.QWidget):
     ''' Take a scan in a single freq window '''
 
-    def __init__(self, parent, main, filename):
+    def __init__(self, filename, parent=None, main=None):
         ''' parent is the JPL scan dialog window. It contains shared settings.
             main is the main GUI window. It containts instrument handles
         '''
@@ -558,12 +568,13 @@ class SingleScan(QtGui.QWidget):
         self.parent.reject()
 
 
-class TestClass(QtGui.QWidget):
-    ''' Test class. Analog to SingleScan, but remove all instrument handles '''
+class SingleScanTestMode(QtGui.QWidget):
+    ''' SingleScan test mode, but remove all instrument handles '''
 
-    def __init__(self, parent, main, filename):
+    def __init__(self, filename, parent=None, main=None):
 
         QtGui.QWidget.__init__(self, parent)
+        self.main = main
         self.parent = parent
         self.filename = filename
 

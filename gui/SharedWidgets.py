@@ -24,8 +24,9 @@ LIATCLIST = ['10 us', '30 us', '100 us', '300 us', '1 ms', '3 ms', '10 ms',
 BUTTONLABEL = {'confirm':['Lets do it', 'Go forth and conquer', 'Ready to go',
                           'Looks good', 'Sounds about right'],
                'complete':['Nice job', 'Sweet', 'Well done', 'Mission complete'],
-               'accept': ['I see', 'Gotcha', 'Okay', 'Yes master'],
-               'reject':['Never mind', 'I changed my mind', 'Cancel']
+               'accept':['I see', 'Gotcha', 'Okay', 'Yes master'],
+               'reject':['Never mind', 'I changed my mind', 'Cancel', 'I refuse'],
+               'error':['Oopsy!', 'Something got messed up', 'Bad']
                 }
 
 def btn_label(btn_type):
@@ -138,7 +139,7 @@ class liaTCBox(QtGui.QComboBox):
 class ScanEntry(QtGui.QWidget):
     ''' Frequency window entry for scanning job configuration with captions '''
 
-    def __init__(self, main):
+    def __init__(self, main, init_setting=()):
         QtGui.QWidget.__init__(self, parent=None)
         self.main = main
 
@@ -149,7 +150,6 @@ class ScanEntry(QtGui.QWidget):
         self.sensSel = liaSensBox()
         self.tcSel = liaTCBox()
         self.waitTimeFill = QtGui.QLineEdit()
-        self.waitTimeFill.setText('30')         # default value
         # validate default values
         self.val_waittime()
 
@@ -159,6 +159,17 @@ class ScanEntry(QtGui.QWidget):
         self.avgFill.textChanged.connect(self.val_avg)
         self.tcSel.currentIndexChanged.connect(self.val_waittime)
         self.waitTimeFill.textChanged.connect(self.val_waittime)
+
+        if init_setting:
+            self.startFreqFill.setText(str(init_setting[0]))
+            self.stopFreqFill.setText(str(init_setting[1]))
+            self.stepFill.setText(str(init_setting[2]))
+            self.avgFill.setText(str(init_setting[3]))
+            self.sensSel.setCurrentIndex(int(init_setting[4]))
+            self.tcSel.setCurrentIndex(int(init_setting[5]))
+            self.waitTimeFill.setText(str(init_setting[6]))
+        else:
+            pass
 
     def val_start_freq(self, text):
 

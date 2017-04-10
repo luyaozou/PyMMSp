@@ -67,9 +67,10 @@ class MainWindow(QtGui.QMainWindow):
         scanCavityAction.setStatusTip('Use cavity enhanced spectroscopy')
         scanCavityAction.triggered.connect(self.on_scan_cavity)
 
-        testAction = QtGui.QAction('Test Widget', self)
-        testAction.setShortcut('Ctrl+T')
-        testAction.triggered.connect(self.on_test)
+        self.testModeAction = QtGui.QAction('Test Mode', self)
+        self.testModeAction.setCheckable(True)
+        self.testModeAction.setShortcut('Ctrl+T')
+        self.testModeAction.setWhatsThis('Toggle the test mode to bypass all instrument communication for GUI development.')
 
         # Set menu bar
         self.statusBar()
@@ -85,7 +86,7 @@ class MainWindow(QtGui.QMainWindow):
         menuScan.addAction(scanPCIAction)
         menuScan.addAction(scanCavityAction)
         menuTest = self.menuBar().addMenu('&Test')
-        menuTest.addAction(testAction)
+        menuTest.addAction(self.testModeAction)
 
         # Set main window widgets
         self.synStatus = Panels.SynStatus(self)
@@ -168,13 +169,20 @@ class MainWindow(QtGui.QMainWindow):
         # when invoke this dialog, pause live lockin monitor in the main panel
         self.liaMonitor.stop()
 
-        dconfig = ScanLockin.JPLScanConfig(self)
-        entry_settings = None
-        result = dconfig.exec_()
+        # if it is test mode, or real-run mode with instrument correctly connected
+        if self.testModeAction.isChecked() or (self.synHandle and self.liaHandle):
+            dconfig = ScanLockin.JPLScanConfig(main=self)
+            entry_settings = None
+            dconfig_result = dconfig.exec_()
+        else:
+            # instrument handle is None, pop up error
+            msg = Shared.MsgError(self, 'Instrument Offline!', 'Connect to the synthesizer and lockin first before proceed.')
+            msg.exec_()
+            return None
 
         # this loop makes sure the config dialog does not disappear
         # unless the settings are all valid / or user hits cancel
-        while result:  # if dialog accepted
+        while dconfig_result:  # if dialog accepted
             entry_settings, filename = dconfig.get_settings()
             if entry_settings:
                 total_time = Shared.jpl_scan_time(entry_settings)
@@ -186,14 +194,14 @@ class MainWindow(QtGui.QMainWindow):
                 q.addButton(QtGui.QMessageBox.Cancel)
                 qres = q.exec_()
                 if qres == QtGui.QMessageBox.Ok:
-                    result = False
+                    break
                 else:
-                    result = dconfig.exec_()
+                    dconfig_result = dconfig.exec_()
             else:
-                result = dconfig.exec_()
+                dconfig_result = dconfig.exec_()
 
-        if entry_settings and result:
-            dscan = ScanLockin.JPLScanWindow(self, entry_settings, filename)
+        if entry_settings and dconfig_result:
+            dscan = ScanLockin.JPLScanWindow(entry_settings, filename, main=self)
             dscan.exec_()
         else:
             pass
@@ -204,13 +212,6 @@ class MainWindow(QtGui.QMainWindow):
 
     def on_scan_cavity(self):
         pass
-
-    def on_test(self):
-        ''' Test developing widget. Modify the widget when necessary '''
-
-        entry_settings = [(6, 12, 1, 1, 0, 0, 1000), (30, 50, 3, 3, 2, 2, 1000)]
-        dscan = ScanLockin.JPLScanWindow(self, entry_settings, '')
-        dscan.exec_()
 
     def closeEvent(self, event):
         q = QtGui.QMessageBox.question(self, 'Quit?',
