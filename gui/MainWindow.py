@@ -7,6 +7,7 @@ from gui import SharedWidgets as Shared
 from gui import Panels
 from gui import Dialogs
 from daq import ScanLockin
+from daq import PresReader
 from api import general as api_gen
 from api import synthesizer as api_syn
 from api import lockin as api_lia
@@ -31,6 +32,7 @@ class MainWindow(QtGui.QMainWindow):
         self.liaHandle = None
         self.pciHandle = None
         self.motorHandle = None
+        self.pressureHandle = None
 
         # Set menu bar actions
         exitAction = QtGui.QAction('Exit', self)
@@ -58,7 +60,7 @@ class MainWindow(QtGui.QMainWindow):
         scanJPLAction.triggered.connect(self.on_scan_jpl)
 
         scanPCIAction = QtGui.QAction('PCI Oscilloscope', self)
-        scanPCIAction.setShortcut('Ctrl+Shift+P')
+        scanPCIAction.setShortcut('Ctrl+Shift+S')
         scanPCIAction.setStatusTip("Use the scanning style of Brian's NIPCI card routine")
         scanPCIAction.triggered.connect(self.on_scan_pci)
 
@@ -66,6 +68,11 @@ class MainWindow(QtGui.QMainWindow):
         scanCavityAction.setShortcut('Ctrl+Shift+C')
         scanCavityAction.setStatusTip('Use cavity enhanced spectroscopy')
         scanCavityAction.triggered.connect(self.on_scan_cavity)
+
+        presReaderAction = QtGui.QAction('Pressure Reader', self)
+        presReaderAction.setShortcut('Ctrl+Shift+P')
+        presReaderAction.setStatusTip('Record pressure measurements using the CENTER TWO pressure readout')
+        presReaderAction.triggered.connect(self.on_pres_reader)
 
         self.testModeAction = QtGui.QAction('Test Mode', self)
         self.testModeAction.setCheckable(True)
@@ -85,6 +92,7 @@ class MainWindow(QtGui.QMainWindow):
         menuScan.addAction(scanJPLAction)
         menuScan.addAction(scanPCIAction)
         menuScan.addAction(scanCavityAction)
+        menuScan.addAction(presReaderAction)
         menuTest = self.menuBar().addMenu('&Test')
         menuTest.addAction(self.testModeAction)
 
@@ -212,6 +220,10 @@ class MainWindow(QtGui.QMainWindow):
 
     def on_scan_cavity(self):
         pass
+
+    def on_pres_reader(self):
+        d = PresReader.PresReaderWindow(main=self)
+        d.exec_()
 
     def closeEvent(self, event):
         q = QtGui.QMessageBox.question(self, 'Quit?',
