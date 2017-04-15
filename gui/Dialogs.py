@@ -44,10 +44,14 @@ class SelInstDialog(QtGui.QDialog):
         self.selMotor = QtGui.QComboBox()
         self.selMotor.addItems(['N.A.'])
         self.selMotor.addItems(instList)
+        self.selPressure = QtGui.QComboBox()
+        self.selPressure.addItems(['N.A.'])
+        self.selPressure.addItems(instList)
         selInstLayout.addRow(QtGui.QLabel('Synthesizer'), self.selSyn)
         selInstLayout.addRow(QtGui.QLabel('Lock-in'), self.selLockin)
         selInstLayout.addRow(QtGui.QLabel('Oscilloscope'), self.selScope)
         selInstLayout.addRow(QtGui.QLabel('Step Motor'), self.selMotor)
+        selInstLayout.addRow(QtGui.QLabel('CENTER TWO Pressure Readout'), self.selPressure)
         selInst.setLayout(selInstLayout)
 
         # Set main layout
@@ -81,10 +85,12 @@ class SelInstDialog(QtGui.QDialog):
             self.selLockin.removeItem(1)
             self.selScope.removeItem(1)
             self.selMotor.removeItem(1)
+            self.selPressure.removeItem(1)
         self.selSyn.addItems(instList)
         self.selLockin.addItems(instList)
         self.selScope.addItems(instList)
         self.selMotor.addItems(instList)
+        self.selPressure.addItems(instList)
 
     def accept(self):
 
@@ -92,13 +98,15 @@ class SelInstDialog(QtGui.QDialog):
         api_gen.close_inst(self.parent.synHandle,
                           self.parent.liaHandle,
                           self.parent.pciHandle,
-                          self.parent.motorHandle)
+                          self.parent.motorHandle,
+                          self.parent.pressureHandle)
 
         # open new instrument handles
         self.parent.synHandle = api_gen.open_inst(self.selSyn.currentText())
         self.parent.liaHandle = api_gen.open_inst(self.selLockin.currentText())
         self.parent.pciHandle = api_gen.open_inst(self.selScope.currentText())
         self.parent.motorHandle = api_gen.open_inst(self.selMotor.currentText())
+        self.parent.pressureHandle = api_gen.open_inst(self.selPressure.currentText())
 
         self.done(True)
 
@@ -133,6 +141,7 @@ class CloseSelInstDialog(QtGui.QDialog):
         self.liaToggle = QtGui.QCheckBox()
         self.pciToggle = QtGui.QCheckBox()
         self.motorToggle = QtGui.QCheckBox()
+        self.pressureToggle = QtGui.QCheckBox()
 
         instLayout = QtGui.QFormLayout()
         instLayout.addRow(QtGui.QLabel('Instrument'), QtGui.QLabel('Status'))
@@ -161,6 +170,12 @@ class CloseSelInstDialog(QtGui.QDialog):
         else:
             self.motorToggle.setCheckState(False)
 
+        if self.parent.pressureHandle:
+            self.pressureToggle.setCheckState(True)
+            instLayout.addRow(QtGui.QLabel('Pressure Readout'), self.pressureToggle)
+        else:
+            self.pressureToggle.setCheckState(False)
+
         inst.setLayout(instLayout)
 
         okButton = QtGui.QPushButton(Shared.btn_label('complete'))
@@ -174,45 +189,13 @@ class CloseSelInstDialog(QtGui.QDialog):
 
     def accept(self):
 
-        self.close_syn(self.synToggle.isChecked())
-        self.close_lia(self.liaToggle.isChecked())
-        self.close_scope(self.pciToggle.isChecked())
-        self.close_motor(self.motorToggle.isChecked())
+        self.close_inst_handle(self.parent.synHandle, self.synToggle)
+        self.close_inst_handle(self.parent.liaHandle, self.liaToggle)
+        self.close_inst_handle(self.parent.pciHandle, self.pciToggle)
+        self.close_inst_handle(self.parent.motorHandle, self.motorToggle)
+        self.close_inst_handle(self.parent.pressureHandle, self.pressureToggle)
 
         self.close()
-
-    def close_syn(self, check_state):
-
-        if (not check_state) and self.parent.synHandle:
-            api_gen.close_inst(self.parent.synHandle)
-            self.parent.synHandle = None
-        else:
-            pass
-
-    def close_lia(self, check_state):
-
-        if (not check_state) and self.parent.liaHandle:
-            api_gen.close_inst(self.parent.liaHandle)
-            self.parent.liaHandle = None
-        else:
-            pass
-
-    def close_scope(self, check_state):
-
-        if (not check_state) and self.parent.pciHandle:
-            api_gen.close_inst(self.parent.pciHandle)
-            self.parent.pciHandle = None
-        else:
-            pass
-
-
-    def close_motor(self, check_state):
-
-        if (not check_state) and self.parent.motorHandle:
-            api_gen.close_inst(self.parent.motorHandle)
-            self.parent.motorHandle = None
-        else:
-            pass
 
 
 class SynInfoDialog(QtGui.QDialog):
