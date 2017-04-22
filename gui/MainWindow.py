@@ -223,7 +223,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def on_pres_reader(self):
         d = PresReader.PresReaderWindow(main=self)
-        d.exec_()
+        d.show()    # this is a modaless window
 
     def closeEvent(self, event):
         q = QtGui.QMessageBox.question(self, 'Quit?',

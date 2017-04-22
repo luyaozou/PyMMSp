@@ -25,6 +25,7 @@ class PresReaderWindow(QtGui.QDialog):
         self.main = main
         self.setWindowTitle('CENTER TWO pressure reader')
         self.setMinimumSize(900, 600)
+        self.setModal(False)
 
         # add left column widigets
         # this is a monitor panel for realtime readings
@@ -33,13 +34,16 @@ class PresReaderWindow(QtGui.QDialog):
         self.currentP = QtGui.QLabel()
         self.currentUnit = QtGui.QLabel()
         self.currentChannel = QtGui.QLabel()
+        self.currentStatus = QtGui.QLabel()
         monitorLayout = QtGui.QGridLayout()
         monitorLayout.addWidget(QtGui.QLabel('Channel'), 0, 0)
-        monitorLayout.addWidget(QtGui.QLabel('Pressure'), 0, 1)
-        monitorLayout.addWidget(QtGui.QLabel('Unit'), 0, 2)
+        monitorLayout.addWidget(QtGui.QLabel('Status'), 0, 1)
+        monitorLayout.addWidget(QtGui.QLabel('Pressure'), 2, 0)
+        monitorLayout.addWidget(QtGui.QLabel('Unit'), 2, 1)
         monitorLayout.addWidget(self.currentChannel, 1, 0)
-        monitorLayout.addWidget(self.currentP, 1, 1)
-        monitorLayout.addWidget(self.currentUnit, 1, 2)
+        monitorLayout.addWidget(self.currentStatus, 1, 1)
+        monitorLayout.addWidget(self.currentP, 3, 0)
+        monitorLayout.addWidget(self.currentUnit, 3, 1)
         rtMonitor.setLayout(monitorLayout)
 
         # this is a mini control panel for the readout
@@ -116,6 +120,7 @@ class PresReaderWindow(QtGui.QDialog):
         self.timer.start()
 
         # trigger settings
+        self.channelSel.currentIndexChanged.connect(self.update_rt)
         self.updateRate.textChanged.connect(self.set_update_period)
         self.updateRateUnit.currentIndexChanged.connect(self.set_update_period)
         self.pUnitSel.currentIndexChanged.connect(self.set_unit)
@@ -124,6 +129,10 @@ class PresReaderWindow(QtGui.QDialog):
         self.saveButton.clicked.connect(self.save)
         self.savepButton.clicked.connect(self.save_and_continue)
         self.timer.timeout.connect(self.daq)
+
+        # set default unit to Torr on the read out
+        self.set_unit(1)
+        # start reading
         self.update_rt()
 
     def start(self):
@@ -160,9 +169,9 @@ class PresReaderWindow(QtGui.QDialog):
 
         tscalar = self._TIMEUNIT[self.updateRateUnit.currentIndex()]
 
-        status, self.waittime = api_val.val_float(self.updateRate.text(),
+        msgcode, self.waittime = api_val.val_float(self.updateRate.text(),
                                                   safe=[('>=', 0.1/tscalar)])
-        self.updateRate.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
+        self.updateRate.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(msgcode)))
         self.waittime *= tscalar
         if status==2:
             self.timer.setInterval(self.waittime*1000)
@@ -178,7 +187,7 @@ class PresReaderWindow(QtGui.QDialog):
         if self.main.testModeAction.isChecked():
             pass
         else:
-            api_pres.set_unit(self.main.pressureHandle, idx)
+            api_pres.set_query_p_unit(self.main.pressureHandle, idx)
 
         self.update_rt()
 
@@ -186,29 +195,37 @@ class PresReaderWindow(QtGui.QDialog):
         ''' Update real time monitor '''
 
         if self.main.testModeAction.isChecked():
-            unit = self.pUnitSel.currentText()
+            unit_txt = self.pUnitSel.currentText()
         else:
-            unit = api_pres.query_unit(self.main.pressureHandle)
+            _, unit_txt = api_pres.set_query_p_unit(self.main.pressureHandle)
 
-        chn = self.channelSel.currentText()
-        self.currentChannel.setText(chn)
-        self.currentUnit.setText(unit)
+        self.currentChannel.setText(self.channelSel.currentText())
+        self.currentUnit.setText(unit_txt)
 
     def daq(self):
 
         if self.main.testModeAction.isChecked():
             self.current_p = np.random.rand()
+            msgcode = 2
+            status_txt = 'Okay'
         else:
-            self.current_p = api_pres.query_p(self.main.pressureHandle,
-                                              self.channelSel.currentText())
+            msgcode, status_txt, self.current_p = api_pres.query_p(self.main.pressureHandle,
+                                                    self.channelSel.currentText())
 
         self.currentP.setText('{:.3f}'.format(self.current_p))
+        self.currentStatus.setText(status_txt)
+        self.currentStatus.setStyleSheet('color: {:s}'.format(Shared.msgcolor(msgcode)))
+
+        if not msgcode: # if fatal, stop daq
+            self.timer.stop()
+        else:
+            pass
+        print('still update')
 
     def update_plot(self):
         self.counter += 1
         t = self.counter*self.waittime
-        self.data = np.row_stack((self.data,
-                                 np.array([t, self.current_p])))
+        self.data = np.row_stack((self.data, np.array([t, self.current_p])))
         self.curve.setData(self.data)
 
     def save_data(self):
@@ -219,3 +236,15 @@ class PresReaderWindow(QtGui.QDialog):
         except AttributeError:
             msg = Shared.MsgError(self, Shared.btn_label('error'), 'No data has been collected!')
             msg.exec_()
+
+    # stop timer before close 
+    def closeEvent(self, event):
+        self.timer.stop()
+        self.close()
+
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Escape:
+            self.timer.stop()
+            self.close()
+        else:
+            pass

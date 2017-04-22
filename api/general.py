@@ -23,7 +23,7 @@ def list_inst():
     for inst in inst_list:
         try:
             # open each instrument and get instrument information
-            temp = rm.open_resource(inst)
+            temp = rm.open_resource(inst, read_termination='\r\n')
             # If the instrument is GPIB, query for the instrument name
             if int(temp.interface_type) == 1:
                 text = temp.query('*IDN?')
