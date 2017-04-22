@@ -222,8 +222,12 @@ class MainWindow(QtGui.QMainWindow):
         pass
 
     def on_pres_reader(self):
-        d = PresReader.PresReaderWindow(main=self)
-        d.show()    # this is a modaless window
+        # this is a modaless window, save this attribute to the main class for reuse
+        if hasattr(self, 'p_reader_win'):       # if window already activated
+            self.p_reader_win.timer.start()     # restart reading
+        else:   # initiate window instance
+            self.p_reader_win = PresReader.PresReaderWindow(main=self)
+        self.p_reader_win.show()
 
     def closeEvent(self, event):
         q = QtGui.QMessageBox.question(self, 'Quit?',

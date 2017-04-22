@@ -220,7 +220,6 @@ class PresReaderWindow(QtGui.QDialog):
             self.timer.stop()
         else:
             pass
-        print('still update')
 
     def update_plot(self):
         self.counter += 1
@@ -230,21 +229,29 @@ class PresReaderWindow(QtGui.QDialog):
 
     def save_data(self):
         try:
-            filename, _ = QtGui.QFileDialog.getSaveFileName(self, 'Save Data', './test_pressure.txt', 'Data File (*.txt)')
+            filename, _ = QtGui.QFileDialog.getSaveFileName(self, 'Save Data',
+                                    './test_pressure.txt', 'Data File (*.txt)')
             np.savetxt(filename, self.data, comments='#', fmt=['%.1f', '%.3e'],
                        header='time(sec) pressure({:s})'.format(self.currentUnit.text()))
         except AttributeError:
-            msg = Shared.MsgError(self, Shared.btn_label('error'), 'No data has been collected!')
+            msg = Shared.MsgError(self, Shared.btn_label('error'),
+                                  'No data has been collected!')
             msg.exec_()
 
-    # stop timer before close 
+    # stop timer before close
     def closeEvent(self, event):
-        self.timer.stop()
-        self.close()
+        q = QtGui.QMessageBox.question(self, 'Exit Pressure Reader?',
+                    'Pressure query will pause. Make sure you save your pressure readings!',
+                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
+        if q == QtGui.QMessageBox.Yes:
+            self.timer.stop()
+            self.close()
+        else:
+            event.ignore()
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:
             self.timer.stop()
             self.close()
         else:
-            pass
+            event.ignore()
