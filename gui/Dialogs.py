@@ -96,10 +96,10 @@ class SelInstDialog(QtGui.QDialog):
 
         # close old instrument handles
         api_gen.close_inst(self.parent.synHandle,
-                          self.parent.liaHandle,
-                          self.parent.pciHandle,
-                          self.parent.motorHandle,
-                          self.parent.pressureHandle)
+                           self.parent.liaHandle,
+                           self.parent.pciHandle,
+                           self.parent.motorHandle,
+                           self.parent.pressureHandle)
 
         # open new instrument handles
         self.parent.synHandle = api_gen.open_inst(self.selSyn.currentText())
@@ -189,20 +189,24 @@ class CloseSelInstDialog(QtGui.QDialog):
 
     def close_inst_handle(self, inst_handle, check_state):
 
-        if (not check_state) and inst_handle:
+        if check_state and inst_handle:
             api_gen.close_inst(inst_handle)
-            inst_handle = None
+            return None
         else:
-            pass
+            return inst_handle
 
     def accept(self):
 
-        self.close_inst_handle(self.parent.synHandle, self.synToggle)
-        self.close_inst_handle(self.parent.liaHandle, self.liaToggle)
-        self.close_inst_handle(self.parent.pciHandle, self.pciToggle)
-        self.close_inst_handle(self.parent.motorHandle, self.motorToggle)
-        self.close_inst_handle(self.parent.pressureHandle, self.pressureToggle)
-
+        self.parent.synHandle = self.close_inst_handle(self.parent.synHandle,
+                                                       self.synToggle.isChecked())
+        self.parent.liaHandle = self.close_inst_handle(self.parent.liaHandle,
+                                                       self.liaToggle.isChecked())
+        self.parent.pciHandle = self.close_inst_handle(self.parent.pciHandle,
+                                                       self.pciToggle.isChecked())
+        self.parent.motorHandle = self.close_inst_handle(self.parent.motorHandle,
+                                                         self.motorToggle.isChecked())
+        self.parent.pressureHandle = self.close_inst_handle(self.parent.pressureHandle,
+                                                            self.pressureToggle.isChecked())
         self.close()
 
 
