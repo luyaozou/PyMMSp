@@ -29,6 +29,7 @@ class PresReaderWindow(QtGui.QDialog):
         self.setModal(False)
         self.data = np.array([0, 0])    # initiate the data array
         self.data_collecting = False    # store data collection status
+        self.msgcode = 2
 
         # add left column widigets
         # this is a monitor panel for realtime readings
@@ -56,7 +57,9 @@ class PresReaderWindow(QtGui.QDialog):
         self.channelSel.addItems(['1', '2'])
         self.pUnitSel = QtGui.QComboBox()
         self.pUnitSel.addItems(['mBar', 'Torr', 'Pascal', 'μmHg'])
-        self.pUnitSel.setCurrentIndex(1)
+        self.pUnitSel.setCurrentIndex(1)    # default unit Torr
+        self.currentUnit.setText('Torr')    # default unit Torr
+        self.current_p_unit_index = 1       # store this for unit protection
         rdCtrlLayout = QtGui.QFormLayout()
         rdCtrlLayout.addRow(QtGui.QLabel('Select Channel'), self.channelSel)
         rdCtrlLayout.addRow(QtGui.QLabel('Select Pressure Unit'), self.pUnitSel)
@@ -66,14 +69,15 @@ class PresReaderWindow(QtGui.QDialog):
         rateSelect = QtGui.QWidget()
         self.updateRate = QtGui.QLineEdit()
         self.updateRate.setText('1')
-        self.updateRateUnit = QtGui.QComboBox()
-        self.updateRateUnit.addItems(['sec', 'min', 'h'])
-        self.updateRateUnit.setCurrentIndex(0)
+        self.updateRateUnitSel = QtGui.QComboBox()
+        self.updateRateUnitSel.addItems(['sec', 'min', 'h'])
+        self.updateRateUnitSel.setCurrentIndex(0)
+        self.current_update_unit_index = 0      # store this for unit protection
         rateSelectLayout = QtGui.QHBoxLayout(self)
         rateSelectLayout.addWidget(QtGui.QLabel('Update Rate'))
         rateSelectLayout.addWidget(self.updateRate)
         rateSelectLayout.addWidget(QtGui.QLabel(' per '))
-        rateSelectLayout.addWidget(self.updateRateUnit)
+        rateSelectLayout.addWidget(self.updateRateUnitSel)
         rateSelect.setLayout(rateSelectLayout)
 
         # putting stuff together in the left column
@@ -129,8 +133,8 @@ class PresReaderWindow(QtGui.QDialog):
         # trigger settings
         self.channelSel.currentIndexChanged.connect(self.update_rt)
         self.updateRate.textChanged.connect(self.set_update_period)
-        self.updateRateUnit.currentIndexChanged.connect(self.set_update_period)
-        self.pUnitSel.currentIndexChanged.connect(self.set_unit)
+        self.updateRateUnitSel.activated.connect(self.protect_update_period)
+        self.pUnitSel.activated.connect(self.protect_p_unit)
         self.startButton.clicked.connect(self.start)
         self.stopButton.clicked.connect(self.stop)
         self.saveButton.clicked.connect(self.save)
@@ -138,22 +142,32 @@ class PresReaderWindow(QtGui.QDialog):
         self.timer.timeout.connect(self.daq)
 
         # set default unit to Torr on the read out
-        self.set_unit(1)
+        self.set_p_unit()
         # start reading
         self.update_rt()
 
     def start(self):
 
-        self.data_collecting = True    # turn data collection status on
-        # store start time (for file saving)
-        self.data_start_time = datetime.datetime.today()
-        # restart QtTimer
-        self.timer.start()
-        # initiate data array
-        self.data = np.array([0, self.current_p])
-        self.counter = 0
-        # connect QtTimer to update plot
-        self.timer.timeout.connect(self.update_plot)
+        # avoid connecting to the timer multiple times
+        self.stop()
+        # check if update period is legal. Won't start if illegal
+        if self.msgcode == 2:
+            # turn data collection status on
+            self.data_collecting = True
+            # disable update rate QLineEdit
+            self.updateRate.setReadOnly(True)
+            self.updateRate.setStyleSheet('color: grey')
+            # store start time (for file saving)
+            self.data_start_time = datetime.datetime.today()
+            # restart QtTimer
+            self.timer.start()
+            # initiate data array
+            self.data = np.array([0, self.current_p])
+            self.counter = 0
+            # connect QtTimer to update plot
+            self.timer.timeout.connect(self.update_plot)
+        else:
+            pass
 
     def stop(self):
 
@@ -164,51 +178,87 @@ class PresReaderWindow(QtGui.QDialog):
         except TypeError:
             pass
         self.data_collecting = False    # turn data collection status off
+        # enable update rate QLineEdit
+        self.updateRate.setReadOnly(False)
+        self.updateRate.setStyleSheet('color: black; border:  1px solid {:s}'.format(Shared.msgcolor(self.msgcode)))
 
     def save(self):
 
-        try:
-            self.timer.timeout.disconnect(self.update_plot)
-        except TypeError:
-            pass
+        self.stop()
         self.save_data()
-        self.data_collecting = False    # turn data collection status off
 
     def save_and_continue(self):
 
         self.save_data()
-        self.timer.timeout.connect(self.update_plot)
-        self.data_collecting = True     # keep data collection status on
+
+    def protect_update_period(self, idx):
+        ''' Protect update period unit change if data is under collection '''
+
+        if idx == self.current_update_unit_index:
+            # ignore if unit index is not changed
+            pass
+        else:
+            if self.data_collecting:
+                q = QtGui.QMessageBox.question(self, 'Change Unit?',
+                            'Data under collection. Change unit will cause data lost!',
+                            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
+                if q == QtGui.QMessageBox.Yes:
+                    self.current_update_unit_index = idx
+                    self.set_update_period()
+                else:
+                    # change the index back to what it was before
+                    self.updateRateUnitSel.setCurrentIndex(self.current_update_unit_index)
+            else:
+                self.set_update_period()
 
     def set_update_period(self):
         ''' Set wait time according to self.updateRate '''
 
-        tscalar = self._TIMEUNIT[self.updateRateUnit.currentIndex()]
+        # stop data collection and re-enable update rate QLineEdit
+        self.stop()
+        self.updateRate.setReadOnly(False)
+        self.updateRate.setStyleSheet('color: black')
 
-        msgcode, self.waittime = api_val.val_float(self.updateRate.text(),
+        tscalar = self._TIMEUNIT[self.updateRateUnitSel.currentIndex()]
+
+        self.msgcode, self.waittime = api_val.val_float(self.updateRate.text(),
                                                   safe=[('>=', 0.1/tscalar)])
-        self.updateRate.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(msgcode)))
-        if msgcode == 2:
+        self.updateRate.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(self.msgcode)))
+        if self.msgcode == 2:
             self.pgPlot.setLabel('bottom', text='Time',
-                                 units=self.updateRateUnit.currentText())
+                                 units=self.updateRateUnitSel.currentText())
             self.timer.setInterval(self.waittime*tscalar*1000)
-            if self.data_collecting:
-                # avoid connecting to the timer multiple times
-                self.stop()
-                # restart data collection
-                self.start()
-            else:
-                pass
         else:
-            self.stop()
+            pass
 
-    def set_unit(self, idx):
+    def protect_p_unit(self, idx):
+        ''' Protect pressure unit change if data is under collection '''
+
+        if idx == self.current_p_unit_index:
+            # ignore if unit index is not changed
+            pass
+        else:
+            if self.data_collecting:
+                q = QtGui.QMessageBox.question(self, 'Change Unit?',
+                            'Data under collection. Change unit will cause data lost!',
+                            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
+                if q == QtGui.QMessageBox.Yes:
+                    self.current_p_unit_index = idx
+                    self.set_p_unit()
+                else:
+                    # change the index back to what it was before
+                    self.pUnitSel.setCurrentIndex(self.current_p_unit_index)
+            else:
+                self.set_p_unit()
+
+    def set_p_unit(self):
         ''' Set pressure unit '''
 
         if self.main.testModeAction.isChecked():
             unit_txt = self.pUnitSel.currentText()
         else:
-            _, unit_txt = api_pres.set_query_p_unit(self.main.pressureHandle, idx)
+            _, unit_txt = api_pres.set_query_p_unit(self.main.pressureHandle,
+                                                    self.pUnitSel.currentIndex())
         # update real time monitor panel
         self.update_rt()
         # update plot label
@@ -261,10 +311,13 @@ class PresReaderWindow(QtGui.QDialog):
         try:
             filename, _ = QtGui.QFileDialog.getSaveFileName(self, 'Save Data',
                                     './test_pressure.txt', 'Data File (*.txt)')
-            np.savetxt(filename, self.data, comments='#', fmt=['%g', '%.3e'],
-                       header='Data collection starts at {:s} \ntime({:s}) pressure({:s})'.format(
-                       self.data_start_time.strftime('%I:%M:%S %p, %m-%d-%Y (%a)'),
-                       self.updateRateUnit.currentText(), self.currentUnit.text()))
+            if filename:
+                np.savetxt(filename, self.data, comments='#', fmt=['%g', '%.3e'],
+                           header='Data collection starts at {:s} \ntime({:s}) pressure({:s})'.format(
+                           self.data_start_time.strftime('%I:%M:%S %p, %m-%d-%Y (%a)'),
+                           self.updateRateUnitSel.currentText(), self.currentUnit.text()))
+            else:
+                pass
         except AttributeError:
             msg = Shared.MsgError(self, Shared.btn_label('error'),
                                   'No data has been collected!')
