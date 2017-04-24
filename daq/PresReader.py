@@ -182,14 +182,19 @@ class PresReaderWindow(QtGui.QDialog):
         msgcode, self.waittime = api_val.val_float(self.updateRate.text(),
                                                   safe=[('>=', 0.1/tscalar)])
         self.updateRate.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(msgcode)))
-        self.waittime *= tscalar
         if msgcode == 2:
-            self.timer.setInterval(self.waittime*1000)
-            self.data = np.array([0, self.current_p])
-            self.counter = 0
-            self.timer.start()
+            self.pgPlot.setLabel('bottom', text='Time',
+                                 units=self.updateRateUnit.currentText())
+            self.timer.setInterval(self.waittime*tscalar*1000)
+            if self.data_collecting:
+                # avoid connecting to the timer multiple times
+                self.stop()
+                # restart data collection
+                self.start()
+            else:
+                pass
         else:
-            pass
+            self.stop()
 
     def set_unit(self, idx):
         ''' Set pressure unit '''
@@ -242,7 +247,7 @@ class PresReaderWindow(QtGui.QDialog):
 
     def update_plot(self):
         self.counter += 1
-        t = self.counter*self.waittime
+        t = self.counter * self.waittime
         self.data = np.row_stack((self.data, np.array([t, self.current_p])))
         self.curve.setData(self.data)
 
@@ -250,8 +255,8 @@ class PresReaderWindow(QtGui.QDialog):
         try:
             filename, _ = QtGui.QFileDialog.getSaveFileName(self, 'Save Data',
                                     './test_pressure.txt', 'Data File (*.txt)')
-            np.savetxt(filename, self.data, comments='#', fmt=['%.1f', '%.3e'],
-                       header='time(sec) pressure({:s})'.format(self.currentUnit.text()))
+            np.savetxt(filename, self.data, comments='#', fmt=['%g', '%.3e'],
+                       header='time({:s}) pressure({:s})'.format(self.updateRateUnit.currentText(), self.currentUnit.text()))
         except AttributeError:
             msg = Shared.MsgError(self, Shared.btn_label('error'),
                                   'No data has been collected!')
