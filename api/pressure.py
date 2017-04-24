@@ -12,10 +12,10 @@ _P_STATUS = {'0': 'Okay',
              '6': 'Identification error',
              '7': 'ITR error'}
 
-_UNIT_CODE = {0: 'mBar',
-              1: 'Torr',
-              2: 'Pascal',
-              3: 'μmHg'}
+_P_UNIT_CODE = {0: 'mBar',
+                1: 'Torr',
+                2: 'Pascal',
+                3: 'μmHg'}
 
 
 def query_p(pressureHandle, chn):
@@ -75,7 +75,7 @@ def set_query_p_unit(pressureHandle, unit_idx=-1):
         text = pressureHandle.query(query_str)
         if text.strip() == '\x06':     # if positive acknowledgement
             text = pressureHandle.query('\x05')
-            return 2, _UNIT_CODE[int(text.strip())]
+            return 2, _P_UNIT_CODE[int(text.strip())]
         else:
             return 0, 'Negative acknowledgement'
     except:

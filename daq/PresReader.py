@@ -269,8 +269,6 @@ class PresReaderWindow(QtGui.QDialog):
         # update plot label
         self.pgPlot.setLabel('left', text='Pressure', units=unit_txt)
         if self.data_collecting:
-            # avoid connecting to the timer multiple times
-            self.stop()
             # restart data collection
             self.start()
         else:
@@ -290,8 +288,6 @@ class PresReaderWindow(QtGui.QDialog):
                 if q == QtGui.QMessageBox.Yes:
                     self.current_chn_index = idx
                     self.currentChannel.setText(self.channelSel.currentText())
-                    # avoid connecting to the timer multiple times
-                    self.stop()
                     # restart data collection
                     self.start()
                 else:
