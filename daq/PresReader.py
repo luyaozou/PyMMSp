@@ -26,6 +26,8 @@ class PresReaderWindow(QtGui.QDialog):
         self.setWindowTitle('CENTER TWO pressure reader')
         self.setMinimumSize(900, 600)
         self.setModal(False)
+        self.data = np.array([0, 0])    # initiate the data array
+        self.data_collecting = False    # store data collection status
 
         # add left column widigets
         # this is a monitor panel for realtime readings
@@ -97,8 +99,12 @@ class PresReaderWindow(QtGui.QDialog):
         settingPanel.setLayout(panelLayout)
 
         rightColumn = QtGui.QWidget()
-        self.pgPlot = pg.PlotWidget(title='Pressure Monitor',
-                                    labels={'left': 'Pressure', 'bottom': 'time (sec)'})
+        # initiate pyqtgraph widget
+        self.pgPlot = pg.PlotWidget(title='Pressure Monitor')
+        self.pgPlot.setLabel('left', text='Pressure', units='Torr')
+        self.pgPlot.setLabel('bottom', text='Time', units='sec')
+        self.pgPlot.setLogMode(x=None, y=True)
+        self.pgPlot.showGrid(x=True, y=True, alpha=0.5)
         self.curve = self.pgPlot.plot()
         rightColumnLayout = QtGui.QVBoxLayout()
         rightColumnLayout.setAlignment(QtCore.Qt.AlignTop)
@@ -137,6 +143,7 @@ class PresReaderWindow(QtGui.QDialog):
 
     def start(self):
 
+        self.data_collecting = True    # turn data collection status on
         self.timer.start()
         self.data = np.array([0, self.current_p])
         self.counter = 0
@@ -150,6 +157,7 @@ class PresReaderWindow(QtGui.QDialog):
             self.timer.timeout.disconnect(self.update_plot)
         except TypeError:
             pass
+        self.data_collecting = False    # turn data collection status off
 
     def save(self):
 
@@ -158,11 +166,13 @@ class PresReaderWindow(QtGui.QDialog):
         except TypeError:
             pass
         self.save_data()
+        self.data_collecting = False    # turn data collection status off
 
     def save_and_continue(self):
 
         self.save_data()
         self.timer.timeout.connect(self.update_plot)
+        self.data_collecting = True     # keep data collection status on
 
     def set_update_period(self):
         ''' Set wait time according to self.updateRate '''
@@ -173,7 +183,7 @@ class PresReaderWindow(QtGui.QDialog):
                                                   safe=[('>=', 0.1/tscalar)])
         self.updateRate.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(msgcode)))
         self.waittime *= tscalar
-        if status==2:
+        if msgcode == 2:
             self.timer.setInterval(self.waittime*1000)
             self.data = np.array([0, self.current_p])
             self.counter = 0
@@ -185,11 +195,20 @@ class PresReaderWindow(QtGui.QDialog):
         ''' Set pressure unit '''
 
         if self.main.testModeAction.isChecked():
-            pass
+            unit_txt = self.pUnitSel.currentText()
         else:
-            api_pres.set_query_p_unit(self.main.pressureHandle, idx)
-
+            _, unit_txt = api_pres.set_query_p_unit(self.main.pressureHandle, idx)
+        # update real time monitor panel
         self.update_rt()
+        # update plot label
+        self.pgPlot.setLabel('left', text='Pressure', units=unit_txt)
+        if self.data_collecting:
+            # avoid connecting to the timer multiple times
+            self.stop()
+            # restart data collection
+            self.start()
+        else:
+            pass
 
     def update_rt(self):
         ''' Update real time monitor '''
