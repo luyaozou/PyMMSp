@@ -37,7 +37,7 @@ class PresReaderWindow(QtGui.QDialog):
         rtMonitor.setTitle('Readtime Monitor')
         self.currentP = QtGui.QLabel()
         self.currentUnit = QtGui.QLabel()
-        self.currentChannel = QtGui.QLabel()
+        self.currentChannel = QtGui.QLabel('1')
         self.currentStatus = QtGui.QLabel()
         monitorLayout = QtGui.QGridLayout()
         monitorLayout.addWidget(QtGui.QLabel('Channel'), 0, 0)
@@ -55,6 +55,7 @@ class PresReaderWindow(QtGui.QDialog):
         rdCtrl.setTitle('Readout Control')
         self.channelSel = QtGui.QComboBox()
         self.channelSel.addItems(['1', '2'])
+        self.current_chn_index = 0
         self.pUnitSel = QtGui.QComboBox()
         self.pUnitSel.addItems(['mBar', 'Torr', 'Pascal', 'μmHg'])
         self.pUnitSel.setCurrentIndex(1)    # default unit Torr
@@ -131,7 +132,7 @@ class PresReaderWindow(QtGui.QDialog):
         self.timer.start()
 
         # trigger settings
-        self.channelSel.currentIndexChanged.connect(self.update_rt)
+        self.channelSel.activated.connect(self.set_channel)
         self.updateRate.textChanged.connect(self.set_update_period)
         self.updateRateUnitSel.activated.connect(self.protect_update_period)
         self.pUnitSel.activated.connect(self.protect_p_unit)
@@ -143,8 +144,6 @@ class PresReaderWindow(QtGui.QDialog):
 
         # set default unit to Torr on the read out
         self.set_p_unit()
-        # start reading
-        self.update_rt()
 
     def start(self):
 
@@ -199,16 +198,19 @@ class PresReaderWindow(QtGui.QDialog):
             pass
         else:
             if self.data_collecting:
-                q = QtGui.QMessageBox.question(self, 'Change Unit?',
-                            'Data under collection. Change unit will cause data lost!',
+                q = QtGui.QMessageBox.question(self, 'Change Time Unit?',
+                            'Data under collection. Change time unit will cause data lost!',
                             QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
                 if q == QtGui.QMessageBox.Yes:
+                    # update index
                     self.current_update_unit_index = idx
                     self.set_update_period()
                 else:
                     # change the index back to what it was before
                     self.updateRateUnitSel.setCurrentIndex(self.current_update_unit_index)
             else:
+                # update index
+                self.current_update_unit_index = idx
                 self.set_update_period()
 
     def set_update_period(self):
@@ -239,16 +241,19 @@ class PresReaderWindow(QtGui.QDialog):
             pass
         else:
             if self.data_collecting:
-                q = QtGui.QMessageBox.question(self, 'Change Unit?',
-                            'Data under collection. Change unit will cause data lost!',
+                q = QtGui.QMessageBox.question(self, 'Change Pressure Unit?',
+                            'Data under collection. Change pressure unit will cause data lost!',
                             QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
                 if q == QtGui.QMessageBox.Yes:
+                    # update pressure unit index
                     self.current_p_unit_index = idx
                     self.set_p_unit()
                 else:
                     # change the index back to what it was before
                     self.pUnitSel.setCurrentIndex(self.current_p_unit_index)
             else:
+                # update pressure unit index
+                self.current_p_unit_index = idx
                 self.set_p_unit()
 
     def set_p_unit(self):
@@ -260,7 +265,7 @@ class PresReaderWindow(QtGui.QDialog):
             _, unit_txt = api_pres.set_query_p_unit(self.main.pressureHandle,
                                                     self.pUnitSel.currentIndex())
         # update real time monitor panel
-        self.update_rt()
+        self.currentUnit.setText(unit_txt)
         # update plot label
         self.pgPlot.setLabel('left', text='Pressure', units=unit_txt)
         if self.data_collecting:
@@ -271,16 +276,32 @@ class PresReaderWindow(QtGui.QDialog):
         else:
             pass
 
-    def update_rt(self):
-        ''' Update real time monitor '''
+    def set_channel(self, idx):
+        ''' Set channel '''
 
-        if self.main.testModeAction.isChecked():
-            unit_txt = self.pUnitSel.currentText()
+        if idx == self.current_chn_index:
+            # ignore if channel is not changed
+            pass
         else:
-            _, unit_txt = api_pres.set_query_p_unit(self.main.pressureHandle)
-
-        self.currentChannel.setText(self.channelSel.currentText())
-        self.currentUnit.setText(unit_txt)
+            if self.data_collecting:
+                q = QtGui.QMessageBox.question(self, 'Change Channel?',
+                            'Data under collection. Change channel will cause data lost!',
+                            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
+                if q == QtGui.QMessageBox.Yes:
+                    self.current_chn_index = idx
+                    self.currentChannel.setText(self.channelSel.currentText())
+                    # avoid connecting to the timer multiple times
+                    self.stop()
+                    # restart data collection
+                    self.start()
+                else:
+                    # change the index back to what it was before
+                    self.channelSel.setCurrentIndex(self.current_chn_index)
+            else:
+                self.current_chn_index = idx
+                self.currentChannel.setText(self.channelSel.currentText())
+                # restart daq
+                self.timer.start()
 
     def daq(self):
 
@@ -292,7 +313,7 @@ class PresReaderWindow(QtGui.QDialog):
             msgcode, status_txt, self.current_p = api_pres.query_p(self.main.pressureHandle,
                                                     self.channelSel.currentText())
 
-        self.currentP.setText('{:.3f}'.format(self.current_p))
+        self.currentP.setText('{:.3e}'.format(self.current_p))
         self.currentStatus.setText(status_txt)
         self.currentStatus.setStyleSheet('color: {:s}'.format(Shared.msgcolor(msgcode)))
 

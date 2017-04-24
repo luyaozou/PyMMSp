@@ -187,6 +187,14 @@ class CloseSelInstDialog(QtGui.QDialog):
 
         okButton.clicked.connect(self.accept)
 
+    def close_inst_handle(self, inst_handle, check_state):
+
+        if (not check_state) and inst_handle:
+            api_gen.close_inst(inst_handle)
+            inst_handle = None
+        else:
+            pass
+
     def accept(self):
 
         self.close_inst_handle(self.parent.synHandle, self.synToggle)
