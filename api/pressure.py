@@ -51,11 +51,11 @@ def query_p(pressureHandle, chn):
         return 0, 'System Error', 0
 
 
-def set_query_p_unit(pressureHandle, unit_idx=None):
+def set_query_p_unit(pressureHandle, unit_idx=-1):
     ''' set/query current pressure unit.
         Arguments
             unit_idx: unit code, int
-                      If specified, set the unit; if None, query the current unit
+                      If specified, set the unit; if -1, query the current unit
         Returns
             msgcode: my msg code
             unit_string: name of current unit
@@ -66,10 +66,10 @@ def set_query_p_unit(pressureHandle, unit_idx=None):
             receiver: a<CR><LF>   a: unit code in _UNIT_CODE
     '''
 
-    if unit_idx:
-        query_str = 'UNI,{:d}'.format(unit_idx)
-    else:
+    if unit_idx == -1:
         query_str = 'UNI'
+    else:
+        query_str = 'UNI,{:d}'.format(unit_idx)
 
     try:
         text = pressureHandle.query(query_str)

@@ -7,6 +7,7 @@ from PyQt5 import QtGui, QtCore
 import numpy as np
 from math import ceil
 import pyqtgraph as pg
+import datetime
 from gui import SharedWidgets as Shared
 from api import validator as api_val
 from api import pressure as api_pres
@@ -144,9 +145,14 @@ class PresReaderWindow(QtGui.QDialog):
     def start(self):
 
         self.data_collecting = True    # turn data collection status on
+        # store start time (for file saving)
+        self.data_start_time = datetime.datetime.today()
+        # restart QtTimer
         self.timer.start()
+        # initiate data array
         self.data = np.array([0, self.current_p])
         self.counter = 0
+        # connect QtTimer to update plot
         self.timer.timeout.connect(self.update_plot)
 
     def stop(self):
@@ -256,7 +262,9 @@ class PresReaderWindow(QtGui.QDialog):
             filename, _ = QtGui.QFileDialog.getSaveFileName(self, 'Save Data',
                                     './test_pressure.txt', 'Data File (*.txt)')
             np.savetxt(filename, self.data, comments='#', fmt=['%g', '%.3e'],
-                       header='time({:s}) pressure({:s})'.format(self.updateRateUnit.currentText(), self.currentUnit.text()))
+                       header='Data collection starts at {:s} \ntime({:s}) pressure({:s})'.format(
+                       self.data_start_time.strftime('%I:%M:%S %p, %m-%d-%Y (%a)'),
+                       self.updateRateUnit.currentText(), self.currentUnit.text()))
         except AttributeError:
             msg = Shared.MsgError(self, Shared.btn_label('error'),
                                   'No data has been collected!')
