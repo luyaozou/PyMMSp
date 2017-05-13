@@ -1,7 +1,8 @@
-# Data files
+# Data & Document files
 *.txt
 *.csv
 *.dat
+*.html
 
 # Internal config files
 *inst.cfg
