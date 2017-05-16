@@ -3,20 +3,20 @@ import pyvisa
 
 
 def ramp_up(start, stop):
-    ''' A integer list generator. start < stop '''
+    ''' A integer list generator. start < stop; frequency step in dbm/sec, or dbm*Hz '''
 
     n = start
     while n < stop:
-        n = n + 1
+        n = n + 2
         yield n
 
 
 def ramp_down(start, stop):
-    ''' A integer list generator. start > stop '''
+    ''' A integer list generator. start > stop; frequency step in dbm/sec, or dbm*Hz'''
 
     n = start
     while n > stop:
-        n = n - 1
+        n = n - 2
         yield n
 
 
