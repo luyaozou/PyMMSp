@@ -46,7 +46,38 @@ In general, function names are lower case and may be linked by underscores, e.g.
 
 * All `QLineEdit` instance names end with `Fill` (fill text).
 * All `QComboBox` instance names end with `Sel` (select options).
-* `QLabel` instance names do not have a specific ending. 
+* `QLabel` instance names do not have a specific ending.
+
+# Test Mode
+
+In developing new GUI windows for various data collection routines, intense tests on the GUI components are necessary.
+Only one computer, however, has physical access to the lab instruments.
+A test mode is therefore designed for developers to develop and test GUI components on other computers without actually connecting to a lab instrument.
+
+In the main GUI window, there is a menu action called `Test Mode` that is checkable.
+Once checked, test mode is activated and developers can launch GUI windows in the `Scan` menu without connecting to instruments.
+
+This functionality is made possible by enabling the `checkable` option in Qt's menu action object.
+In the `QtGui.QMainWindow` class, define `testModeAction` as a checkable action.
+
+    class MainWindow(QtGui.QMainWindow):
+
+        def __init__(self, parent=None):
+
+            QtGui.QMainWindow.__init__(self)
+            self.testModeAction = QtGui.QAction('Test Mode', self)
+            self.testModeAction.setCheckable(True)
+            self.testModeAction.setShortcut('Ctrl+T')
+            menuTest = self.menuBar().addMenu('&Test')
+            menuTest.addAction(self.testModeAction)
+
+Now before each communication with the instrument, use a conditional statement to bypass the instrument communication.
+
+    # self.main is pointed to the MainWindow instance.
+    if self.main.testModeAction.isChecked():
+        # bypass instrument API
+    else:
+        # call instrument API
 
 # Foolproof
 
