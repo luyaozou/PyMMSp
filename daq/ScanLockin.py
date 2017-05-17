@@ -63,6 +63,7 @@ class JPLScanConfig(QtGui.QDialog):
         self.entryLayout.addWidget(QtGui.QLabel('Sensitivity'), 0, 4)
         self.entryLayout.addWidget(QtGui.QLabel('Time Constant'), 0, 5)
         self.entryLayout.addWidget(QtGui.QLabel('Wait time (ms)'), 0, 6)
+        self.entryLayout.addWidget(QtGui.QLabel('Comment'), 0, 7)
 
         self.add_entry()
 
@@ -92,7 +93,7 @@ class JPLScanConfig(QtGui.QDialog):
 
         # generate a new batch entry
         if self.main.testModeAction.isChecked():
-            entry = Shared.ScanEntry(self.main, init_setting=(6, 120, 1, 1, 0, 0, 1000))
+            entry = Shared.ScanEntry(self.main, init_setting=(6, 120, 1, 1, 0, 0, 1000, 'default'))
         else:
             entry = Shared.ScanEntry(self.main)
 
@@ -105,6 +106,7 @@ class JPLScanConfig(QtGui.QDialog):
             entry.sensSel.setCurrentIndex(last_entry.sensSel.currentIndex())
             entry.tcSel.setCurrentIndex(last_entry.tcSel.currentIndex())
             entry.waitTimeFill.setText(last_entry.waitTimeFill.text())
+            entry.commentsFill.setText(last_entry.commentsFill.text())
         else:
             pass
         # add this entry to the layout and to the entry list
@@ -117,6 +119,7 @@ class JPLScanConfig(QtGui.QDialog):
         self.entryLayout.addWidget(entry.sensSel, row, 4)
         self.entryLayout.addWidget(entry.tcSel, row, 5)
         self.entryLayout.addWidget(entry.waitTimeFill, row, 6)
+        self.entryLayout.addWidget(entry.commentsFill, row, 7)
 
     def remove_entry(self):
         ''' Remove last batch entry in this dialog window '''
@@ -143,6 +146,8 @@ class JPLScanConfig(QtGui.QDialog):
             entry.tcSel.deleteLater()
             self.entryLayout.removeWidget(entry.waitTimeFill)
             entry.waitTimeFill.deleteLater()
+            self.entryLayout.removeWidget(entry.commentsFill)
+            entry.commentsFill.deleteLater()
             entry.deleteLater()
 
     def set_file_directory(self):
@@ -179,11 +184,12 @@ class JPLScanConfig(QtGui.QDialog):
                 sens_index = entry.sensSel.currentIndex()
                 tc_index = entry.tcSel.currentIndex()
                 status5, waittime = api_val.val_lia_waittime(entry.waitTimeFill.text(), tc_index)
+                comments = entry.commentsFill.text()
                 # put them into a setting tuple
                 if status1 and status2 and status3 and status4 and status5:
                     no_error *= True
                     setting_entry = (start_freq, stop_freq, step, average,
-                                     sens_index, tc_index, waittime)
+                                     sens_index, tc_index, waittime, comments)
                     # put the setting tuple into a list
                     entry_settings.append(setting_entry)
                 else:
@@ -201,7 +207,7 @@ class JPLScanWindow(QtGui.QDialog):
     ''' Scanning window '''
 
     # define a pyqt signal to control batch scans
-    move_to_next_entry = QtCore.pyqtSignal()
+    next_entry_signal = QtCore.pyqtSignal()
 
     def __init__(self, entry_settings, filename, main=None):
         QtGui.QWidget.__init__(self, main)
@@ -217,6 +223,7 @@ class JPLScanWindow(QtGui.QDialog):
             entry_str += 'sens={:s}; '.format(Shared.LIASENSLIST[entry[4]])
             entry_str += 'tc={:s}\n'.format(Shared.LIATCLIST[entry[5]])
             entry_str += 'waittime={:.0f} ms'.format(entry[6])
+            entry_str += ' # {:s}'.format(entry[7])
             entry_setting_list.append(entry_str)
 
         self.batchList = QtGui.QListWidget()
@@ -234,10 +241,7 @@ class JPLScanWindow(QtGui.QDialog):
         batchDisplay.setLayout(batchLayout)
 
         # set up single scan monitor + daq class
-        if self.main.testModeAction.isChecked():
-            self.singleScan = SingleScanTestMode(filename, parent=self, main=self.main)
-        else:
-            self.singleScan = SingleScan(filename, parent=self, main=self.main)
+        self.singleScan = SingleScan(filename, parent=self, main=self.main)
 
         # set up progress bar
         currentProgress = QtGui.QWidget()
@@ -273,9 +277,9 @@ class JPLScanWindow(QtGui.QDialog):
         self.batch_progress_taken = 0
 
         # Start scan
-        self.move_to_next_entry.connect(self.next_entry)
+        self.next_entry_signal.connect(self.next_entry)
         self.current_entry_index = -1   # make sure batch starts at index 0
-        self.move_to_next_entry.emit()
+        self.next_entry_signal.emit()
 
     def next_entry(self):
 
@@ -328,7 +332,10 @@ class SingleScan(QtGui.QWidget):
         self.filename = filename
 
         # Initialize shared settings
-        self.multiplier = api_val.MULTIPLIER[self.main.synCtrl.bandSelect.currentIndex()]
+        if self.main.testModeAction.isChecked():
+            pass
+        else:
+            self.multiplier = api_val.MULTIPLIER[self.main.synCtrl.bandSelect.currentIndex()]
 
         # Initialize scan entry settings
         self.start_rf_freq = 0
@@ -402,6 +409,7 @@ class SingleScan(QtGui.QWidget):
         self.tc_index = entry_setting[5]
         self.waittime = entry_setting[6]
         self.waitTimer.setInterval(self.waittime)
+        self.current_comment = entry_setting[7]
         self.y = np.zeros_like(self.x)
         self.y_sum = np.zeros_like(self.x)
         self.ySumCurve.setData(self.x, self.y_sum)
@@ -411,21 +419,32 @@ class SingleScan(QtGui.QWidget):
         self.parent.currentProgBar.setValue(ceil(self.pts_taken*self.waittime*1e-3))
 
         # set lockin properties
-        api_lia.set_sens(self.main.liaHandle, self.sens_index)
-        api_lia.set_tc(self.main.liaHandle, self.tc_index)
+        if self.main.testModeAction.isChecked():
+            pass
+        else:
+            api_lia.set_sens(self.main.liaHandle, self.sens_index)
+            api_lia.set_tc(self.main.liaHandle, self.tc_index)
+
         self.tune_syn()
 
     def tune_syn(self):
         ''' Tune synthesizer frequency '''
 
-        api_syn.set_syn_freq(self.main.synHandle, self.x[self.current_x_index]/self.multiplier)
+        if self.main.testModeAction.isChecked():
+            pass
+        else:
+            api_syn.set_syn_freq(self.main.synHandle, self.x[self.current_x_index]/self.multiplier)
+
         self.waitTimer.start()
 
     def query_lockin(self):
         ''' Query lockin data. Triggered by waitTimer.timeout() '''
 
         # append data to data list
-        self.y[self.current_x_index] = api_lia.query_single_x(self.main.liaHandle)
+        if self.main.testModeAction.isChecked():
+            self.y[self.current_x_index] = np.random.random_sample()
+        else:
+            self.y[self.current_x_index] = api_lia.query_single_x(self.main.liaHandle)
         # update plot
         self.yCurve.setData(self.x, self.y)
         # move to the next frequency, update freq index and average counter
@@ -434,7 +453,7 @@ class SingleScan(QtGui.QWidget):
         if self.acquired_avg == self.target_avg:
             self.save_data()
             self.parent.batch_progress_taken += ceil(len(self.x)*self.target_avg*self.waittime*1e-3)
-            self.parent.move_to_next_entry.emit()
+            self.parent.next_entry_signal.emit()
         else:
             self.tune_syn()
 
@@ -476,10 +495,15 @@ class SingleScan(QtGui.QWidget):
     def save_data(self):
         ''' Save data array '''
 
-        tc = api_lia.read_tc(self.main.liaHandle)
-
-        h_info = (self.waittime, api_val.LIASENSLIST[self.sens_index],
-                  api_val.LIATCLIST[tc]*1e-3, 15, 75, self.x_min, self.step, self.acquired_avg)
+        if self.main.testModeAction.isChecked():
+            h_info = (self.waittime, api_val.LIASENSLIST[self.sens_index],
+                      api_val.LIATCLIST[self.tc_index]*1e-3, 15, 75, self.x_min, self.step,
+                      self.acquired_avg, self.current_comment)
+        else:
+            tc = api_lia.read_tc(self.main.liaHandle)
+            h_info = (self.waittime, api_val.LIASENSLIST[self.sens_index],
+                      api_val.LIATCLIST[tc]*1e-3, 15, 75, self.x_min, self.step,
+                      self.acquired_avg, self.current_comment)
 
         # if already finishes at least one sweep
         if self.acquired_avg > 0:
@@ -559,243 +583,7 @@ class SingleScan(QtGui.QWidget):
             #print('abort current')
             self.waitTimer.stop()
             self.parent.batch_pts_taken += len(self.x)*self.target_avg
-            self.parent.move_to_next_entry.emit()
-        else:
-            pass
-
-    def abort_all(self):
-
-        self.parent.reject()
-
-
-class SingleScanTestMode(QtGui.QWidget):
-    ''' SingleScan test mode, but remove all instrument handles '''
-
-    def __init__(self, filename, parent=None, main=None):
-
-        QtGui.QWidget.__init__(self, parent)
-        self.main = main
-        self.parent = parent
-        self.filename = filename
-
-        # Initialize shared settings
-        self.multiplier = 6
-
-        # Initialize scan entry settings
-        self.start_rf_freq = 0
-        self.stop_rf_freq = 0
-        self.current_rf_freq = 0
-        self.acquired_avg = 0
-        self.step = 0
-        self.sens_index = 0
-        self.waittime = 30
-
-        self.waitTimer = QtCore.QTimer()
-        self.waitTimer.setInterval(self.waittime)
-        self.waitTimer.setSingleShot(True)
-        self.waitTimer.timeout.connect(self.query_lockin)
-
-        # set up main layout
-        buttons = QtGui.QWidget()
-        jumpButton = QtGui.QPushButton('Jump to Next Window')
-        abortAllButton = QtGui.QPushButton('Abort Batch Project')
-        self.pauseButton = QtGui.QPushButton('Pause Current Scan')
-        self.pauseButton.setCheckable(True)
-        redoButton = QtGui.QPushButton('Redo Current Scan')
-        restartWinButton = QtGui.QPushButton('Restart Current Window')
-        saveButton = QtGui.QPushButton('Save and Continue')
-        buttonLayout = QtGui.QGridLayout()
-        buttonLayout.addWidget(self.pauseButton, 0, 0)
-        buttonLayout.addWidget(redoButton, 0, 1)
-        buttonLayout.addWidget(restartWinButton, 0, 2)
-        buttonLayout.addWidget(saveButton, 1, 0)
-        buttonLayout.addWidget(jumpButton, 1, 1)
-        buttonLayout.addWidget(abortAllButton, 1, 2)
-        buttons.setLayout(buttonLayout)
-
-        pgWin = pg.GraphicsWindow(title='Live Monitor')
-        self.yPlot = pgWin.addPlot(1, 0, title='Current sweep')
-        self.yPlot.setLabels(left='Intensity', bottom='Frequency (MHz)')
-        self.ySumPlot = pgWin.addPlot(0, 0, title='Sum sweep')
-        self.ySumPlot.setLabels(left='Intensity')
-        self.yCurve = self.yPlot.plot()
-        self.yCurve.setDownsampling(auto=True, method='peak')
-        self.yCurve.setPen(pg.mkPen(220, 220, 220))
-        self.ySumCurve = self.ySumPlot.plot()
-        self.ySumCurve.setDownsampling(auto=True, method='peak')
-        self.ySumCurve.setPen(pg.mkPen(219, 112, 147))
-        mainLayout = QtGui.QVBoxLayout()
-        mainLayout.addWidget(pgWin)
-        mainLayout.addWidget(buttons)
-        self.setLayout(mainLayout)
-
-        self.pauseButton.clicked.connect(self.pause_current)
-        redoButton.clicked.connect(self.redo_current)
-        restartWinButton.clicked.connect(self.restart_avg)
-        saveButton.clicked.connect(self.save_current)
-        jumpButton.clicked.connect(self.jump)
-        abortAllButton.clicked.connect(self.abort_all)
-
-    def update_setting(self, entry_setting):
-        ''' Update scan entry setting. Starts a scan after setting update.
-            entry = (start_freq <MHz>, stop_freq <MHz>, step <MHz>, averages <int>,
-            lockin sens_index <int>, lockin tc_index <int>, itgtime <ms>, waittime <ms>)
-        '''
-
-        self.x = Shared.gen_x_array(*entry_setting[0:3])
-        self.current_x_index = 0
-        self.target_avg = entry_setting[3]
-        self.acquired_avg = 0
-        self.sens_index = entry_setting[4]
-        self.tc_index = entry_setting[5]
-        self.waittime = entry_setting[6]
-        self.waitTimer.setInterval(self.waittime)
-        self.y = np.zeros_like(self.x)
-        self.y_sum = np.zeros_like(self.x)
-        # calculate downsamping factor
-        self.ySumCurve.setData(self.x, self.y_sum)
-        total_pts =  len(self.x) * self.target_avg
-        self.pts_taken = 0
-        self.parent.currentProgBar.setRange(0, ceil(total_pts*self.waittime*1e-3))
-        self.parent.currentProgBar.setValue(ceil(self.pts_taken*self.waittime*1e-3))
-
-        #print('tune lockin sensitivity to {:s}'.format(Shared.LIASENSLIST[self.sens_index]))
-        #print('tune lockin time constant to {:s}'.format(Shared.LIATCLIST[self.tc_index]))
-        self.tune_syn()
-
-    def tune_syn(self):
-        #print('tune syn freq to {:.3f} MHz'.format(self.x[self.current_x_index]/self.multiplier))
-        self.waitTimer.start()
-
-    def query_lockin(self):
-        #print('query_lockin_buffer')
-        # append data to data list
-        y_avg = np.random.random_sample()
-        self.y[self.current_x_index] = y_avg
-        # update plot
-        self.yCurve.setData(self.x, self.y)
-        # move to the next frequency, update freq index and average counter
-        self.next_freq()
-        # if done
-        if self.acquired_avg == self.target_avg:
-            self.save_data()
-            self.parent.batch_progress_taken += ceil(len(self.x)*self.target_avg*self.waittime*1e-3)
-            self.parent.move_to_next_entry.emit()
-        else:
-            self.tune_syn()
-
-    def next_freq(self):
-        ''' move to the next frequency point '''
-
-        # current sweep is even average, decrease index (sweep backward)
-        if self.acquired_avg % 2:
-            self.pts_taken = (self.acquired_avg+1)*len(self.x) - self.current_x_index
-            if self.current_x_index > 0:
-                self.current_x_index -= 1
-            else:
-                self.acquired_avg += 1
-                self.update_ysum()
-                self.y = np.zeros_like(self.x)
-        # current sweep is odd average, increase index (sweep forward)
-        else:
-            self.pts_taken = self.acquired_avg*len(self.x) + self.current_x_index
-            if self.current_x_index < len(self.x)-1:
-                self.current_x_index += 1
-            else:
-                self.acquired_avg += 1
-                self.update_ysum()
-                self.y = np.zeros_like(self.x)
-
-        # update progress bar
-        self.parent.currentProgBar.setValue(ceil(self.pts_taken*self.waittime*1e-3))
-        self.parent.totalProgBar.setValue(self.parent.batch_progress_taken +
-                                          ceil(self.pts_taken*self.waittime*1e-3))
-
-    def update_ysum(self):
-        ''' Update sum plot '''
-
-        # add current y array to y_sum
-        self.y_sum += self.y
-        # update plot
-        self.ySumCurve.setData(self.x, self.y_sum)
-
-    def save_data(self):
-        #print('save data')
-        pass
-
-    def pause_current(self, btn_pressed):
-        ''' Pause/resume data acquisition '''
-
-        if btn_pressed:
-            self.pauseButton.setText('Resume Current Scan')
-            #print('pause')
-            self.waitTimer.stop()
-        else:
-            self.pauseButton.setText('Pause Current Scan')
-            #print('resume')
-            self.waitTimer.start()
-
-    def redo_current(self):
-        ''' Erase current y array and restart a scan '''
-
-        #print('redo current')
-        self.waitTimer.stop()
-        if self.pauseButton.isChecked():
-            self.pauseButton.click()
-        else:
-            pass
-
-        if self.acquired_avg % 2:
-            self.current_x_index = len(self.x) - 1
-        else:
-            self.current_x_index = 0
-
-        self.y = np.zeros_like(self.x)
-        self.tune_syn()
-
-    def restart_avg(self):
-        ''' Erase all current averages and start over '''
-
-        q = QtGui.QMessageBox.question(self, 'Scan In Progress!',
-                       'Restart will erase all cached averages.\n Are you sure to proceed?', QtGui.QMessageBox.Yes |
-                       QtGui.QMessageBox.No, QtGui.QMessageBox.No)
-
-        if q == QtGui.QMessageBox.Yes:
-            #print('restart average')
-            self.waitTimer.stop()
-            self.acquired_avg = 0
-            self.current_x_index = 0
-            self.y = np.zeros_like(self.x)
-            self.y_sum = np.zeros_like(self.x)
-            self.ySumCurve.setData(self.x, self.y_sum)
-            self.tune_syn()
-        else:
-            pass
-
-    def save_current(self):
-        ''' Save what's got so far and continue '''
-
-        self.waitTimer.stop()
-        self.save_data()
-        self.waitTimer.start()
-
-    def jump(self):
-        ''' Jump to next batch item '''
-
-        q = QtGui.QMessageBox.question(self, 'Jump To Next',
-                       'Save aquired data for the current scan window?', QtGui.QMessageBox.Yes |
-                       QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Yes)
-
-        if q == QtGui.QMessageBox.Yes:
-            #print('abort current')
-            self.waitTimer.stop()
-            self.parent.batch_pts_taken += len(self.x)*self.target_avg
-            self.save_data()
-        elif q == QtGui.QMessageBox.No:
-            #print('abort current')
-            self.waitTimer.stop()
-            self.parent.batch_pts_taken += len(self.x)*self.target_avg
-            self.parent.move_to_next_entry.emit()
+            self.parent.next_entry_signal.emit()
         else:
             pass
 

@@ -17,8 +17,7 @@ def save_lwa(filename, y, h_info):
     '''
 
     d = datetime.datetime.today()
-    itgtime, sens, tc, mod_freq, mod_depth, start_freq, step, avg = h_info
-    comments = ''
+    itgtime, sens, tc, mod_freq, mod_depth, start_freq, step, avg, comments = h_info
     # rescale y based on sensitivity, full scale is 1e4
     yscale = y / sens * 1e4
 

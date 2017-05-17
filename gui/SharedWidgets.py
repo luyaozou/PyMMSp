@@ -150,6 +150,7 @@ class ScanEntry(QtGui.QWidget):
         self.sensSel = liaSensBox()
         self.tcSel = liaTCBox()
         self.waitTimeFill = QtGui.QLineEdit()
+        self.commentsFill = QtGui.QLineEdit()
         # validate default values
         self.val_waittime()
 
@@ -168,6 +169,7 @@ class ScanEntry(QtGui.QWidget):
             self.sensSel.setCurrentIndex(int(init_setting[4]))
             self.tcSel.setCurrentIndex(int(init_setting[5]))
             self.waitTimeFill.setText(str(init_setting[6]))
+            self.commentsFill.setText(str(init_setting[7]))
         else:
             pass
 

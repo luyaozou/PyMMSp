@@ -2,6 +2,7 @@
 *.txt
 *.csv
 *.dat
+*.lwa
 
 # Internal config files
 *inst.cfg
