@@ -401,7 +401,7 @@ class SynCtrl(QtGui.QGroupBox):
         synPowerCtrl.setLayout(synPowerLayout)
 
         self.powerSwitchTimer = QtCore.QTimer()
-        self.powerSwitchTimer.setInterval(1000)
+        self.powerSwitchTimer.setInterval(500)
         self.powerSwitchTimer.setSingleShot(True)
         self.powerSwitchProgBar = QtGui.QProgressBar()
         self.progDialog = QtGui.QDialog()
