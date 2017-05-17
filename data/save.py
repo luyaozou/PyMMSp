@@ -19,6 +19,8 @@ def save_lwa(filename, y, h_info):
     d = datetime.datetime.today()
     itgtime, sens, tc, mod_freq, mod_depth, start_freq, step, avg = h_info
     comments = ''
+    # rescale y based on sensitivity, full scale is 1e4
+    yscale = y / sens * 1e4
 
     with open(filename, 'a') as f:
         # write first line
@@ -39,9 +41,9 @@ def save_lwa(filename, y, h_info):
         f.write(' {:d} 1 1  1.887  0.000 0 0 START\n'.format(avg))
 
         # write y data
-        fmt = '{:10.3f}'*10
+        fmt = '{:10.3f}'*10     # 10 numbers each row
         for i in range(len(y)//10 + 1):
-            f.write(fmt.format(*y[i:i+10]))
+            f.write(fmt.format(*yscale[i:i+10]))
             f.write('\n')
 
     return None
