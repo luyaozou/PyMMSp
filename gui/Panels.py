@@ -115,7 +115,7 @@ class SynStatus(QtGui.QGroupBox):
             fmfreq, fmdev, fmstat = api_syn.read_fm_par(self.parent.synHandle)
             self.synAMStat.setText('On' if amstat else 'Off')
             self.synFMStat.setText('On' if fmstat else 'Off')
-            self.synAMDepth.setText('{:.1f} %'.format(amdepth))
+            self.synAMDepth.setText('{:.1%}'.format(amdepth))
             self.synAMFreq.setText(pg.siFormat(amfreq, suffix='Hz', precision=4))
             self.synFMDev.setText(pg.siFormat(fmdev, suffix='Hz', precision=4))
             self.synFMFreq.setText(pg.siFormat(fmfreq, suffix='Hz', precision=4))

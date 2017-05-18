@@ -373,18 +373,18 @@ class SynInfoDialog(QtGui.QDialog):
         # update RF setting panel
         self.rfOutputLabel.setText('ON' if api_syn.read_power_toggle(self.parent.synHandle) else 'OFF')
         self.modOutputLabel.setText('ON' if api_syn.read_mod_toggle(self.parent.synHandle) else 'OFF')
-        self.synFreqLabel.setText('{:.12f} MHz'.format(api_syn.read_syn_freq(self.parent.synHandle)))
+        self.synFreqLabel.setText('{:.9f} MHz'.format(api_syn.read_syn_freq(self.parent.synHandle)*1e-6))
 
         # update modulation setting panel
         self.am1StateLabel.setText('ON' if api_syn.read_am_state(self.parent.synHandle, 1) else 'OFF')
         self.am1SrcLabel.setText(api_syn.read_am_source(self.parent.synHandle, 1))
-        self.am1DepthLabel.setText('{:.1f} % ({:.0f} dB)'.format(*api_syn.read_am_depth(self.parent.synHandle, 1)))
+        self.am1DepthLabel.setText('{:.1%} ({:.0f} dB)'.format(*api_syn.read_am_depth(self.parent.synHandle, 1)))
         self.am1FreqLabel.setText(siFormat(api_syn.read_am_freq(self.parent.synHandle, 1), suffix='Hz'))
         self.am1WaveLabel.setText(api_syn.read_am_waveform(self.parent.synHandle, 1))
 
         self.am2StateLabel.setText('ON' if api_syn.read_am_state(self.parent.synHandle, 2) else 'OFF')
         self.am2SrcLabel.setText(api_syn.read_am_source(self.parent.synHandle, 2))
-        self.am2DepthLabel.setText('{:.1f} % ({:.0f} dB)'.format(*api_syn.read_am_depth(self.parent.synHandle, 2)))
+        self.am2DepthLabel.setText('{:.1%} ({:.0f} dB)'.format(*api_syn.read_am_depth(self.parent.synHandle, 2)))
         self.am2FreqLabel.setText(siFormat(api_syn.read_am_freq(self.parent.synHandle, 2), suffix='Hz'))
         self.am2WaveLabel.setText(api_syn.read_am_waveform(self.parent.synHandle, 2))
 

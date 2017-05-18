@@ -182,7 +182,7 @@ def read_am_par(synHandle):
     ''' Read current amplitude modulation setting.
         Returns
             freq:  mod freq, float (Hz)
-            depth: mod depth, float (%)
+            depth: mod depth, float
             status: on/off, bool
     '''
 
@@ -190,7 +190,7 @@ def read_am_par(synHandle):
         text = synHandle.query(':AM1:INT1:FREQ?')
         freq = float(text.strip())
         text = synHandle.query(':AM1:DEPT?')
-        depth = float(text.strip())
+        depth = float(text.strip()) * 1e-2
         text = synHandle.query(':AM1:STAT?')
         status = bool(int(text.strip()))
         return freq, depth, status
@@ -234,13 +234,13 @@ def read_am_depth(synHandle, channel):
             synHandle: pyvisa.resources.Resource
             channel: int
         Returns
-            depth_linear: float, depth in %
+            depth_linear: float, depth
             depth_exp: float, depth in dB
     '''
 
     try:
         text = synHandle.query(':AM{:d}:DEPT?'.format(channel))
-        depth_linear = float(text.strip()) * 100
+        depth_linear = float(text.strip()) * 1e-2
         text = synHandle.query(':AM{:d}:DEPT:EXP?'.format(channel))
         depth_exp = float(text.strip())
         return depth_linear, depth_exp
