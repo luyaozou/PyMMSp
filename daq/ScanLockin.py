@@ -93,9 +93,9 @@ class JPLScanConfig(QtGui.QDialog):
 
         # generate a new batch entry
         if self.main.testModeAction.isChecked():
-            entry = Shared.ScanEntry(self.main, init_setting=(6, 120, 1, 1, 0, 0, 1000, 'default'))
+            entry = Shared.JPLLIAScanEntry(self.main, init_setting=(6, 120, 1, 1, 0, 0, 1000, 'default'))
         else:
-            entry = Shared.ScanEntry(self.main)
+            entry = Shared.JPLLIAScanEntry(self.main)
 
         # get the current last entry
         if self.entryWidgetList:
@@ -106,7 +106,7 @@ class JPLScanConfig(QtGui.QDialog):
             entry.sensSel.setCurrentIndex(last_entry.sensSel.currentIndex())
             entry.tcSel.setCurrentIndex(last_entry.tcSel.currentIndex())
             entry.waitTimeFill.setText(last_entry.waitTimeFill.text())
-            entry.commentsFill.setText(last_entry.commentsFill.text())
+            entry.commentFill.setText(last_entry.commentFill.text())
         else:
             pass
         # add this entry to the layout and to the entry list
@@ -119,7 +119,7 @@ class JPLScanConfig(QtGui.QDialog):
         self.entryLayout.addWidget(entry.sensSel, row, 4)
         self.entryLayout.addWidget(entry.tcSel, row, 5)
         self.entryLayout.addWidget(entry.waitTimeFill, row, 6)
-        self.entryLayout.addWidget(entry.commentsFill, row, 7)
+        self.entryLayout.addWidget(entry.commentFill, row, 7)
 
     def remove_entry(self):
         ''' Remove last batch entry in this dialog window '''
@@ -146,8 +146,8 @@ class JPLScanConfig(QtGui.QDialog):
             entry.tcSel.deleteLater()
             self.entryLayout.removeWidget(entry.waitTimeFill)
             entry.waitTimeFill.deleteLater()
-            self.entryLayout.removeWidget(entry.commentsFill)
-            entry.commentsFill.deleteLater()
+            self.entryLayout.removeWidget(entry.commentFill)
+            entry.commentFill.deleteLater()
             entry.deleteLater()
 
     def set_file_directory(self):
@@ -184,12 +184,12 @@ class JPLScanConfig(QtGui.QDialog):
                 sens_index = entry.sensSel.currentIndex()
                 tc_index = entry.tcSel.currentIndex()
                 status5, waittime = api_val.val_lia_waittime(entry.waitTimeFill.text(), tc_index)
-                comments = entry.commentsFill.text()
+                comment = entry.commentFill.text()
                 # put them into a setting tuple
                 if status1 and status2 and status3 and status4 and status5:
                     no_error *= True
                     setting_entry = (start_freq, stop_freq, step, average,
-                                     sens_index, tc_index, waittime, comments)
+                                     sens_index, tc_index, waittime, comment)
                     # put the setting tuple into a list
                     entry_settings.append(setting_entry)
                 else:
@@ -214,25 +214,13 @@ class JPLScanWindow(QtGui.QDialog):
         self.main = main
         self.setWindowTitle('Lockin scan monitor')
         self.setMinimumSize(800, 600)
+        self.entry_settings = entry_settings
 
         # set up batch list display
-        self.entry_settings = entry_settings
-        entry_setting_list = []
-        for entry in entry_settings:
-            entry_str = '{:.3f} -- {:.3f} MHz;\n    step={:.3f} MHz; avg={:d}; '.format(*entry[:4])
-            entry_str += 'sens={:s}; '.format(Shared.LIASENSLIST[entry[4]])
-            entry_str += 'tc={:s}\n'.format(Shared.LIATCLIST[entry[5]])
-            entry_str += 'waittime={:.0f} ms'.format(entry[6])
-            entry_str += ' # {:s}'.format(entry[7])
-            entry_setting_list.append(entry_str)
-
-        self.batchList = QtGui.QListWidget()
-        self.batchList.addItems(entry_setting_list)
-        self.batchList.setSelectionMode(1)
-        self.batchList.setCurrentRow(0)
+        self.batchListWidget = JPLBatchListWidget(entry_settings)
         batchArea = QtGui.QScrollArea()
         batchArea.setWidgetResizable(True)
-        batchArea.setWidget(self.batchList)
+        batchArea.setWidget(self.batchListWidget)
 
         batchDisplay = QtGui.QGroupBox()
         batchDisplay.setTitle('Batch List')
@@ -244,48 +232,49 @@ class JPLScanWindow(QtGui.QDialog):
         self.singleScan = SingleScan(filename, parent=self, main=self.main)
 
         # set up progress bar
-        currentProgress = QtGui.QWidget()
         self.currentProgBar = QtGui.QProgressBar()
-        currentProgLayout = QtGui.QHBoxLayout()
-        currentProgLayout.addWidget(QtGui.QLabel('Current Progress'))
-        currentProgLayout.addWidget(self.currentProgBar)
-        currentProgress.setLayout(currentProgLayout)
-
-        totalProgress = QtGui.QWidget()
-        totalProgLayout = QtGui.QHBoxLayout()
         self.totalProgBar = QtGui.QProgressBar()
-        totalProgLayout.addWidget(QtGui.QLabel('Total Progress'))
-        totalProgLayout.addWidget(self.totalProgBar)
-        totalProgress.setLayout(totalProgLayout)
 
         progressDisplay = QtGui.QWidget()
-        progressLayout = QtGui.QVBoxLayout()
-        progressLayout.addWidget(currentProgress)
-        progressLayout.addWidget(totalProgress)
+        progressLayout = QtGui.QGridLayout()
+        progressLayout.addWidget(QtGui.QLabel('Current Progress'), 0, 0)
+        progressLayout.addWidget(self.currentProgBar, 0, 1)
+        progressLayout.addWidget(QtGui.QLabel('Total progress'), 1, 0)
+        progressLayout.addWidget(self.totalProgBar, 1, 1)
         progressDisplay.setLayout(progressLayout)
 
         mainLayout = QtGui.QGridLayout()
-        mainLayout.addWidget(batchDisplay, 0, 0, 1, 1)
-        mainLayout.addWidget(self.singleScan, 0, 1, 1, 2)
-        mainLayout.addWidget(progressDisplay, 1, 0, 1, 3)
+        mainLayout.addWidget(batchDisplay, 0, 0, 1, 2)
+        mainLayout.addWidget(self.singleScan, 0, 2, 1, 3)
+        mainLayout.addWidget(progressDisplay, 1, 0, 1, 5)
         self.setLayout(mainLayout)
 
         # Initiate progress bar
         total_time = ceil(Shared.jpl_scan_time(entry_settings))
         self.totalProgBar.setRange(0, total_time)
         self.totalProgBar.setValue(0)
-        self.batch_progress_taken = 0
+        self.batch_pts_taken = 0
 
         # Start scan
         self.next_entry_signal.connect(self.next_entry)
-        self.current_entry_index = -1   # make sure batch starts at index 0
+        # this makes sure batch starts at index 0
+        self.current_entry_index = -1
         self.next_entry_signal.emit()
 
     def next_entry(self):
 
         self.current_entry_index += 1
-        if self.current_entry_index < len(self.batchList):
-            self.batchList.setCurrentRow(self.current_entry_index)
+        if self.current_entry_index < len(self.entry_settings):
+            if self.current_entry_index:    # more than one entry
+                prev_entry = self.batchListWidget.entryList[self.current_entry_index - 1]
+                # make previous entry color grey and comment box read only
+                prev_entry.set_color_grey()
+                prev_entry.commentFill.setReadOnly(True)
+                prev_entry.commentFill.setStyleSheet('color: grey')
+            else:
+                pass    # it's the first entry, no prev_entry
+            current_entry = self.batchListWidget.entryList[self.current_entry_index]
+            current_entry.set_color_black()
             self.singleScan.update_setting(self.entry_settings[self.current_entry_index])
         else:
             self.finish()
@@ -317,6 +306,54 @@ class JPLScanWindow(QtGui.QDialog):
             self.accept()
         else:
             pass
+
+
+class JPLBatchListWidget(QtGui.QWidget):
+    ''' Batch list display '''
+
+    def __init__(self, entry_settings):
+
+        QtGui.QWidget.__init__(self)
+
+        self.batchLayout = QtGui.QGridLayout()
+        self.batchLayout.setAlignment(QtCore.Qt.AlignTop)
+        # set up batch list row header
+        # put comment in the first column and make it editable
+        self.batchLayout.addWidget(QtGui.QLabel('#'), 0, 0)
+        self.batchLayout.addWidget(QtGui.QLabel('Comment'), 0, 1)
+        self.batchLayout.addWidget(QtGui.QLabel('Start'), 0, 2)
+        self.batchLayout.addWidget(QtGui.QLabel('Stop'), 0, 3)
+        self.batchLayout.addWidget(QtGui.QLabel('Step'), 0, 4)
+        self.batchLayout.addWidget(QtGui.QLabel('Avg'), 0, 5)
+        self.batchLayout.addWidget(QtGui.QLabel('Sens'), 0, 6)
+        self.batchLayout.addWidget(QtGui.QLabel('Time Const'), 0, 7)
+        self.batchLayout.addWidget(QtGui.QLabel('Wait time'), 0, 8)
+        self.batchLayout.addWidget(QtGui.QLabel('(MHz)'), 1, 2)
+        self.batchLayout.addWidget(QtGui.QLabel('(MHz)'), 1, 3)
+        self.batchLayout.addWidget(QtGui.QLabel('(MHz)'), 1, 4)
+        self.batchLayout.addWidget(QtGui.QLabel('(ms)'), 1, 8)
+
+        # add batch list entry
+        self.entryList = []
+        for row in range(len(entry_settings)):
+            # entry = (start, stop, step, avg, sens_idx, tc_idx, waittime, comment)
+            current_setting = entry_settings[row]
+            entry = Shared.JPLLIABatchListEntry(self, entry_setting=current_setting)
+            # set up the batch number (row + 1)
+            entry.numberLabel.setText(str(row+1))
+            # add widgets to the dispaly panel layout
+            self.batchLayout.addWidget(entry.numberLabel, row+2, 0)
+            self.batchLayout.addWidget(entry.commentFill, row+2, 1)
+            self.batchLayout.addWidget(entry.startFreqLabel, row+2, 2)
+            self.batchLayout.addWidget(entry.stopFreqLabel, row+2, 3)
+            self.batchLayout.addWidget(entry.stepLabel, row+2, 4)
+            self.batchLayout.addWidget(entry.avgLabel, row+2, 5)
+            self.batchLayout.addWidget(entry.sensLabel, row+2, 6)
+            self.batchLayout.addWidget(entry.tcLabel, row+2, 7)
+            self.batchLayout.addWidget(entry.waitTimeLabel, row+2, 8)
+            self.entryList.append(entry)
+
+        self.setLayout(self.batchLayout)
 
 
 class SingleScan(QtGui.QWidget):
@@ -452,7 +489,7 @@ class SingleScan(QtGui.QWidget):
         # if done
         if self.acquired_avg == self.target_avg:
             self.save_data()
-            self.parent.batch_progress_taken += ceil(len(self.x)*self.target_avg*self.waittime*1e-3)
+            self.parent.batch_pts_taken += ceil(len(self.x)*self.target_avg*self.waittime*1e-3)
             self.parent.next_entry_signal.emit()
         else:
             self.tune_syn()
@@ -481,7 +518,7 @@ class SingleScan(QtGui.QWidget):
 
         # update progress bar
         self.parent.currentProgBar.setValue(ceil(self.pts_taken*self.waittime*1e-3))
-        self.parent.totalProgBar.setValue(self.parent.batch_progress_taken +
+        self.parent.totalProgBar.setValue(self.parent.batch_pts_taken +
                                           ceil(self.pts_taken*self.waittime*1e-3))
 
     def update_ysum(self):
@@ -494,6 +531,10 @@ class SingleScan(QtGui.QWidget):
 
     def save_data(self):
         ''' Save data array '''
+
+        # Grab current comment (in case edited during the scan) before saving data
+        entry = self.parent.batchListWidget.entryList[self.parent.current_entry_index]
+        self.current_comment = entry.commentFill.text()
 
         if self.main.testModeAction.isChecked():
             h_info = (self.waittime, api_val.LIASENSLIST[self.sens_index],
@@ -579,6 +620,7 @@ class SingleScan(QtGui.QWidget):
             self.waitTimer.stop()
             self.parent.batch_pts_taken += len(self.x)*self.target_avg
             self.save_data()
+            self.parent.next_entry_signal.emit()
         elif q == QtGui.QMessageBox.No:
             #print('abort current')
             self.waitTimer.stop()

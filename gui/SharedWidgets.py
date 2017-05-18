@@ -136,7 +136,7 @@ class liaTCBox(QtGui.QComboBox):
         self.setCurrentIndex(5)
 
 
-class ScanEntry(QtGui.QWidget):
+class JPLLIAScanEntry(QtGui.QWidget):
     ''' Frequency window entry for scanning job configuration with captions '''
 
     def __init__(self, main, init_setting=()):
@@ -150,7 +150,7 @@ class ScanEntry(QtGui.QWidget):
         self.sensSel = liaSensBox()
         self.tcSel = liaTCBox()
         self.waitTimeFill = QtGui.QLineEdit()
-        self.commentsFill = QtGui.QLineEdit()
+        self.commentFill = QtGui.QLineEdit()
         # validate default values
         self.val_waittime()
 
@@ -169,7 +169,7 @@ class ScanEntry(QtGui.QWidget):
             self.sensSel.setCurrentIndex(int(init_setting[4]))
             self.tcSel.setCurrentIndex(int(init_setting[5]))
             self.waitTimeFill.setText(str(init_setting[6]))
-            self.commentsFill.setText(str(init_setting[7]))
+            self.commentFill.setText(str(init_setting[7]))
         else:
             pass
 
@@ -202,6 +202,63 @@ class ScanEntry(QtGui.QWidget):
         tc_index = self.tcSel.currentIndex()
         status, waittime = api_val.val_lia_waittime(text, tc_index)
         self.waitTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+
+
+class JPLLIABatchListEntry(QtGui.QWidget):
+    ''' Single batch list entry in display mode.
+    entry = (start, stop, step, avg, sens_idx, tc_idx, waittime, comment) '''
+
+    def __init__(self, parent, entry_setting=()):
+        QtGui.QWidget.__init__(self, parent=None)
+        self.parent = parent
+
+        # add labels
+        self.numberLabel = QtGui.QLabel()
+        self.commentFill = QtGui.QLineEdit()
+        self.startFreqLabel = QtGui.QLabel()
+        self.stopFreqLabel = QtGui.QLabel()
+        self.stepLabel = QtGui.QLabel()
+        self.avgLabel = QtGui.QLabel()
+        self.sensLabel = QtGui.QLabel()
+        self.tcLabel = QtGui.QLabel()
+        self.waitTimeLabel = QtGui.QLabel()
+
+        # set label text
+        self.commentFill.setText(entry_setting[-1])
+        self.startFreqLabel.setText('{:.3f}'.format(entry_setting[0]))
+        self.stopFreqLabel.setText('{:.3f}'.format(entry_setting[1]))
+        self.stepLabel.setText('{:.3f}'.format(entry_setting[2]))
+        self.avgLabel.setText('{:d}'.format(entry_setting[3]))
+        self.sensLabel.setText(LIASENSLIST[entry_setting[4]])
+        self.tcLabel.setText(LIATCLIST[entry_setting[5]])
+        self.waitTimeLabel.setText('{:4g}'.format(entry_setting[6]))
+
+        # set text color to grey
+        self.set_color_grey()
+
+    def set_color_grey(self):
+        ''' set text color to grey '''
+        self.numberLabel.setStyleSheet('color: grey')
+        self.startFreqLabel.setStyleSheet('color: grey')
+        self.stopFreqLabel.setStyleSheet('color: grey')
+        self.stepLabel.setStyleSheet('color: grey')
+        self.avgLabel.setStyleSheet('color: grey')
+        self.sensLabel.setStyleSheet('color: grey')
+        self.tcLabel.setStyleSheet('color: grey')
+        self.waitTimeLabel.setStyleSheet('color: grey')
+
+    def set_color_black(self):
+        ''' Set text color to black '''
+
+        # set texts to grey
+        self.numberLabel.setStyleSheet('color: black')
+        self.startFreqLabel.setStyleSheet('color: black')
+        self.stopFreqLabel.setStyleSheet('color: black')
+        self.stepLabel.setStyleSheet('color: black')
+        self.avgLabel.setStyleSheet('color: black')
+        self.sensLabel.setStyleSheet('color: black')
+        self.tcLabel.setStyleSheet('color: black')
+        self.waitTimeLabel.setStyleSheet('color: black')
 
 
 def msgcolor(status_code):
