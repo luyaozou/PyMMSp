@@ -273,8 +273,8 @@ def val_lia_monitor_srate(srate_index, tc_index):
     waittime = waittime_list[srate_index]
     tc = LIATCLIST[tc_index]
 
-    code, waittime = val_float(text, safe=[('>', time_const*3*pi + 10)],
-                                 warning=[('>', time_const*2*pi + 10)])
+    code, waittime = val_float(waittime, safe=[('>', tc*3*pi + 10)],
+                               warning=[('>', tc*2*pi + 10)])
     if code:
         return code, waittime
     else:
