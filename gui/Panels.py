@@ -543,7 +543,7 @@ class SynCtrl(QtGui.QGroupBox):
             self.powerSwitchProgBar.setValue(0)
             self.ramp_synRFPower()
             self.progDialog.exec_()
-        else:   # user wants to turn off
+        elif current_power > -20:   # user wants to turn off, needs ramp down
             self.ramper = api_syn.ramp_down(current_power, -20)
             self.powerSwitchProgBar.setRange(0, abs(current_power + 20))
             self.powerSwitchProgBar.setValue(0)
@@ -557,6 +557,10 @@ class SynCtrl(QtGui.QGroupBox):
                 self.synPowerSwitchBtn.setChecked(False)
             else:
                 self.synPowerSwitchBtn.setChecked(True)
+        else:   # user wants to turn off, power is already -20
+            # safely turn off RF
+            api_syn.set_power_toggle(self.parent.synHandle, False)
+            self.synPowerSwitchBtn.setChecked(False)
 
         self.parent.synStatus.update()
 
