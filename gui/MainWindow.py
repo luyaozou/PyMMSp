@@ -25,7 +25,7 @@ class MainWindow(QtGui.QMainWindow):
         # Set global window properties
         self.setWindowTitle(self.title_text)
         self.setMinimumWidth(1500)
-        self.setMinimumHeight(820)
+        self.setMinimumHeight(840)
 
         # Initiate pyvisa instrument objects
         self.synHandle = None
@@ -111,28 +111,38 @@ class MainWindow(QtGui.QMainWindow):
         # Set main window layout
         self.mainLayout = QtGui.QGridLayout()
         self.mainLayout.setSpacing(6)
-        self.mainLayout.addWidget(self.synStatus, 0, 0, 1, 2)
-        self.mainLayout.addWidget(self.liaStatus, 1, 0, 1, 2)
-        self.mainLayout.addWidget(self.scopeStatus, 2, 0, 1, 2)
-        self.mainLayout.addWidget(self.synCtrl, 0, 2, 1, 3)
-        self.mainLayout.addWidget(self.liaCtrl, 1, 2, 1, 3)
-        self.mainLayout.addWidget(self.scopeCtrl, 2, 2, 1, 3)
-        self.mainLayout.addWidget(self.motorCtrl, 3, 2, 1, 3)
-        self.mainLayout.addWidget(self.scopeMonitor, 0, 5, 1, 4)
-        self.mainLayout.addWidget(self.liaMonitor, 1, 5, 1, 4)
-        self.mainLayout.addWidget(self.specMonitor, 2, 5, 1, 4)
+        self.mainLayout.addWidget(self.synStatus, 0, 0, 3, 2)
+        self.mainLayout.addWidget(self.liaStatus, 3, 0, 3, 2)
+        self.mainLayout.addWidget(self.scopeStatus, 6, 0, 2, 2)
+        self.mainLayout.addWidget(self.synCtrl, 0, 2, 3, 3)
+        self.mainLayout.addWidget(self.liaCtrl, 3, 2, 2, 3)
+        self.mainLayout.addWidget(self.scopeCtrl, 5, 2, 2, 3)
+        self.mainLayout.addWidget(self.motorCtrl, 7, 2, 1, 3)
+        self.mainLayout.addWidget(self.scopeMonitor, 0, 5, 2, 4)
+        self.mainLayout.addWidget(self.liaMonitor, 2, 5, 4, 4)
+        self.mainLayout.addWidget(self.specMonitor, 6, 5, 2, 4)
 
         # Enable main window
         self.mainWidget = QtGui.QWidget()
         self.mainWidget.setLayout(self.mainLayout)
         self.setCentralWidget(self.mainWidget)
+        self.refresh_inst()
+
+        self.testModeAction.toggled.connect(self.refresh_inst)
 
     def refresh_inst(self):
 
-        self.synCtrl.setChecked(not(self.synHandle is None))
-        self.liaCtrl.setChecked(not(self.liaHandle is None))
-        self.scopeCtrl.setChecked(not(self.pciHandle is None))
-        self.motorCtrl.setChecked(not(self.motorHandle is None))
+        if self.testModeAction.isChecked():
+            self.synCtrl.setChecked(True)
+            self.liaCtrl.setChecked(True)
+            self.scopeCtrl.setChecked(True)
+            self.motorCtrl.setChecked(True)
+        else:
+            self.synCtrl.setChecked(not(self.synHandle is None))
+            self.liaCtrl.setChecked(not(self.liaHandle is None))
+            self.scopeCtrl.setChecked(not(self.pciHandle is None))
+            self.motorCtrl.setChecked(not(self.motorHandle is None))
+
         self.synStatus.update()
         self.liaStatus.update()
         self.scopeStatus.update()

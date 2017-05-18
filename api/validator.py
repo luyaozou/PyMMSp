@@ -213,26 +213,37 @@ def val_syn_mod_freq(freq_text, freq_unit_text):
     return code, freq
 
 
-def val_syn_mod_depth(depth_text, depth_unit_text):
-    ''' Validate synthesizer modulation depth input.
+def val_syn_am_depth(depth_text, depth_unit_text):
+    ''' Validate synthesizer AM modulation depth input.
         Arguments
             depth_text: str, modulation depth user input
             depth_unit_text: int, modulation depth unit
-        Safe range: [0, 75]'%' for AM
-                    [0, 5e6] Hz for FM
-        Warning range: (5e6, 64e6] Hz for FM (max 64 MHz)
+        Safe range: [0, 75] '%'
     '''
 
     if depth_unit_text == '%':
         code, depth = val_float(depth_text, safe=[('>=', 0), ('<=', 75)])
+        return code, depth
     else:
-        if depth_text:  # if not empty string
-            depth_num = siEval(depth_text + depth_unit_text)
-        else:
-            return 0, 0
+        return 0, 0
 
-        code, depth = val_float(depth_num, safe=[('>=', 0), ('<=', 5e6)],
-                                warning=[('>', 5e6), ('<=', 6.4e7)])
+
+def val_syn_fm_depth(depth_text, depth_unit_text):
+    ''' Validate synthesizer FM modulation depth input.
+        Arguments
+            depth_text: str, modulation depth user input
+            depth_unit_text: int, modulation depth unit
+        Safe range: [0, 5e6] Hz for FM
+        Warning range: (5e6, 64e6] Hz for FM (max 64 MHz)
+    '''
+
+    if depth_text:  # if not empty string
+        depth_num = siEval(depth_text + depth_unit_text)
+    else:
+        return 0, 0
+
+    code, depth = val_float(depth_num, safe=[('>=', 0), ('<=', 5e6)],
+                            warning=[('>', 5e6), ('<=', 6.4e7)])
     return code, depth
 
 
