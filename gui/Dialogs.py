@@ -7,6 +7,7 @@ from api import general as api_gen
 from api import synthesizer as api_syn
 from api import lockin as api_lia
 from gui import SharedWidgets as Shared
+from data import lwaparser
 from pyqtgraph import siFormat
 
 
@@ -578,3 +579,118 @@ class LockinInfoDialog(QtGui.QDialog):
         self.outputFront1Label.setText(self.parent.liaInfo.front1Text)
         self.outputFront2Label.setText(self.parent.liaInfo.front2Text)
         self.outputSRateLabel.setText(self.parent.liaInfo.sampleRateText)
+
+
+class LWAParserDialog(QtGui.QDialog):
+    '''
+        Dialog window for the LWA file previewer & parser.
+    '''
+
+    def __init__(self, parent, filename):
+        QtGui.QDialog.__init__(self, parent)
+        self.parent = parent
+        self.filename = filename
+        self.setMinimumWidth(800)
+        self.setMinimumHeight(600)
+        self.setWindowTitle('LWA Preview & Parser')
+        self.entry_id_to_export = []
+
+        self.mainLayout = QtGui.QVBoxLayout()
+        self.mainLayout.setAlignment(QtCore.Qt.AlignTop)
+        self.mainLayout.addWidget(QtGui.QLabel('Source file: {:s}'.format(filename)))
+
+        # read lwa batch scan entry from file
+        self.entry_settings = lwaparser.scan_header(filename)
+
+        if self.entry_settings:
+            # set top buttons
+            topButtons = QtGui.QWidget()
+            self.exportButton = QtGui.QPushButton('Export selected scans')
+            self.exportButton.clicked.connect(self.export_lwa)
+            self.openFileButton = QtGui.QPushButton('Open New File')
+            self.openFileButton.clicked.connect(self.open_new_file)
+            topButtonLayout = QtGui.QHBoxLayout()
+            topButtonLayout.addWidget(self.exportButton)
+            topButtonLayout.addWidget(self.openFileButton)
+            topButtons.setLayout(topButtonLayout)
+            self.mainLayout.addWidget(topButtons)
+
+            # set up a QButtonGroup to manage checkboxes
+            self.entryGroup = QtGui.QButtonGroup()
+            self.entryGroup.setExclusive(False)
+            # set up the batch list area
+            self.batchListWidget = QtGui.QWidget()
+            batchArea = QtGui.QScrollArea()
+            batchArea.setWidgetResizable(True)
+            batchArea.setWidget(self.batchListWidget)
+
+            self.batchLayout = QtGui.QGridLayout()
+            self.batchLayout.setAlignment(QtCore.Qt.AlignTop)
+            self.batchLayout.addWidget(QtGui.QLabel('Scan #'), 0, 0)
+            self.batchLayout.addWidget(QtGui.QLabel('Comment'), 0, 1)
+            self.batchLayout.addWidget(QtGui.QLabel('Start Freq'), 0, 2)
+            self.batchLayout.addWidget(QtGui.QLabel('Stop Freq'), 0, 3)
+            self.batchLayout.addWidget(QtGui.QLabel('Step Freq'), 0, 4)
+            self.batchLayout.addWidget(QtGui.QLabel('Average'), 0, 5)
+            self.batchLayout.addWidget(QtGui.QLabel('Sensitivity'), 0, 6)
+            self.batchLayout.addWidget(QtGui.QLabel('Time Const'), 0, 7)
+            self.batchLayout.addWidget(QtGui.QLabel('Wait time'), 0, 8)
+            self.batchLayout.addWidget(QtGui.QLabel('(MHz)'), 1, 2)
+            self.batchLayout.addWidget(QtGui.QLabel('(MHz)'), 1, 3)
+            self.batchLayout.addWidget(QtGui.QLabel('(MHz)'), 1, 4)
+            self.batchLayout.addWidget(QtGui.QLabel('(ms)'), 1, 8)
+
+            for row in range(len(self.entry_settings)):
+                current_setting = self.entry_settings[row]
+                entry = Shared.JPLLIABatchListEntry(self, entry_setting=current_setting)
+                entry.set_color_black()     # set texts to be black
+                entry.commentFill.setReadOnly(True) # disable comment edits
+                entry.commentFill.setStyleSheet('color: grey')
+                # change number label to checkbox
+                entry.numberLabel = QtGui.QCheckBox()
+                # set up the batch number (row + 1)
+                entry.numberLabel.setText(str(row+1))
+                # add entry number checkbox to the button group
+                self.entryGroup.addButton(entry.numberLabel, row+1)
+                # add widgets to the dispaly panel layout
+                self.batchLayout.addWidget(entry.numberLabel, row+2, 0)
+                self.batchLayout.addWidget(entry.commentFill, row+2, 1)
+                self.batchLayout.addWidget(entry.startFreqLabel, row+2, 2)
+                self.batchLayout.addWidget(entry.stopFreqLabel, row+2, 3)
+                self.batchLayout.addWidget(entry.stepLabel, row+2, 4)
+                self.batchLayout.addWidget(entry.avgLabel, row+2, 5)
+                self.batchLayout.addWidget(entry.sensLabel, row+2, 6)
+                self.batchLayout.addWidget(entry.tcLabel, row+2, 7)
+                self.batchLayout.addWidget(entry.waitTimeLabel, row+2, 8)
+
+            self.batchListWidget.setLayout(self.batchLayout)
+            self.mainLayout.addWidget(batchArea)
+            self.entryGroup.buttonClicked[int].connect(self.add_to_list)
+        else:
+            self.mainLayout.addWidget(QtGui.QLabel('Invalid file! No scans found.'))
+
+        self.setLayout(self.mainLayout)
+
+    def add_to_list(self, id):
+        ''' Add checked buttons to list '''
+
+        if self.entryGroup.button(id).isChecked():
+            print(id)
+            self.entry_id_to_export.append(id)
+        else:
+            pass
+
+    def export_lwa(self):
+
+        print(list(set(self.entry_id_to_export)))
+        #lwaparser.export(self.filename, checked_id)
+        # clear id
+        self.entry_id_to_export = []
+
+    def open_new_file(self):
+
+        # close this window and delete this instance
+        self.close()
+        self.deleteLater()
+        # launch a new dialog window
+        self.parent.on_lwa_parser()

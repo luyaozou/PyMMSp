@@ -41,6 +41,7 @@ class MainWindow(QtGui.QMainWindow):
         exitAction.setStatusTip('Exit program')
         exitAction.triggered.connect(self.on_exit)
 
+        # instrument actions
         instSelAction = QtGui.QAction('Select Instrument', self)
         instSelAction.setShortcut('Ctrl+Shift+I')
         instSelAction.setStatusTip('Select instrument')
@@ -55,6 +56,7 @@ class MainWindow(QtGui.QMainWindow):
         instCloseAction.setStatusTip('Close individual instrument')
         instCloseAction.triggered.connect(self.on_close_sel_inst)
 
+        # scan actions
         scanJPLAction = QtGui.QAction('JPL Scanning Routine', self)
         scanJPLAction.setShortcut('Ctrl+Shift+J')
         scanJPLAction.setStatusTip('Use the scanning style of the JPL scanning routine')
@@ -75,6 +77,11 @@ class MainWindow(QtGui.QMainWindow):
         presReaderAction.setStatusTip('Record pressure measurements using the CENTER TWO pressure readout')
         presReaderAction.triggered.connect(self.on_pres_reader)
 
+        # data process actions
+        lwaParserAction = QtGui.QAction('.lwa preview and export', self)
+        lwaParserAction.setStatusTip('Preview JPL .lwa file and export subset of scans')
+        lwaParserAction.triggered.connect(self.on_lwa_parser)
+
         self.testModeAction = QtGui.QAction('Test Mode', self)
         self.testModeAction.setCheckable(True)
         self.testModeAction.setShortcut('Ctrl+T')
@@ -94,6 +101,8 @@ class MainWindow(QtGui.QMainWindow):
         menuScan.addAction(scanPCIAction)
         menuScan.addAction(scanCavityAction)
         menuScan.addAction(presReaderAction)
+        menuData = self.menuBar().addMenu('&Data')
+        menuData.addAction(lwaParserAction)
         menuTest = self.menuBar().addMenu('&Test')
         menuTest.addAction(self.testModeAction)
 
@@ -266,6 +275,15 @@ class MainWindow(QtGui.QMainWindow):
         else:   # initiate window instance
             self.p_reader_win = PresReader.PresReaderWindow(main=self)
         self.p_reader_win.show()
+
+    def on_lwa_parser(self):
+        ''' Launch lwa parser dialog window '''
+
+        filename, _ = QtGui.QFileDialog.getOpenFileName(self, 'Open LWA File',
+                                './default.lwa', 'SMAP Data File (*.lwa)')
+
+        d = Dialogs.LWAParserDialog(self, filename)
+        d.exec_()
 
     def closeEvent(self, event):
         q = QtGui.QMessageBox.question(self, 'Quit?',
