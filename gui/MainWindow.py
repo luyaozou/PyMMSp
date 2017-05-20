@@ -96,6 +96,12 @@ class MainWindow(QtGui.QMainWindow):
         menuTest = self.menuBar().addMenu('&Test')
         menuTest.addAction(self.testModeAction)
 
+        # Set classes to store all instrument info
+        self.synInfo = Shared.SynInfo()
+        self.liaInfo = Shared.LiaInfo()
+        self.scopeInfo = Shared.ScopeInfo()
+        self.motorInfo = Shared.MotorInfo()
+
         # Set main window widgets
         self.synStatus = Panels.SynStatus(self)
         self.liaStatus = Panels.LockinStatus(self)
@@ -126,8 +132,10 @@ class MainWindow(QtGui.QMainWindow):
         self.mainWidget = QtGui.QWidget()
         self.mainWidget.setLayout(self.mainLayout)
         self.setCentralWidget(self.mainWidget)
-        self.refresh_inst()
 
+        # Preload system dialog widgets
+        self.load_dialogs()
+        self.refresh_inst()
         self.testModeAction.toggled.connect(self.refresh_inst)
 
     def refresh_inst(self):
@@ -137,22 +145,36 @@ class MainWindow(QtGui.QMainWindow):
             self.liaCtrl.setChecked(True)
             self.scopeCtrl.setChecked(True)
             self.motorCtrl.setChecked(True)
+            self.synStatus.setChecked(True)
+            self.liaStatus.setChecked(True)
+            self.scopeStatus.setChecked(True)
         else:
             self.synCtrl.setChecked(not(self.synHandle is None))
             self.liaCtrl.setChecked(not(self.liaHandle is None))
             self.scopeCtrl.setChecked(not(self.pciHandle is None))
             self.motorCtrl.setChecked(not(self.motorHandle is None))
+            self.synStatus.setChecked(not(self.synHandle is None))
+            self.liaStatus.setChecked(not(self.liaHandle is None))
+            self.scopeStatus.setChecked(not(self.pciHandle is None))
 
-        self.synStatus.update()
-        self.liaStatus.update()
-        self.scopeStatus.update()
+        self.synStatus.manual_refresh()
+        self.liaStatus.manual_refresh()
+        self.scopeStatus.manual_refresh()
+
+    def load_dialogs(self):
+        ''' Load dialog widgets without showing them '''
+
+        self.selInstDialog = Dialogs.SelInstDialog(self)
+        self.viewInstDialog = Dialogs.ViewInstDialog(self)
+        self.closeInstDialog = Dialogs.CloseSelInstDialog(self)
+        self.synInfoDialog = Dialogs.SynInfoDialog(self)
+        self.liaInfoDialog = Dialogs.LockinInfoDialog(self)
 
     def on_exit(self):
         self.close()
 
     def on_sel_inst(self):
-        d = Dialogs.SelInstDialog(self)
-        result = d.exec_()
+        result = self.selInstDialog.exec_()
 
         if result:
             # simply uncheck panels to prevent the warning dialog
@@ -172,12 +194,12 @@ class MainWindow(QtGui.QMainWindow):
             pass
 
     def on_view_inst_stat(self):
-        d = Dialogs.ViewInstDialog(self)
-        d.show()
+
+        self.viewInstDialog.show()
 
     def on_close_sel_inst(self):
-        d = Dialogs.CloseSelInstDialog(self)
-        d.exec_()
+
+        self.closeInstDialog.exec_()
 
         # simply uncheck panels to prevent the warning dialog
         self.refresh_inst()

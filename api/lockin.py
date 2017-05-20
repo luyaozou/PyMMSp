@@ -2,6 +2,49 @@
 
 import numpy as np
 
+# LOCKIN AMPLIFIER SENSTIVITY LIST
+SENS_LIST = ['2 nV', '5 nV', '10 nV', '20 nV', '50 nV', '100 nV',
+             '200 nV', '500 nV', '1 uV', '2 uV', '5 uV', '10 uV',
+             '20 uV', '50 uV', '100 uV', '200 uV', '500 uV', '1 mV',
+             '2 mV', '5 mV', '10 mV', '20 mV', '50 mV', '100 mV',
+             '200 mV', '500 mV', '1 V'
+             ]
+
+# LOCKIN AMPLIFIER TIME CONSTANT LIST
+TC_LIST = ['10 us', '30 us', '100 us', '300 us', '1 ms', '3 ms', '10 ms',
+           '30 ms', '100 ms', '300 ms', '1 s', '3 s', '10 s', '30 s'
+           ]
+
+# LOCKIN HARMONICS LIST
+HARM_LIST = ['1', '2', '3', '4']
+
+# LOCKIN COUPLE LIST
+COUPLE_LIST = ['AC', 'DC']
+
+# LOCKIN RESERVE LIST
+RESERVE_LIST = ['High Reserve', 'Normal', 'Low Noise']
+
+# LOCKIN REF SOURCE LIST
+REF_SRC_LIST = ['External', 'Internal']
+
+# LOCKIN INPUT CONFIG LIST
+INPUT_CONFIG_LIST = ['A', 'B', 'I (1 MΩ)', 'I (100 MΩ)']
+
+# LOCKIN INPUT GROUNDING LIST
+INPUT_GND_LIST = ['Float', 'Ground']
+
+# LOCKIN INPUT FILTER LIST
+INPUT_FILTER_LIST = ['No filter', '1× Line notch',
+                     '2× Line notch', '1× & 2× Line notch']
+
+# LOCKIN LP SLOPE LIST
+LPSLOPE_LIST = ['6 dB/oct', '12 dB/oct', '18 dB/oct', '24 dB/oct']
+
+# LOCKIN SAMPLE RATE LIST
+SAMPLE_RATE_LIST = ['1/16 Hz', '1/8 Hz', '1/4 Hz', '1/2 Hz', '1 Hz',
+                    '2 Hz', '4 Hz', '8 Hz', '16 Hz', '32 Hz', '64 Hz',
+                    '128 Hz', '256 Hz', '512 Hz', 'Trigger']
+
 
 def init_lia(liaHandle):
     ''' Initiate the lockin with default settings.
@@ -24,7 +67,7 @@ def reset(liaHandle):
         vcode = init_lia(liaHandle)
         return vcode
     except:
-        return 'IOError'
+        return 'Lockin reset: IOError'
 
 
 def query_inst_name(liaHandle):
@@ -62,7 +105,7 @@ def read_freq(liaHandle):
 
 def read_harm(liaHandle):
     ''' Read current lockin harmonics.
-        Returns harm: int
+        Returns harmonics: int
     '''
 
     try:
@@ -84,7 +127,7 @@ def set_harm(liaHandle, harm):
         num, vcode = liaHandle.write('HARM{:d}'.format(harm))
         return vcode
     except:
-        return 'IOError'
+        return 'Lockin set harmonics: IOError'
 
 
 def read_phase(liaHandle):
@@ -111,7 +154,7 @@ def set_phase(liaHandle, phase):
         num, vcode = liaHandle.write('PHAS{:.2f}'.format(phase))
         return vcode
     except:
-        return 'IOError'
+        return 'Lockin set phase: IOError'
 
 
 def auto_phase(liaHandle):
@@ -123,7 +166,7 @@ def auto_phase(liaHandle):
         num, vcode = liaHandle.write('APHS')
         return vcode
     except:
-        return 'IOError'
+        return 'Lockin auto phase: IOError'
 
 
 def auto_gain(liaHandle):
@@ -135,7 +178,7 @@ def auto_gain(liaHandle):
         num, vcode = liaHandle.write('AGAN')
         return vcode
     except:
-        return 'IOError'
+        return 'Lockin auto gain: IOError'
 
 
 def read_sens(liaHandle):
@@ -165,7 +208,7 @@ def set_sens(liaHandle, sens_index):
         num, vcode = liaHandle.write('SENS{:d}'.format(sens_index))
         return vcode
     except:
-        return 'IOError'
+        return 'Lockin set sensitivity: IOError'
 
 
 def read_tc(liaHandle):
@@ -187,7 +230,7 @@ def set_tc(liaHandle, tc_index):
         Arguments
             liaHandle: pyvisa.resources.Resource, Lockin handle
             tc_index: int, user input.
-                      The index directly map to the lockin command
+                      The index directly maps to the lockin command
         Returns visaCode
     '''
 
@@ -195,71 +238,59 @@ def set_tc(liaHandle, tc_index):
         num, vcode = liaHandle.write('OFLT{:d}'.format(tc_index))
         return vcode
     except:
-        return 'IOError'
+        return 'Lockin set time constant: IOError'
 
 
 def read_couple(liaHandle):
     ''' Read current lockin couple.
-        Returns couple text (str)
+        Returns couple index number (int)
     '''
-
-    a_dict = {'0': 'AC', '1': 'DC'}
 
     try:
         text = liaHandle.query('ICPL?')
-        return a_dict[text.strip()]
+        return int(text.strip())
     except:
-        return 'N.A.'
+        return 0
 
 
-def set_couple(liaHandle, couple_text):
+def set_couple(liaHandle, couple_index):
     ''' Set the lockin couple.
         Arguments
             liaHandle: pyvisa.resources.Resource, Lockin handle
-            couple_text: str, user input.
+            couple_index: int, user input.
+                          The index directly maps to the lockin command
         Returns visaCode
     '''
 
-    a_dict = {'AC': 'ICPL0',
-              'DC': 'ICPL1'}
-
     try:
-        num, vcode = liaHandle.write(a_dict[couple_text])
+        num, vcode = liaHandle.write('ICPL{:d}'.format(couple_index))
         return vcode
     except:
-        return 'IOError'
+        return 'Lockin set couple: IOError'
 
 
 def read_reserve(liaHandle):
     ''' Read current lockin reserve.
-        Returns reserve text (str)
+        Returns reserve index (int)
     '''
-
-    a_dict = {'2': 'Low Noise',
-              '1': 'Normal',
-              '0': 'High Reserve'}
 
     try:
         text = liaHandle.query('RMOD?')
-        return a_dict[text.strip()]
+        return int(text.strip())
     except:
-        return 'N.A.'
+        return 1    # default is normal
 
 
-def set_reserve(liaHandle, reserve_text):
+def set_reserve(liaHandle, reserve_index):
     ''' Set the lockin reserve.
         Returns visaCode
     '''
 
-    a_dict = {'Low Noise': 'RMOD2',
-              'Normal': 'RMOD1',
-              'High Reserve': 'RMOD0'}
-
     try:
-        num, vcode = liaHandle.write(a_dict[reserve_text])
+        num, vcode = liaHandle.write('RMOD{:d}'.format(reserve_index))
         return vcode
     except:
-        return 'IOError'
+        return 'Lockin set reserve: IOError'
 
 
 def query_single_x(liaHandle):
@@ -280,10 +311,9 @@ def read_ref_source(liaHandle):
             text: str
     '''
 
-    a_dict = {0:'External', 1:'Internal'}
     try:
         text = liaHandle.query('FMOD?')
-        return a_dict[int(text.strip())]
+        return REF_SRC_LIST[int(text.strip())]
     except:
         return 'N.A.'
 
@@ -294,54 +324,48 @@ def read_input_config(liaHandle):
             text: str
     '''
 
-    a_dict = {0:'A', 1:'B', 2:'I (1 MΩ)', 3:'I (100 MΩ)'}
     try:
         text = liaHandle.query('ISRC?')
-        return a_dict[int(text.strip())]
+        return INPUT_CONFIG_LIST[int(text.strip())]
     except:
         return 'N.A.'
 
 
 def read_input_grounding(liaHandle):
     ''' Read input grounding
-        Returns
-            text: str
+        Returns grounding index (int)
     '''
 
-    a_dict = {0:'Float', 1:'Ground'}
     try:
         text = liaHandle.query('IGND?')
-        return a_dict[int(text.strip())]
+        return int(text.strip())
     except:
-        return 'N.A.'
+        return 1    # default is gound
 
 
-def set_input_grounding(liaHandle, gnd_text):
+def set_input_grounding(liaHandle, gnd_index):
     ''' Set input grounding
         Returns visaCode
     '''
 
-    a_dict = {'Float':'IGND0', 'Ground':'IGND1'}
     try:
-        num, vcode = liaHandle.write(a_dict[gnd_text])
+        num, vcode = liaHandle.write(INPUT_GND_LIST[gnd_index])
         return vcode
     except:
-        return 'IOError'
+        return 'Lockin set input grounding: IOError'
 
 
 def read_input_filter(liaHandle):
     ''' Read input notch filter
         Returns
-            text: str
+            filter index: int
     '''
 
-    a_dict = {0:'No filter', 1:'1× Line notch',
-              2:'2× Line notch', 3:'1× & 2× Line notch'}
     try:
         text = liaHandle.query('ILIN?')
-        return a_dict[int(text.strip())]
+        return int(text.strip())
     except:
-        return 'N.A.'
+        return 0
 
 
 def set_input_filter(liaHandle, filter_index):
@@ -353,22 +377,20 @@ def set_input_filter(liaHandle, filter_index):
         num, vcode = liaHandle.write('ILIN{:d}'.format(filter_index))
         return vcode
     except:
-        return 'IOError'
+        return 'Lockin set input filter: IOError'
 
 
 def read_lp_slope(liaHandle):
     ''' Read low pass filter slope
         Returns
-            text: str
+            lp slope index: int
     '''
 
-    a_dict = {0:'6 dB/oct', 1:'12 dB/oct',
-              2:'18 dB/oct', 3:'24 dB/oct'}
     try:
         text = liaHandle.query('OFSL?')
-        return a_dict[int(text.strip())]
+        return int(text.strip())
     except:
-        return 'N.A.'
+        return 0
 
 
 def read_disp(liaHandle):
@@ -451,11 +473,8 @@ def read_sample_rate(liaHandle):
             index: int
     '''
 
-    a_dict = {0:'per 16s', 1:'per 8s', 2:'per 4s', 3:'per 2s', 4:'1 Hz',
-              5:'2 Hz', 6:'4 Hz', 7:'8 Hz', 8:'16 Hz', 9:'32 Hz', 10:'64 Hz',
-              11:'128 Hz', 12:'256 Hz', 13:'512 Hz', 14:'Trigger'}
     try:
         text = liaHandle.query('SRAT?')
-        return a_dict[int(text.strip())]
+        return int(text.strip())
     except:
-        return 'N.A.'
+        return 0

@@ -10,16 +10,18 @@ from pyqtgraph import siEval
 
 # VDI MULTIPLICATION FACTOR
 MULTIPLIER = [1, 3, 3, 3, 6, 9, 12, 18, 27, 27]
+
 # LOCKIN AMPLIFIER SENSTIVITY LIST (IN VOLTS)
-LIASENSLIST = [2e-9, 5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7,
+LIASENSLIST= [2e-9, 5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7,
                1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4,
                1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1, 5e-1, 1
                ]
+
 # LOCKIN AMPLIFIER TIME CONSTANT LIST (IN MILLISECONDS)
 LIATCLIST = [1e-2, 3e-2, 1e-1, 3e-1, 1, 3, 10, 30, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4]
 
 
-def compare(num1, op, num2):
+def _compare(num1, op, num2):
     ''' An comparison operator generator '''
 
     ops = {'>': operator.gt,
@@ -31,7 +33,7 @@ def compare(num1, op, num2):
     return ops[op](num1, num2)
 
 
-def wrap_phase(phase):
+def _wrap_phase(phase):
     ''' Wrap phase into the range of [-180, 180] degrees.
         Arguments
             phase: float
@@ -62,14 +64,14 @@ def val_int(text, safe=[], warning=[]):
         # 1st test if the number is in the safe range
         boolean = True
         for op, num in safe:
-            boolean *= compare(number, op, num)
+            boolean *= _compare(number, op, num)
         if boolean:
             code = 2
         else:
             boolean = True
             for op, num in warning:
-                boolean *= compare(number, op, num)
-            if boolean and warning: # make sure there is something to compare
+                boolean *= _compare(number, op, num)
+            if boolean and warning: # make sure there is something to _compare
                 code = 1
             else:
                 code = 0
@@ -89,13 +91,13 @@ def val_float(text, safe=[], warning=[]):
         # 1st test if the number is in the safe range
         boolean = True
         for op, num in safe:
-            boolean *= compare(number, op, num)
+            boolean *= _compare(number, op, num)
         if boolean:
             code = 2
         else:
             boolean = True
             for op, num in warning:
-                boolean *= compare(number, op, num)
+                boolean *= _compare(number, op, num)
             if boolean:
                 code = 1
             else:
@@ -118,7 +120,7 @@ def val_lia_phase(text):
         if phase <= 180 and phase > -180:
             return 2, phase
         else:
-            return 1, wrap_phase(phase)
+            return 1, _wrap_phase(phase)
     except ValueError:
         return 0, 0
 

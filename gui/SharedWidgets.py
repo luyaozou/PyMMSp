@@ -5,20 +5,10 @@ import random
 from math import ceil
 import numpy as np
 from api import validator as api_val
+from api import synthesizer as api_syn
+from api import lockin as api_lia
+from api import pci as api_pci
 
-
-# LOCKIN AMPLIFIER SENSTIVITY LIST
-LIASENSLIST = ['2 nV', '5 nV', '10 nV', '20 nV', '50 nV', '100 nV',
-               '200 nV', '500 nV', '1 uV', '2 uV', '5 uV', '10 uV',
-               '20 uV', '50 uV', '100 uV', '200 uV', '500 uV', '1 mV',
-               '2 mV', '5 mV', '10 mV', '20 mV', '50 mV', '100 mV',
-               '200 mV', '500 mV', '1 V'
-               ]
-
-# LOCKIN AMPLIFIER TIME CONSTANT LIST
-LIATCLIST = ['10 us', '30 us', '100 us', '300 us', '1 ms', '3 ms', '10 ms',
-             '30 ms', '100 ms', '300 ms', '1 s', '3 s', '10 s', '30 s'
-             ]
 
 # QPushButton label dictionary
 BUTTONLABEL = {'confirm':['Lets do it', 'Go forth and conquer', 'Ready to go',
@@ -28,6 +18,43 @@ BUTTONLABEL = {'confirm':['Lets do it', 'Go forth and conquer', 'Ready to go',
                'reject':['Never mind', 'I changed my mind', 'Cancel', 'I refuse'],
                'error':['Oopsy!', 'Something got messed up', 'Bad']
                 }
+
+
+# VDI band information.
+# Keys are the indices used in VDIBandComboBox, and values are the names, multiplication factors, and recommended frequency ranges.
+VDIBANDNAME = {0: '1',
+               1: '2',
+               2: '3',
+               3: '4',
+               4: '5',
+               5: '6',
+               6: '7',
+               7: '8a',
+               8: '8b',
+               9: '9'}
+
+VDIBANDMULTI = {0: 1,
+                1: 2,
+                2: 3,
+                3: 3,
+                4: 6,
+                5: 9,
+                6: 12,
+                7: 18,
+                8: 27,
+                9: 27}
+
+VDIBANDRANGE = {0: (20, 50),
+                1: (50, 75),
+                2: (70, 115),
+                3: (90, 140),
+                4: (140, 225),
+                5: (220, 330),
+                6: (270, 460),
+                7: (430, 700),
+                8: (650, 800),
+                9: (700, 1000)}
+
 
 def btn_label(btn_type):
     ''' Randomly generate a QPushButton label.
@@ -101,39 +128,224 @@ class VDIBandComboBox(QtGui.QComboBox):
     def __init__(self):
         QtGui.QWidget.__init__(self)
 
-        bandList = ['1 (x1): 0-50 GHz',
-                    '2 (x2): GHz',
-                    '3 (x3): 70-110 GHz',
-                    '4 (x3): 110-140 GHz',
-                    '5 (x6): 140-220 GHz',
-                    '6 (x9): 220-330 GHz',
-                    '7 (x12): 325-430 GHz',
-                    '8a (x18): 430-700 GHz',
-                    '8b (x27): 600-850 GHz',
-                    '9 (x27): 700-1000 GHz']
+        bandList = []
+
+        for key in VDIBANDNAME:
+            msg = 'Band {:s} (x{:d}): {:d}-{:d} GHz'.format(VDIBANDNAME[key], VDIBANDMULTI[key], *VDIBANDRANGE[key])
+            bandList.append(msg)
 
         self.addItems(bandList)
         self.setCurrentIndex(4)
 
 
-class liaSensBox(QtGui.QComboBox):
+class LIASensBox(QtGui.QComboBox):
     ''' Lockin sensitivity selection box '''
 
     def __init__(self):
         QtGui.QWidget.__init__(self)
 
-        self.addItems(LIASENSLIST)
+        self.addItems(api_lia.SENS_LIST)
         self.setCurrentIndex(26)
 
 
-class liaTCBox(QtGui.QComboBox):
+class LIATCBox(QtGui.QComboBox):
     ''' Lockin time constant selection box '''
 
     def __init__(self):
         QtGui.QWidget.__init__(self)
 
-        self.addItems(LIATCLIST)
+        self.addItems(api_lia.TC_LIST)
         self.setCurrentIndex(5)
+
+
+class SynInfo():
+    ''' Synthesizer info '''
+
+    def __init__(self):
+
+        self.instName = ''
+        self.instInterface = ''
+        self.instInterfaceNum = 0
+        self.instRemoteDisp = False
+        self.rfToggle = False
+        self.synPower = -20
+        self.synFreq = 3*1e9      # Hz
+        self.vdiBandIndex = 4
+        self.vdiBandMultiplication = VDIBANDMULTI[self.vdiBandIndex]
+        self.probFreq = self.synFreq * self.vdiBandMultiplication
+        self.modToggle = False
+        self.AM1Toggle = False
+        self.AM1Freq = 0          # Hz
+        self.AM1DepthPercent = 0  # %
+        self.AM1DepthDbm = -20    # dbm
+        self.AM1Src = ''
+        self.AM1Wave = ''
+        self.AM2Toggle = False
+        self.AM2Freq = 0          # Hz
+        self.AM2DepthPercent = 0  # %
+        self.AM2DepthDbm = -20    # dbm
+        self.AM2Src = ''
+        self.AM2Wave = ''
+        self.FM1Toggle = False
+        self.FM1Freq = 0          # Hz
+        self.FM1Dev = 0           # Hz
+        self.FM1Src = ''
+        self.FM1Wave = ''
+        self.FM2Toggle = False
+        self.FM2Freq = 0          # Hz
+        self.FM2Dev = 0           # Hz
+        self.FM2Src = ''
+        self.FM2Wave = ''
+        self.PM1Toggle = False
+        self.PM1Freq = 0          # Hz
+        self.PM1Dev = 0           # Hz
+        self.PM1Src = ''
+        self.PM1Wave = ''
+        self.PM2Toggle = False
+        self.PM2Freq = 0          # Hz
+        self.PM2Dev = 0           # Hz
+        self.PM2Src = ''
+        self.PM2Wave = ''
+        self.LFToggle = False
+        self.LFVoltage = 0
+        self.LFSrc = ''
+        self.errMsg = ''
+
+    def full_info_query(self, synHandle):
+        ''' Query all information '''
+
+        if synHandle:
+            self.instName = synHandle.resource_name
+            self.instInterface = str(synHandle.interface_type)
+            self.instInterfaceNum = synHandle.interface_number
+            self.instRemoteDisp = api_syn.read_remote_disp(synHandle)
+            self.rfToggle = api_syn.read_power_toggle(synHandle)
+            self.synPower = api_syn.read_syn_power(synHandle)
+            self.synFreq = api_syn.read_syn_freq(synHandle)
+            self.probFreq = self.synFreq * self.vdiBandMultiplication
+            self.modToggle = api_syn.read_mod_toggle(synHandle)
+            self.AM1Toggle = api_syn.read_am_state(synHandle, 1)
+            self.AM1Freq = api_syn.read_am_freq(synHandle, 1)
+            self.AM1DepthPercent, self.AM1DepthDbm = api_syn.read_am_depth(synHandle, 1)
+            self.AM1Src = api_syn.read_am_source(synHandle, 1)
+            self.AM2Toggle = api_syn.read_am_state(synHandle, 2)
+            self.AM2Freq = api_syn.read_am_freq(synHandle, 2)
+            self.AM2DepthPercent, self.AM2DepthDbm = api_syn.read_am_depth(synHandle, 2)
+            self.AM2Src = api_syn.read_am_source(synHandle, 2)
+            self.FM1Toggle = api_syn.read_fm_state(synHandle, 1)
+            self.FM1Freq = api_syn.read_fm_freq(synHandle, 1)
+            self.FM1Dev = api_syn.read_fm_dev(synHandle, 1)
+            self.FM1Src = api_syn.read_fm_source(synHandle, 1)
+            self.FM1Wave = api_syn.read_fm_waveform(synHandle, 1)
+            self.FM2Toggle = api_syn.read_fm_state(synHandle, 2)
+            self.FM2Freq = api_syn.read_fm_freq(synHandle, 2)
+            self.FM2Dev = api_syn.read_fm_dev(synHandle, 2)
+            self.FM2Src = api_syn.read_fm_source(synHandle, 2)
+            self.FM2Wave = api_syn.read_fm_waveform(synHandle, 2)
+            self.PM1Toggle = api_syn.read_pm_state(synHandle, 1)
+            self.PM1Freq = api_syn.read_pm_freq(synHandle, 1)
+            self.PM1Dev = api_syn.read_pm_dev(synHandle, 1)
+            self.PM1Src = api_syn.read_pm_source(synHandle, 1)
+            self.PM1Wave = api_syn.read_pm_waveform(synHandle, 1)
+            self.PM2Toggle = api_syn.read_pm_state(synHandle, 2)
+            self.PM2Freq = api_syn.read_pm_freq(synHandle, 2)
+            self.PM2Dev = api_syn.read_pm_dev(synHandle, 2)
+            self.PM2Src = api_syn.read_pm_source(synHandle, 2)
+            self.PM2Wave = api_syn.read_pm_waveform(synHandle, 2)
+            self.LFToggle = api_syn.read_lf_toggle(synHandle)
+            self.LFVoltage = api_syn.read_lf_voltage(synHandle)
+            self.LFSrc = api_syn.read_lf_source(synHandle)
+            self.errMsg = ''
+        else:
+            self.instName = 'No Instrument'
+
+
+class LiaInfo():
+    ''' Lockin amplifier info '''
+
+    def __init__(self):
+
+        self.instName = ''
+        self.instInterface = ''
+        self.instInterfaceNum = 0
+        self.refSrc = ''
+        self.refFreq = 1
+        self.refPhase = 0
+        self.refHarm = 1
+        self.refHarmIndex = api_lia.HARM_LIST.index(str(self.refHarm))
+        self.configIndex = 1
+        self.configText = api_lia.INPUT_CONFIG_LIST[self.configIndex]
+        self.groundingIndex = 1
+        self.groundingText = api_lia.INPUT_GND_LIST[self.groundingIndex]
+        self.coupleIndex = 1
+        self.coupleText = api_lia.COUPLE_LIST[self.coupleIndex]
+        self.inputFilterIndex = 1
+        self.inputFilterText = api_lia.INPUT_FILTER_LIST[self.inputFilterIndex]
+        self.sensIndex = 26
+        self.sensText = api_lia.SENS_LIST[self.sensIndex]
+        self.tcIndex = 5
+        self.tcText = api_lia.TC_LIST[self.tcIndex]
+        self.reserveIndex = 1
+        self.reserveText = api_lia.RESERVE_LIST[self.reserveIndex]
+        self.lpSlopeIndex = 0
+        self.lpSlopeText = api_lia.LPSLOPE_LIST[self.lpSlopeIndex]
+        self.disp1Text = ''
+        self.disp2Text = ''
+        self.front1Text = ''
+        self.front2Text = ''
+        self.sampleRateIndex = 0
+        self.sampleRateText = api_lia.SAMPLE_RATE_LIST[self.sampleRateIndex]
+
+    def full_info_query(self, liaHandle):
+        ''' Query all information '''
+
+        if liaHandle:
+            self.instName = liaHandle.resource_name()
+            self.instInterface = str(liaHandle.interface_type())
+            self.instInterfaceNum = liaHandle.interface_number
+            self.refSrc = api_lia.read_ref_source(liaHandle)
+            self.refFreq = api_lia.read_freq(liaHandle)
+            self.refPhase = api_lia.read_phase(liaHandle)
+            self.refHarm = api_lia.read_harm(liaHandle)
+            self.refHarmIndex = api_lia.HARM_LIST.index(str(self.refHarm))
+            self.configIndex = api_lia.read_input_config(liaHandle)
+            self.configText = api_lia.INPUT_CONFIG_LIST[self.configIndex]
+            self.groundingIndex = api_lia.read_input_grounding(liaHandle)
+            self.groundingText = api_lia.INPUT_GND_LIST[self.groundingText]
+            self.coupleIndex = api_lia.read_couple(liaHandle)
+            self.coupleText = api_lia.COUPLE_LIST[self.coupleIndex]
+            self.inputFilterIndex = api_lia.read_input_filter(liaHandle)
+            self.inputFilterText = api_lia.INPUT_FILTER_LIST[self.inputFilterIndex]
+            self.sensIndex = api_lia.read_sens(liaHandle)
+            self.sensText = api_lia.SENS_LIST[self.sensIndex]
+            self.tcIndex = api_lia.read_tc(liaHarmLabel)
+            self.tcText = api_lia.TC_LIST[self.tcIndex]
+            self.reserveIndex = api_lia.read_reserve(liaHandle)
+            self.reserveText = api_lia.RESERVE_LIST[self.reserveIndex]
+            self.lpSlopeIndex = api_lia.read_lp_slope(liaHandle)
+            self.lpSlopeText = api_lia.LPSLOPE_LIST[self.lpSlopeIndex]
+            self.disp1Text, self.disp2Text = api_lia.read_disp(liaHandle)
+            self.front1Text, self.front2Text = api_lia.read_front_panel(liaHandle)
+            self.sampleRateIndex = api_lia.read_sample_rate(liaHandle)
+            self.sampleRateText = api_lia.SAMPLE_RATE_LIST(self.sampleRateIndex)
+        else:
+            self.instName = 'No Instrument'
+
+
+class ScopeInfo():
+    ''' PCI card Oscilloscope info '''
+
+    def __init__(self):
+
+        self.instName = ''
+
+
+class MotorInfo():
+    ''' Step motor info '''
+
+    def __init__(self):
+
+        self.instName = ''
 
 
 class JPLLIAScanEntry(QtGui.QWidget):
@@ -147,8 +359,8 @@ class JPLLIAScanEntry(QtGui.QWidget):
         self.stopFreqFill = QtGui.QLineEdit()
         self.stepFill = QtGui.QLineEdit()
         self.avgFill = QtGui.QLineEdit()
-        self.sensSel = liaSensBox()
-        self.tcSel = liaTCBox()
+        self.sensSel = LIASensBox()
+        self.tcSel = LIATCBox()
         self.waitTimeFill = QtGui.QLineEdit()
         self.commentFill = QtGui.QLineEdit()
         # validate default values
@@ -229,8 +441,8 @@ class JPLLIABatchListEntry(QtGui.QWidget):
         self.stopFreqLabel.setText('{:.3f}'.format(entry_setting[1]))
         self.stepLabel.setText('{:.3f}'.format(entry_setting[2]))
         self.avgLabel.setText('{:d}'.format(entry_setting[3]))
-        self.sensLabel.setText(LIASENSLIST[entry_setting[4]])
-        self.tcLabel.setText(LIATCLIST[entry_setting[5]])
+        self.sensLabel.setText(api_lia.SENS_LIST[entry_setting[4]])
+        self.tcLabel.setText(api_lia.TC_LIST[entry_setting[5]])
         self.waitTimeLabel.setText('{:4g}'.format(entry_setting[6]))
 
         # set text color to grey

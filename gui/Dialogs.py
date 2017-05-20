@@ -335,6 +335,7 @@ class SynInfoDialog(QtGui.QDialog):
         modGroupLayout.addWidget(self.lfVolLabel, 7, 3)
         self.modGroup.setLayout(modGroupLayout)
 
+        self.refreshButton = QtGui.QPushButton('Manual Refresh')
         self.acceptButton = QtGui.QPushButton(Shared.btn_label('accept'))
 
         mainLayout = QtGui.QGridLayout()
@@ -344,6 +345,7 @@ class SynInfoDialog(QtGui.QDialog):
         mainLayout.addWidget(self.acceptButton, 3, 2, 1, 1)
         self.setLayout(mainLayout)
 
+        self.refreshButton.clicked.connect(self.manual_refresh)
         self.acceptButton.clicked.connect(self.accept)
 
     def display(self):
@@ -351,7 +353,7 @@ class SynInfoDialog(QtGui.QDialog):
         self.acceptButton.setText(Shared.btn_label('accept'))
 
         if self.parent.synHandle:
-            self.update()
+            self.print_info()
             self.instGroup.show()
             self.rfGroup.show()
             self.modGroup.show()
@@ -362,60 +364,64 @@ class SynInfoDialog(QtGui.QDialog):
 
         self.exec_()
 
-    def update(self):
+    def manual_refresh(self):
+
+        self.parent.synInfo.full_info_query(self.parent.synHandle)
+        self.print_info()
+
+    def print_info(self):
 
         # update instrument panel
-        self.instNameLabel.setText(self.parent.synHandle.resource_name)
-        self.instInterfaceLabel.setText(str(self.parent.synHandle.interface_type))
-        self.instInterfaceNumLabel.setText(str(self.parent.synHandle.interface_number))
-        self.instRemoteDispLabel.setText('ON' if api_syn.read_remote_disp(self.parent.synHandle) else 'OFF')
+        self.instNameLabel.setText(self.parent.synInfo.instName)
+        self.instInterfaceLabel.setText(self.parent.synInfo.instInterface)
+        self.instInterfaceNumLabel.setText(str(self.parent.synInfo.instInterfaceNum))
+        self.instRemoteDispLabel.setText('ON' if self.parent.synInfo.instRemoteDisp else 'OFF')
 
         # update RF setting panel
-        self.rfOutputLabel.setText('ON' if api_syn.read_power_toggle(self.parent.synHandle) else 'OFF')
-        self.modOutputLabel.setText('ON' if api_syn.read_mod_toggle(self.parent.synHandle) else 'OFF')
-        self.synFreqLabel.setText('{:.9f} MHz'.format(api_syn.read_syn_freq(self.parent.synHandle)*1e-6))
+        self.rfOutputLabel.setText('ON' if self.parent.synInfo.rfToggle else 'OFF')
+        self.modOutputLabel.setText('ON' if self.parent.synInfo.modToggle else 'OFF')
+        self.synFreqLabel.setText('{:.9f} MHz'.format(self.parent.synInfo.synFreqLabel * 1e-6))
 
         # update modulation setting panel
-        self.am1StateLabel.setText('ON' if api_syn.read_am_state(self.parent.synHandle, 1) else 'OFF')
-        self.am1SrcLabel.setText(api_syn.read_am_source(self.parent.synHandle, 1))
-        self.am1DepthLabel.setText('{:.1%} ({:.0f} dB)'.format(*api_syn.read_am_depth(self.parent.synHandle, 1)))
-        self.am1FreqLabel.setText(siFormat(api_syn.read_am_freq(self.parent.synHandle, 1), suffix='Hz'))
-        self.am1WaveLabel.setText(api_syn.read_am_waveform(self.parent.synHandle, 1))
+        self.am1StateLabel.setText('ON' if self.parent.synInfo.AM1Toggle else 'OFF')
+        self.am1SrcLabel.setText(self.parent.synInfo.AM1Src)
+        self.am1DepthLabel.setText('{:.1%} ({:.0f} dB)'.format(self.parent.synInfo.AM1DepthPercent, self.parent.synInfo.AM1DepthDbm))
+        self.am1FreqLabel.setText(siFormat(self.parent.synInfo.AM1Freq, suffix='Hz'))
+        self.am1WaveLabel.setText(self.parent.synInfo.AM1Wave)
 
-        self.am2StateLabel.setText('ON' if api_syn.read_am_state(self.parent.synHandle, 2) else 'OFF')
-        self.am2SrcLabel.setText(api_syn.read_am_source(self.parent.synHandle, 2))
-        self.am2DepthLabel.setText('{:.1%} ({:.0f} dB)'.format(*api_syn.read_am_depth(self.parent.synHandle, 2)))
-        self.am2FreqLabel.setText(siFormat(api_syn.read_am_freq(self.parent.synHandle, 2), suffix='Hz'))
-        self.am2WaveLabel.setText(api_syn.read_am_waveform(self.parent.synHandle, 2))
+        self.am2StateLabel.setText('ON' if self.parent.synInfo.AM2Toggle else 'OFF')
+        self.am2SrcLabel.setText(self.parent.synInfo.AM2Src)
+        self.am2DepthLabel.setText('{:.1%} ({:.0f} dB)'.format(self.parent.synInfo.AM2DepthPercent, self.parent.synInfo.AM2DepthDbm))
+        self.am2FreqLabel.setText(siFormat(self.parent.synInfo.AM2Freq, suffix='Hz'))
+        self.am2WaveLabel.setText(self.parent.synInfo.AM2Wave)
 
-        self.fm1StateLabel.setText('ON' if api_syn.read_fm_state(self.parent.synHandle, 1) else 'OFF')
-        self.fm1SrcLabel.setText(api_syn.read_fm_source(self.parent.synHandle, 1))
-        self.fm1DevLabel.setText(siFormat(api_syn.read_fm_dev(self.parent.synHandle, 1), suffix='Hz'))
-        self.fm1FreqLabel.setText(siFormat(api_syn.read_fm_freq(self.parent.synHandle, 1), suffix='Hz'))
-        self.fm1WaveLabel.setText(api_syn.read_fm_waveform(self.parent.synHandle, 1))
+        self.fm1StateLabel.setText('ON' if self.parent.synInfo.FM1Toggle else 'OFF')
+        self.fm1SrcLabel.setText(self.parent.synInfo.FM1Src)
+        self.fm1DevLabel.setText(siFormat(self.parent.synInfo.FM1Dev, suffix='Hz'))
+        self.fm1FreqLabel.setText(siFormat(self.parent.synInfo.FM1Freq, suffix='Hz'))
+        self.fm1WaveLabel.setText(self.parent.synInfo.FM1Wave)
 
-        self.fm2StateLabel.setText('ON' if api_syn.read_fm_state(self.parent.synHandle, 2) else 'OFF')
-        self.fm2SrcLabel.setText(api_syn.read_fm_source(self.parent.synHandle, 2))
-        self.fm2DevLabel.setText(siFormat(api_syn.read_fm_dev(self.parent.synHandle, 2), suffix='Hz'))
-        self.fm2FreqLabel.setText(siFormat(api_syn.read_fm_freq(self.parent.synHandle, 2), suffix='Hz'))
-        self.fm2WaveLabel.setText(api_syn.read_fm_waveform(self.parent.synHandle, 2))
+        self.fm2StateLabel.setText('ON' if self.parent.synInfo.FM2Toggle else 'OFF')
+        self.fm2SrcLabel.setText(self.parent.synInfo.FM2Src)
+        self.fm2DevLabel.setText(siFormat(self.parent.synInfo.FM2Dev, suffix='Hz'))
+        self.fm2FreqLabel.setText(siFormat(self.parent.synInfo.FM2Freq, suffix='Hz'))
+        self.fm2WaveLabel.setText(self.parent.synInfo.FM2Wave)
 
-        self.pm1StateLabel.setText('ON' if api_syn.read_pm_state(self.parent.synHandle, 1) else 'OFF')
-        self.pm1SrcLabel.setText(api_syn.read_pm_source(self.parent.synHandle, 1))
-        self.pm1DevLabel.setText(siFormat(api_syn.read_pm_dev(self.parent.synHandle, 1), suffix='rad'))
-        self.pm1FreqLabel.setText(siFormat(api_syn.read_pm_freq(self.parent.synHandle, 1), suffix='Hz'))
-        self.pm1WaveLabel.setText(api_syn.read_pm_waveform(self.parent.synHandle, 1))
+        self.pm1StateLabel.setText('ON' if self.parent.synInfo.PM1Toggle else 'OFF')
+        self.pm1SrcLabel.setText(self.parent.synInfo.PM1Src)
+        self.pm1DevLabel.setText(siFormat(self.parent.synInfo.PM1Dev, suffix='rad'))
+        self.pm1FreqLabel.setText(siFormat(self.parent.synInfo.PM1Freq, suffix='Hz'))
+        self.pm1WaveLabel.setText(self.parent.synInfo.PM1Wave)
 
-        self.pm2StateLabel.setText('ON' if api_syn.read_pm_state(self.parent.synHandle, 2) else 'OFF')
-        self.pm2SrcLabel.setText(api_syn.read_pm_source(self.parent.synHandle, 2))
-        self.pm2DevLabel.setText(siFormat(api_syn.read_pm_dev(self.parent.synHandle, 2), suffix='rad'))
-        self.pm2FreqLabel.setText(siFormat(api_syn.read_pm_freq(self.parent.synHandle, 2), suffix='Hz'))
-        self.pm2WaveLabel.setText(api_syn.read_pm_waveform(self.parent.synHandle, 2))
+        self.pm2StateLabel.setText('ON' if self.parent.synInfo.PM2Toggle else 'OFF')
+        self.pm2SrcLabel.setText(self.parent.synInfo.PM2Src)
+        self.pm2DevLabel.setText(siFormat(self.parent.synInfo.PM2Dev, suffix='rad'))
+        self.pm2FreqLabel.setText(siFormat(self.parent.synInfo.PM2Freq,  suffix='Hz'))
+        self.pm2WaveLabel.setText(self.parent.synInfo.PM2Wave)
 
-        lf_vol, lf_status = api_syn.read_lf(self.parent.synHandle)
-        self.lfStateLabel.setText('ON' if lf_status else 'OFF')
-        self.lfSrcLabel.setText(api_syn.read_lf_source(self.parent.synHandle))
-        self.lfVolLabel.setText(siFormat(lf_vol, suffix='V'))
+        self.lfStateLabel.setText('ON' if self.parent.synInfo.LFToggle else 'OFF')
+        self.lfSrcLabel.setText(self.parent.synInfo.LFSrc)
+        self.lfVolLabel.setText(siFormat(self.parent.synInfo.LFVoltage, suffix='V'))
 
 
 class LockinInfoDialog(QtGui.QDialog):
@@ -461,12 +467,12 @@ class LockinInfoDialog(QtGui.QDialog):
         self.inputGroup.setTitle('Input and Filter')
         self.inputConfigLabel = QtGui.QLabel()
         self.inputGroundingLabel = QtGui.QLabel()
-        self.inputCouplingLabel = QtGui.QLabel()
+        self.inputCoupleLabel = QtGui.QLabel()
         self.inputFilterLabel = QtGui.QLabel()
         inputGroupLayout = QtGui.QFormLayout()
         inputGroupLayout.addRow(QtGui.QLabel('Input Config'), self.inputConfigLabel)
         inputGroupLayout.addRow(QtGui.QLabel('Input Grounding'), self.inputGroundingLabel)
-        inputGroupLayout.addRow(QtGui.QLabel('Input Coupling'), self.inputCouplingLabel)
+        inputGroupLayout.addRow(QtGui.QLabel('Input Coupling'), self.inputCoupleLabel)
         inputGroupLayout.addRow(QtGui.QLabel('Input Filter'), self.inputFilterLabel)
         self.inputGroup.setLayout(inputGroupLayout)
 
@@ -474,12 +480,12 @@ class LockinInfoDialog(QtGui.QDialog):
         self.gainSensLabel = QtGui.QLabel()
         self.gainReserveLabel = QtGui.QLabel()
         self.gainTCLabel = QtGui.QLabel()
-        self.gainFilterLabel = QtGui.QLabel()
+        self.lpSlopeLabel = QtGui.QLabel()
         gainGroupLayout = QtGui.QFormLayout()
         gainGroupLayout.addRow(QtGui.QLabel('Sensitivity'), self.gainSensLabel)
         gainGroupLayout.addRow(QtGui.QLabel('Time Constant'), self.gainTCLabel)
         gainGroupLayout.addRow(QtGui.QLabel('Reserve'), self.gainReserveLabel)
-        gainGroupLayout.addRow(QtGui.QLabel('Low-pass Filter Slope'), self.gainFilterLabel)
+        gainGroupLayout.addRow(QtGui.QLabel('Low-pass Filter Slope'), self.lpSlopeLabel)
         self.gainGroup.setLayout(gainGroupLayout)
 
         self.outputGroup.setTitle('Display and Output')
@@ -501,6 +507,7 @@ class LockinInfoDialog(QtGui.QDialog):
         outputGroupLayout.addWidget(self.outputSRateLabel, 3, 1, 1, 2)
         self.outputGroup.setLayout(outputGroupLayout)
 
+        self.refreshButton = QtGui.QPushButton('Manual Refresh')
         self.acceptButton = QtGui.QPushButton(Shared.btn_label('accept'))
 
         mainLayout = QtGui.QGridLayout()
@@ -512,6 +519,7 @@ class LockinInfoDialog(QtGui.QDialog):
         mainLayout.addWidget(self.acceptButton, 3, 2, 1, 2)
         self.setLayout(mainLayout)
 
+        self.refreshButton.clicked.connect(self.manual_refresh)
         self.acceptButton.clicked.connect(self.accept)
 
     def display(self):
@@ -519,7 +527,7 @@ class LockinInfoDialog(QtGui.QDialog):
         self.acceptButton.setText(Shared.btn_label('accept'))
 
         if self.parent.liaHandle:
-            self.update()
+            self.print_info()
             self.instGroup.show()
             self.refGroup.show()
             self.gainGroup.show()
@@ -534,36 +542,39 @@ class LockinInfoDialog(QtGui.QDialog):
 
         self.exec_()
 
-    def update(self):
+    def manual_refresh(self):
+
+        self.parent.synInfo.full_info_query(self.parent.liaHandle)
+        self.print_info()
+
+    def print_info(self):
 
         # update instrument panel
-        self.instNameLabel.setText(self.parent.liaHandle.resource_name)
-        self.instInterfaceLabel.setText(str(self.parent.liaHandle.interface_type))
-        self.instInterfaceNumLabel.setText(str(self.parent.liaHandle.interface_number))
+        self.instNameLabel.setText(self.parent.liaInfo.instName)
+        self.instInterfaceLabel.setText(self.parent.liaInfo.instInterface)
+        self.instInterfaceNumLabel.setText(str(self.parent.liaInfo.instInterfaceNum))
 
         # update ref group
-        self.refSrcLabel.setText(api_lia.read_ref_source(self.parent.liaHandle))
-        self.refFreqLabel.setText(siFormat(api_lia.read_freq(self.parent.liaHandle), suffix='Hz'))
-        self.refHarmLabel.setText('{:d}'.format(api_lia.read_harm(self.parent.liaHandle)))
-        self.refPhaseLabel.setText('{:.2f} deg'.format(api_lia.read_phase(self.parent.liaHandle)))
+        self.refSrcLabel.setText(self.parent.liaInfo.refSrc)
+        self.refFreqLabel.setText(siFormat(self.parent.liaInfo.refFreq, suffix='Hz'))
+        self.refHarmLabel.setText('{:d}'.format(self.parent.liaInfo.refHrefHarm))
+        self.refPhaseLabel.setText('{:.2f} deg'.format(self.parent.liaInfo.refPhase))
 
         # update input group
-        self.inputConfigLabel.setText(api_lia.read_input_config(self.parent.liaHandle))
-        self.inputGroundingLabel.setText(api_lia.read_input_grounding(self.parent.liaHandle))
-        self.inputCouplingLabel.setText(api_lia.read_couple(self.parent.liaHandle))
-        self.inputFilterLabel.setText(api_lia.read_input_filter(self.parent.liaHandle))
+        self.inputConfigLabel.setText(self.parent.liaInfo.configText)
+        self.inputGroundingLabel.setText(self.parent.liaInfo.groundingText)
+        self.inputCoupleLabel.setText(self.parent.liaInfo.coupleText)
+        self.inputFilterLabel.setText(self.parent.liaInfo.inputFilterText)
 
         # update gain group
-        self.gainSensLabel.setText(Shared.LIASENSLIST[api_lia.read_sens(self.parent.liaHandle)])
-        self.gainTCLabel.setText(Shared.LIATCLIST[api_lia.read_tc(self.parent.liaHandle)])
-        self.gainReserveLabel.setText(api_lia.read_reserve(self.parent.liaHandle))
-        self.gainFilterLabel.setText(api_lia.read_lp_slope(self.parent.liaHandle))
+        self.gainSensLabel.setText(self.parent.liaInfo.sensText)
+        self.gainTCLabel.setText(self.parent.liaInfo.tcText)
+        self.gainReserveLabel.setText(self.parent.liaInfo.reserveText)
+        self.lpSlopeLabel.setText(self.parent.liaInfo.lpSlopeText)
 
         # update output group
-        disp1, disp2 = api_lia.read_disp(self.parent.liaHandle)
-        self.outputDisp1Label.setText(disp1)
-        self.outputDisp2Label.setText(disp2)
-        front1, front2 = api_lia.read_front_panel(self.parent.liaHandle)
-        self.outputFront1Label.setText(front1)
-        self.outputFront2Label.setText(front2)
-        self.outputSRateLabel.setText(api_lia.read_sample_rate(self.parent.liaHandle))
+        self.outputDisp1Label.setText(self.parent.liaInfo.disp1Text)
+        self.outputDisp2Label.setText(self.parent.liaInfo.disp2Text)
+        self.outputFront1Label.setText(self.parent.liaInfo.front1Text)
+        self.outputFront2Label.setText(self.parent.liaInfo.front2Text)
+        self.outputSRateLabel.setText(self.parent.liaInfo.sampleRateText)
