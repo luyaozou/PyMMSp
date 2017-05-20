@@ -52,7 +52,7 @@ class SynStatus(QtGui.QGroupBox):
 
         # put modulation settings in a groupbox
         modGroup = QtGui.QGroupBox()
-        modGroup.setTitle('Mod Settings')
+        modGroup.setTitle('Modulation Settings')
         modGroup.setAlignment(QtCore.Qt.AlignLeft)
         modGroup.setCheckable(False)
         modGroupLayout = QtGui.QGridLayout()
@@ -72,28 +72,29 @@ class SynStatus(QtGui.QGroupBox):
         ## -- Set layout and add GUI elements
         mainLayout = QtGui.QGridLayout()
         mainLayout.setAlignment(QtCore.Qt.AlignTop)
-        # first column
+        # top buttons
         mainLayout.addWidget(refreshButton, 0, 0, 1, 2)
         mainLayout.addWidget(moreInfoButton, 0, 2, 1, 2)
         mainLayout.addWidget(QtGui.QLabel('Inst. Name'), 1, 0)
         mainLayout.addWidget(self.addressText, 1, 1, 1, 3)
+        # RF & LF settings
         mainLayout.addWidget(QtGui.QLabel('RF Freq'), 2, 0)
         mainLayout.addWidget(self.synFreq, 2, 1, 1, 3)
         mainLayout.addWidget(QtGui.QLabel('RF Output'), 3, 0)
         mainLayout.addWidget(self.synRF, 3, 1)
         mainLayout.addWidget(QtGui.QLabel('Power'), 4, 0)
         mainLayout.addWidget(self.synPower, 4, 1)
-        mainLayout.addWidget(QtGui.QLabel('Modulation'), 5, 0)
-        mainLayout.addWidget(self.synMod, 5, 1)
-        mainLayout.addWidget(QtGui.QLabel('LF Output'), 6, 0)
-        mainLayout.addWidget(self.synLF, 6, 1)
-        mainLayout.addWidget(QtGui.QLabel('LF Voltage'), 7, 0)
-        mainLayout.addWidget(self.synLFV, 7, 1)
-        self.setLayout(mainLayout)
-        # second column
-        mainLayout.addWidget(modGroup, 3, 2, 5, 2)
+        mainLayout.addWidget(QtGui.QLabel('Modulation'), 2, 2)
+        mainLayout.addWidget(self.synMod, 2, 3)
+        mainLayout.addWidget(QtGui.QLabel('LF Output'), 3, 2)
+        mainLayout.addWidget(self.synLF, 3, 3)
+        mainLayout.addWidget(QtGui.QLabel('LF Voltage'), 4, 2)
+        mainLayout.addWidget(self.synLFV, 4, 3)
+        # Modulation setting group
+        mainLayout.addWidget(modGroup, 5, 0, 3, 4)
         mainLayout.addWidget(errMsgBtn, 8, 0)
         mainLayout.addWidget(self.errMsgLabel, 8, 1, 1, 3)
+        self.setLayout(mainLayout)
 
         ## -- Trigger status updates
         refreshButton.clicked.connect(self.manual_refresh)
@@ -890,8 +891,8 @@ class LockinCtrl(QtGui.QGroupBox):
         mainLayout.addWidget(self.groundingSel, 2, 3)
         mainLayout.addWidget(QtGui.QLabel('Input Filter'), 3, 2)
         mainLayout.addWidget(self.filterSel, 3, 3)
-        mainLayout.addWidget(autoPhaseBtn, 4, 0)
-        mainLayout.addWidget(resetBtn, 4, 2)
+        mainLayout.addWidget(autoPhaseBtn, 4, 2)
+        mainLayout.addWidget(resetBtn, 4, 3)
         self.setLayout(mainLayout)
 
         ## -- Trigger setting status and communication

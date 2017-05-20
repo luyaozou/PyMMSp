@@ -20,12 +20,13 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
         QtGui.QMainWindow.__init__(self)
 
-        self.title_text = 'Yo!'
-
         # Set global window properties
-        self.setWindowTitle(self.title_text)
+        self.setWindowTitle('Yo! Go PySpec!')
         self.setMinimumWidth(1500)
         self.setMinimumHeight(840)
+        self.testModeSignLabel = QtGui.QLabel('[TEST MODE ACTIVE -- NOTHING IS REAL]!')
+        self.testModeSignLabel.setStyleSheet('color: {:s}'.format(Shared.msgcolor(0)))
+        self.testModeSignLabel.setAlignment(QtCore.Qt.AlignCenter)
 
         # Initiate pyvisa instrument objects
         self.synHandle = None
@@ -119,7 +120,8 @@ class MainWindow(QtGui.QMainWindow):
         self.mainLayout.setSpacing(6)
         self.mainLayout.addWidget(self.synStatus, 0, 0, 3, 2)
         self.mainLayout.addWidget(self.liaStatus, 3, 0, 3, 2)
-        self.mainLayout.addWidget(self.scopeStatus, 6, 0, 2, 2)
+        self.mainLayout.addWidget(self.scopeStatus, 6, 0, 1, 2)
+        self.mainLayout.addWidget(self.testModeSignLabel, 7, 0, 1, 2)
         self.mainLayout.addWidget(self.synCtrl, 0, 2, 3, 3)
         self.mainLayout.addWidget(self.liaCtrl, 3, 2, 2, 3)
         self.mainLayout.addWidget(self.scopeCtrl, 5, 2, 2, 3)
@@ -141,6 +143,8 @@ class MainWindow(QtGui.QMainWindow):
     def refresh_inst(self):
 
         if self.testModeAction.isChecked():
+            self.setWindowTitle('Yo! Go PySpec! [TEST MODE]')
+            self.testModeSignLabel.show()
             self.synCtrl.setChecked(True)
             self.liaCtrl.setChecked(True)
             self.scopeCtrl.setChecked(True)
@@ -149,6 +153,8 @@ class MainWindow(QtGui.QMainWindow):
             self.liaStatus.setChecked(True)
             self.scopeStatus.setChecked(True)
         else:
+            self.setWindowTitle('Yo! Go PySpec!')
+            self.testModeSignLabel.hide()
             self.synCtrl.setChecked(not(self.synHandle is None))
             self.liaCtrl.setChecked(not(self.liaHandle is None))
             self.scopeCtrl.setChecked(not(self.pciHandle is None))
