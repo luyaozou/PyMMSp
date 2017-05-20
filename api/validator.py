@@ -8,9 +8,6 @@ from math import pi
 import operator
 from pyqtgraph import siEval
 
-# VDI MULTIPLICATION FACTOR
-MULTIPLIER = [1, 3, 3, 3, 6, 9, 12, 18, 27, 27]
-
 # LOCKIN AMPLIFIER SENSTIVITY LIST (IN VOLTS)
 LIASENSLIST= [2e-9, 5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7,
                1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4,
@@ -19,6 +16,41 @@ LIASENSLIST= [2e-9, 5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7,
 
 # LOCKIN AMPLIFIER TIME CONSTANT LIST (IN MILLISECONDS)
 LIATCLIST = [1e-2, 3e-2, 1e-1, 3e-1, 1, 3, 10, 30, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4]
+
+# VDI band information.
+# Keys are the indices used in VDIBandComboBox, and values are the names, multiplication factors, and recommended frequency ranges.
+VDIBANDNAME = {0: '1',
+               1: '2',
+               2: '3',
+               3: '4',
+               4: '5',
+               5: '6',
+               6: '7',
+               7: '8a',
+               8: '8b',
+               9: '9'}
+
+VDIBANDMULTI = {0: 1,
+                1: 2,
+                2: 3,
+                3: 3,
+                4: 6,
+                5: 9,
+                6: 12,
+                7: 18,
+                8: 27,
+                9: 27}
+
+VDIBANDRANGE = {0: (20, 50),    # !!! in the unit of GHz !!!
+                1: (50, 75),
+                2: (70, 115),
+                3: (90, 140),
+                4: (140, 225),
+                5: (220, 330),
+                6: (270, 460),
+                7: (430, 700),
+                8: (650, 800),
+                9: (700, 1000)}
 
 
 def _compare(num1, op, num2):
@@ -154,18 +186,18 @@ def calc_syn_freq(probf, band_index):
             synfreq: float, synthesizer frequency (MHz)
     '''
 
-    syn_freq = probf / MULTIPLIER[band_index]
+    syn_freq = probf / VDIBANDMULTI[band_index]
     return syn_freq
 
 
 def val_syn_freq(probf_text, band_index):
     ''' Validate synthesizer prob frequency input.
         Arguments
-            probf_text: str, prob frequency input text
+            probf_text: str, prob frequency input text (MHz)
             band_index: int, VDI band index
         Returns
             code: int (2: safe; 1: warning; 0: fatal)
-            syn_freq: float, synthesizer frequency
+            syn_freq: float, synthesizer frequency (MHz)
     '''
 
     try:
@@ -182,16 +214,22 @@ def val_syn_freq(probf_text, band_index):
 def val_prob_freq(probf_text, band_index):
     ''' Validate prob frequency input.
         Arguments
-            probf_text: str, prob frequency input text
+            probf_text: str, prob frequency input text (MHz)
             band_index: int, VDI band index
-        Safe range: (0, 50000]
+        Safe range: specified in VDIBANDRANGE (GHz)
+        Warning range: [20, 50] GHz * multiplication
     '''
 
     try:
         probf = float(probf_text)
         syn_freq = calc_syn_freq(probf, band_index)
-        if syn_freq > 0 and syn_freq < 50000:
-            return 2, probf
+        safe_range = VDIBANDRANGE[band_index]
+        if syn_freq > 20000 and syn_freq < 50000:
+            # prob freq in safe_range
+            if (probf > safe_range[0]*1e3) and (probf < safe_range[1]*1e3):
+                return 2, syn_freq
+            else:   # return a warning sign
+                return 1, syn_freq
         else:
             return 0, 50000
     except ValueError:

@@ -20,42 +20,6 @@ BUTTONLABEL = {'confirm':['Lets do it', 'Go forth and conquer', 'Ready to go',
                 }
 
 
-# VDI band information.
-# Keys are the indices used in VDIBandComboBox, and values are the names, multiplication factors, and recommended frequency ranges.
-VDIBANDNAME = {0: '1',
-               1: '2',
-               2: '3',
-               3: '4',
-               4: '5',
-               5: '6',
-               6: '7',
-               7: '8a',
-               8: '8b',
-               9: '9'}
-
-VDIBANDMULTI = {0: 1,
-                1: 2,
-                2: 3,
-                3: 3,
-                4: 6,
-                5: 9,
-                6: 12,
-                7: 18,
-                8: 27,
-                9: 27}
-
-VDIBANDRANGE = {0: (20, 50),
-                1: (50, 75),
-                2: (70, 115),
-                3: (90, 140),
-                4: (140, 225),
-                5: (220, 330),
-                6: (270, 460),
-                7: (430, 700),
-                8: (650, 800),
-                9: (700, 1000)}
-
-
 def btn_label(btn_type):
     ''' Randomly generate a QPushButton label.
         Arguments
@@ -130,8 +94,10 @@ class VDIBandComboBox(QtGui.QComboBox):
 
         bandList = []
 
-        for key in VDIBANDNAME:
-            msg = 'Band {:s} (x{:d}): {:d}-{:d} GHz'.format(VDIBANDNAME[key], VDIBANDMULTI[key], *VDIBANDRANGE[key])
+        for key in api_val.VDIBANDNAME:
+            msg = 'Band {:s} (x{:d}): {:d}-{:d} GHz'.format(
+                  api_val.VDIBANDNAME[key], api_val.VDIBANDMULTI[key],
+                  *api_val.VDIBANDRANGE[key])
             bandList.append(msg)
 
         self.addItems(bandList)
@@ -169,9 +135,9 @@ class SynInfo():
         self.instRemoteDisp = False
         self.rfToggle = False
         self.synPower = -20
-        self.synFreq = 3*1e9      # Hz
+        self.synFreq = 3*1e4      # MHz
         self.vdiBandIndex = 4
-        self.vdiBandMultiplication = VDIBANDMULTI[self.vdiBandIndex]
+        self.vdiBandMultiplication = api_val.VDIBANDMULTI[self.vdiBandIndex]
         self.probFreq = self.synFreq * self.vdiBandMultiplication
         self.modToggle = False
         self.AM1Toggle = False

@@ -77,7 +77,7 @@ class SynStatus(QtGui.QGroupBox):
         mainLayout.addWidget(moreInfoButton, 0, 2, 1, 2)
         mainLayout.addWidget(QtGui.QLabel('Inst. Name'), 1, 0)
         mainLayout.addWidget(self.addressText, 1, 1, 1, 3)
-        mainLayout.addWidget(QtGui.QLabel('Frequency'), 2, 0)
+        mainLayout.addWidget(QtGui.QLabel('RF Freq'), 2, 0)
         mainLayout.addWidget(self.synFreq, 2, 1, 1, 3)
         mainLayout.addWidget(QtGui.QLabel('RF Output'), 3, 0)
         mainLayout.addWidget(self.synRF, 3, 1)
@@ -121,7 +121,7 @@ class SynStatus(QtGui.QGroupBox):
         self.addressText.setText(self.parent.synInfo.instName)
         self.synRF.setText('On' if self.parent.synInfo.rfToggle else 'Off')
         self.synPower.setText('{:.1f} dbm'.format(self.parent.synInfo.synPower))
-        self.synFreq.setText(pg.siFormat(self.parent.synInfo.synFreq, suffix='Hz', precision=12))
+        self.synFreq.setText(pg.siFormat(self.parent.synInfo.synFreq*1e6, suffix='Hz', precision=12))
         self.synMod.setText('On' if self.parent.synInfo.modToggle else 'Off')
         self.synAMStat.setText('On' if self.parent.synInfo.AM1Toggle else 'Off')
         self.synFMStat.setText('On' if self.parent.synInfo.FM1Toggle else 'Off')
@@ -527,7 +527,7 @@ class SynCtrl(QtGui.QGroupBox):
         '''
 
         # validate input
-        status, synfreq = api_val.val_syn_freq(self.probFreqFill.text(),
+        status, synfreq = api_val.val_prob_freq(self.probFreqFill.text(),
                                               self.bandSel.currentIndex())
         # set sheet border color by syn_stat
         self.probFreqFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
@@ -544,8 +544,8 @@ class SynCtrl(QtGui.QGroupBox):
                 # communication successful, update synInfo
                 self.parent.synInfo.synFreq = synfreq
                 self.parent.synInfo.vdiBandIndex = self.bandSel.currentIndex()
-                self.parent.synInfo.vdiBandMultiplication = Shared.VDIBANDMULTI[self.bandSel.currentIndex]
-                self.parent.synInfo.probFreq = synfreq * Shared.VDIBANDMULTI[self.bandSel.currentIndex]
+                self.parent.synInfo.vdiBandMultiplication = api_val.VDIBANDMULTI[self.bandSel.currentIndex()]
+                self.parent.synInfo.probFreq = synfreq * api_val.VDIBANDMULTI[self.bandSel.currentIndex()]
             else:
                 msg = Shared.InstStatus(self, vCode)
                 msg.exec_()
