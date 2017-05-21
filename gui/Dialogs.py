@@ -590,7 +590,7 @@ class LWAParserDialog(QtGui.QDialog):
         QtGui.QDialog.__init__(self, parent)
         self.parent = parent
         self.filename = filename
-        self.setMinimumWidth(800)
+        self.setMinimumWidth(1200)
         self.setMinimumHeight(600)
         self.setWindowTitle('LWA Preview & Parser')
         self.entry_id_to_export = []
@@ -600,7 +600,7 @@ class LWAParserDialog(QtGui.QDialog):
         self.mainLayout.addWidget(QtGui.QLabel('Source file: {:s}'.format(filename)))
 
         # read lwa batch scan entry from file
-        self.entry_settings = lwaparser.scan_header(filename)
+        self.entry_settings, self.hd_line_num = lwaparser.scan_header(filename)
 
         if self.entry_settings:
             # set top buttons
@@ -626,42 +626,46 @@ class LWAParserDialog(QtGui.QDialog):
 
             self.batchLayout = QtGui.QGridLayout()
             self.batchLayout.setAlignment(QtCore.Qt.AlignTop)
+            # row of names
             self.batchLayout.addWidget(QtGui.QLabel('Scan #'), 0, 0)
             self.batchLayout.addWidget(QtGui.QLabel('Comment'), 0, 1)
-            self.batchLayout.addWidget(QtGui.QLabel('Start Freq'), 0, 2)
-            self.batchLayout.addWidget(QtGui.QLabel('Stop Freq'), 0, 3)
-            self.batchLayout.addWidget(QtGui.QLabel('Step Freq'), 0, 4)
-            self.batchLayout.addWidget(QtGui.QLabel('Average'), 0, 5)
-            self.batchLayout.addWidget(QtGui.QLabel('Sensitivity'), 0, 6)
-            self.batchLayout.addWidget(QtGui.QLabel('Time Const'), 0, 7)
-            self.batchLayout.addWidget(QtGui.QLabel('Wait time'), 0, 8)
-            self.batchLayout.addWidget(QtGui.QLabel('(MHz)'), 1, 2)
-            self.batchLayout.addWidget(QtGui.QLabel('(MHz)'), 1, 3)
-            self.batchLayout.addWidget(QtGui.QLabel('(MHz)'), 1, 4)
-            self.batchLayout.addWidget(QtGui.QLabel('(ms)'), 1, 8)
+            self.batchLayout.addWidget(QtGui.QLabel('Date'), 0, 2)
+            self.batchLayout.addWidget(QtGui.QLabel('Time'), 0, 3)
+            self.batchLayout.addWidget(QtGui.QLabel('Start Freq'), 0, 4)
+            self.batchLayout.addWidget(QtGui.QLabel('Stop Freq'), 0, 5)
+            self.batchLayout.addWidget(QtGui.QLabel('Step Freq'), 0, 6)
+            self.batchLayout.addWidget(QtGui.QLabel('Points'), 0, 7)
+            self.batchLayout.addWidget(QtGui.QLabel('Average'), 0, 8)
+            self.batchLayout.addWidget(QtGui.QLabel('Sensitivity'), 0, 9)
+            self.batchLayout.addWidget(QtGui.QLabel('Time Const'), 0, 10)
+            self.batchLayout.addWidget(QtGui.QLabel('Wait Time'), 0, 11)
+            self.batchLayout.addWidget(QtGui.QLabel('SH'), 0, 12)
+            self.batchLayout.addWidget(QtGui.QLabel('Harmonics'), 0, 13)
+            self.batchLayout.addWidget(QtGui.QLabel('Mod Freq'), 0, 14)
+            self.batchLayout.addWidget(QtGui.QLabel('Mod Amp'), 0, 15)
 
             for row in range(len(self.entry_settings)):
                 current_setting = self.entry_settings[row]
-                entry = Shared.JPLLIABatchListEntry(self, entry_setting=current_setting)
-                entry.set_color_black()     # set texts to be black
-                entry.commentFill.setReadOnly(True) # disable comment edits
-                entry.commentFill.setStyleSheet('color: grey')
-                # change number label to checkbox
-                entry.numberLabel = QtGui.QCheckBox()
-                # set up the batch number (row + 1)
-                entry.numberLabel.setText(str(row+1))
+                entry = Shared.LWAScanHdEntry(self, entry_setting=current_setting)
                 # add entry number checkbox to the button group
-                self.entryGroup.addButton(entry.numberLabel, row+1)
+                self.entryGroup.addButton(entry.scanNumLabel, row)
                 # add widgets to the dispaly panel layout
-                self.batchLayout.addWidget(entry.numberLabel, row+2, 0)
-                self.batchLayout.addWidget(entry.commentFill, row+2, 1)
-                self.batchLayout.addWidget(entry.startFreqLabel, row+2, 2)
-                self.batchLayout.addWidget(entry.stopFreqLabel, row+2, 3)
-                self.batchLayout.addWidget(entry.stepLabel, row+2, 4)
-                self.batchLayout.addWidget(entry.avgLabel, row+2, 5)
-                self.batchLayout.addWidget(entry.sensLabel, row+2, 6)
-                self.batchLayout.addWidget(entry.tcLabel, row+2, 7)
-                self.batchLayout.addWidget(entry.waitTimeLabel, row+2, 8)
+                self.batchLayout.addWidget(entry.scanNumLabel, row+1, 0)
+                self.batchLayout.addWidget(entry.commentLabel, row+1, 1)
+                self.batchLayout.addWidget(entry.dateLabel, row+1, 2)
+                self.batchLayout.addWidget(entry.timeLabel, row+1, 3)
+                self.batchLayout.addWidget(entry.startFreqLabel, row+1, 4)
+                self.batchLayout.addWidget(entry.stopFreqLabel, row+1, 5)
+                self.batchLayout.addWidget(entry.stepLabel, row+1, 6)
+                self.batchLayout.addWidget(entry.ptsLabel, row+1, 7)
+                self.batchLayout.addWidget(entry.avgLabel, row+1, 8)
+                self.batchLayout.addWidget(entry.sensLabel, row+1, 9)
+                self.batchLayout.addWidget(entry.tcLabel, row+1, 10)
+                self.batchLayout.addWidget(entry.itLabel, row+1, 11)
+                self.batchLayout.addWidget(entry.shLabel, row+1, 12)
+                self.batchLayout.addWidget(entry.harmLabel, row+1, 13)
+                self.batchLayout.addWidget(entry.modFreqLabel, row+1, 14)
+                self.batchLayout.addWidget(entry.modAmpLabel, row+1, 15)
 
             self.batchListWidget.setLayout(self.batchLayout)
             self.mainLayout.addWidget(batchArea)
@@ -672,20 +676,34 @@ class LWAParserDialog(QtGui.QDialog):
         self.setLayout(self.mainLayout)
 
     def add_to_list(self, id):
-        ''' Add checked buttons to list '''
+        ''' Add checked buttons to list. id starts at 0 '''
 
         if self.entryGroup.button(id).isChecked():
-            print(id)
-            self.entry_id_to_export.append(id)
+            # check if id is already in the list
+            if id in self.entry_id_to_export:
+                pass
+            else:
+                self.entry_id_to_export.append(id)
         else:
-            pass
+            # check if id is already in the list
+            if id in self.entry_id_to_export:
+                self.entry_id_to_export.remove(id)
+            else:
+                pass
 
     def export_lwa(self):
 
-        print(list(set(self.entry_id_to_export)))
-        #lwaparser.export(self.filename, checked_id)
-        # clear id
-        self.entry_id_to_export = []
+        outputfile, _ = QtGui.QFileDialog.getSaveFileName(self, 'Save Data', '', 'SMAP File (*.lwa)')
+
+        # prevent from overwriting
+        if outputfile == self.filename:
+            msg = Shared.MsgError(self, 'Cannot save!',
+                             'Output file shall not overwrite source file')
+            msg.exec_()
+        elif outputfile:
+            lwaparser.export(list(set(self.entry_id_to_export)), self.hd_line_num, src=self.filename, output=outputfile)
+        else:
+            pass
 
     def open_new_file(self):
 

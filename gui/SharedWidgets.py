@@ -4,6 +4,7 @@ from PyQt5 import QtGui, QtCore
 import random
 from math import ceil
 import numpy as np
+from pyqtgraph import siFormat
 from api import validator as api_val
 from api import synthesizer as api_syn
 from api import lockin as api_lia
@@ -437,6 +438,67 @@ class JPLLIABatchListEntry(QtGui.QWidget):
         self.sensLabel.setStyleSheet('color: black')
         self.tcLabel.setStyleSheet('color: black')
         self.waitTimeLabel.setStyleSheet('color: black')
+
+
+class LWAScanHdEntry(QtGui.QWidget):
+    ''' Display lwa scan header settings.
+    entry = (SCAN# [int],
+             COMMENT [str],
+             DATE [str],
+             TIME [str],
+             SH [int],
+             IT [float, ms],
+             SENS [float, V],
+             TAU [float, s],
+             MF [float, kHz],
+             MA [float, kHz],
+             START [float, MHz],
+             STOP [float, MHz],
+             STEP [float, MHz],
+             PTS [int],
+             AVG [int],
+             HARM [int]
+             ) '''
+
+    def __init__(self, parent, entry_setting=()):
+        QtGui.QWidget.__init__(self, parent=None)
+        self.parent = parent
+
+        # add labels
+        self.scanNumLabel = QtGui.QCheckBox()
+        self.commentLabel = QtGui.QLabel()
+        self.dateLabel = QtGui.QLabel()
+        self.timeLabel = QtGui.QLabel()
+        self.shLabel = QtGui.QLabel()
+        self.itLabel = QtGui.QLabel()
+        self.sensLabel = QtGui.QLabel()
+        self.tcLabel = QtGui.QLabel()
+        self.modFreqLabel = QtGui.QLabel()
+        self.modAmpLabel = QtGui.QLabel()
+        self.startFreqLabel = QtGui.QLabel()
+        self.stopFreqLabel = QtGui.QLabel()
+        self.stepLabel = QtGui.QLabel()
+        self.ptsLabel = QtGui.QLabel()
+        self.avgLabel = QtGui.QLabel()
+        self.harmLabel = QtGui.QLabel()
+
+        # set label text
+        self.scanNumLabel.setText(str(entry_setting[0]))
+        self.commentLabel.setText(entry_setting[1])
+        self.dateLabel.setText(entry_setting[2])
+        self.timeLabel.setText(entry_setting[3])
+        self.shLabel.setText(str(entry_setting[4]))
+        self.itLabel.setText(siFormat(entry_setting[5]*1e-3, suffix='s'))
+        self.sensLabel.setText(siFormat(entry_setting[6], suffix='V'))
+        self.tcLabel.setText(siFormat(entry_setting[7], suffix='s'))
+        self.modFreqLabel.setText(siFormat(entry_setting[8]*1e3, suffix='Hz'))
+        self.modAmpLabel.setText(siFormat(entry_setting[9]*1e3, suffix='Hz'))
+        self.startFreqLabel.setText('{:.3f}'.format(entry_setting[10]))
+        self.stopFreqLabel.setText('{:.3f}'.format(entry_setting[11]))
+        self.stepLabel.setText(siFormat(entry_setting[12]*1e6, suffix='Hz'))
+        self.ptsLabel.setText(str(entry_setting[13]))
+        self.avgLabel.setText(str(entry_setting[14]))
+        self.harmLabel.setText(str(entry_setting[15]))
 
 
 def msgcolor(status_code):
