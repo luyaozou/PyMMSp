@@ -17,7 +17,7 @@ def save_lwa(filename, y, h_info):
     '''
 
     d = datetime.datetime.today()
-    itgtime, sens, tc, mod_freq, mod_depth, start_freq, step, avg, comments = h_info
+    itgtime, sens, tc, mod_freq, mod_depth, start_freq, step, avg, comment = h_info
     # rescale y based on sensitivity, full scale is 1e4
     yscale = y / sens * 1e4
 
@@ -33,7 +33,7 @@ def save_lwa(filename, y, h_info):
         f.write(' MA {:.3f}'.format(mod_depth))
 
         # write second line
-        f.write('\n {:s}'.format(comments))
+        f.write('\n {:s}'.format(comment))
 
         # write third line
         f.write('\n {:.3f}   {:.6f}  {:d}'.format(start_freq, step, len(y)))

@@ -20,12 +20,13 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
         QtGui.QMainWindow.__init__(self)
 
-        self.title_text = 'Yo!'
-
         # Set global window properties
-        self.setWindowTitle(self.title_text)
+        self.setWindowTitle('Yo! Go PySpec!')
         self.setMinimumWidth(1500)
-        self.setMinimumHeight(820)
+        self.setMinimumHeight(840)
+        self.testModeSignLabel = QtGui.QLabel('[TEST MODE ACTIVE -- NOTHING IS REAL]!')
+        self.testModeSignLabel.setStyleSheet('color: {:s}'.format(Shared.msgcolor(0)))
+        self.testModeSignLabel.setAlignment(QtCore.Qt.AlignCenter)
 
         # Initiate pyvisa instrument objects
         self.synHandle = None
@@ -40,6 +41,7 @@ class MainWindow(QtGui.QMainWindow):
         exitAction.setStatusTip('Exit program')
         exitAction.triggered.connect(self.on_exit)
 
+        # instrument actions
         instSelAction = QtGui.QAction('Select Instrument', self)
         instSelAction.setShortcut('Ctrl+Shift+I')
         instSelAction.setStatusTip('Select instrument')
@@ -54,6 +56,7 @@ class MainWindow(QtGui.QMainWindow):
         instCloseAction.setStatusTip('Close individual instrument')
         instCloseAction.triggered.connect(self.on_close_sel_inst)
 
+        # scan actions
         scanJPLAction = QtGui.QAction('JPL Scanning Routine', self)
         scanJPLAction.setShortcut('Ctrl+Shift+J')
         scanJPLAction.setStatusTip('Use the scanning style of the JPL scanning routine')
@@ -74,6 +77,11 @@ class MainWindow(QtGui.QMainWindow):
         presReaderAction.setStatusTip('Record pressure measurements using the CENTER TWO pressure readout')
         presReaderAction.triggered.connect(self.on_pres_reader)
 
+        # data process actions
+        lwaParserAction = QtGui.QAction('.lwa preview and export', self)
+        lwaParserAction.setStatusTip('Preview JPL .lwa file and export subset of scans')
+        lwaParserAction.triggered.connect(self.on_lwa_parser)
+
         self.testModeAction = QtGui.QAction('Test Mode', self)
         self.testModeAction.setCheckable(True)
         self.testModeAction.setShortcut('Ctrl+T')
@@ -93,8 +101,16 @@ class MainWindow(QtGui.QMainWindow):
         menuScan.addAction(scanPCIAction)
         menuScan.addAction(scanCavityAction)
         menuScan.addAction(presReaderAction)
+        menuData = self.menuBar().addMenu('&Data')
+        menuData.addAction(lwaParserAction)
         menuTest = self.menuBar().addMenu('&Test')
         menuTest.addAction(self.testModeAction)
+
+        # Set classes to store all instrument info
+        self.synInfo = Shared.SynInfo()
+        self.liaInfo = Shared.LiaInfo()
+        self.scopeInfo = Shared.ScopeInfo()
+        self.motorInfo = Shared.MotorInfo()
 
         # Set main window widgets
         self.synStatus = Panels.SynStatus(self)
@@ -111,38 +127,69 @@ class MainWindow(QtGui.QMainWindow):
         # Set main window layout
         self.mainLayout = QtGui.QGridLayout()
         self.mainLayout.setSpacing(6)
-        self.mainLayout.addWidget(self.synStatus, 0, 0, 1, 2)
-        self.mainLayout.addWidget(self.liaStatus, 1, 0, 1, 2)
-        self.mainLayout.addWidget(self.scopeStatus, 2, 0, 1, 2)
-        self.mainLayout.addWidget(self.synCtrl, 0, 2, 1, 3)
-        self.mainLayout.addWidget(self.liaCtrl, 1, 2, 1, 3)
-        self.mainLayout.addWidget(self.scopeCtrl, 2, 2, 1, 3)
-        self.mainLayout.addWidget(self.motorCtrl, 3, 2, 1, 3)
-        self.mainLayout.addWidget(self.scopeMonitor, 0, 5, 1, 4)
-        self.mainLayout.addWidget(self.liaMonitor, 1, 5, 1, 4)
-        self.mainLayout.addWidget(self.specMonitor, 2, 5, 1, 4)
+        self.mainLayout.addWidget(self.synStatus, 0, 0, 3, 2)
+        self.mainLayout.addWidget(self.liaStatus, 3, 0, 3, 2)
+        self.mainLayout.addWidget(self.scopeStatus, 6, 0, 1, 2)
+        self.mainLayout.addWidget(self.testModeSignLabel, 7, 0, 1, 2)
+        self.mainLayout.addWidget(self.synCtrl, 0, 2, 3, 3)
+        self.mainLayout.addWidget(self.liaCtrl, 3, 2, 2, 3)
+        self.mainLayout.addWidget(self.scopeCtrl, 5, 2, 2, 3)
+        self.mainLayout.addWidget(self.motorCtrl, 7, 2, 1, 3)
+        self.mainLayout.addWidget(self.scopeMonitor, 0, 5, 2, 4)
+        self.mainLayout.addWidget(self.liaMonitor, 2, 5, 4, 4)
+        self.mainLayout.addWidget(self.specMonitor, 6, 5, 2, 4)
 
         # Enable main window
         self.mainWidget = QtGui.QWidget()
         self.mainWidget.setLayout(self.mainLayout)
         self.setCentralWidget(self.mainWidget)
 
+        # Preload system dialog widgets
+        self.load_dialogs()
+        self.refresh_inst()
+        self.testModeAction.toggled.connect(self.refresh_inst)
+
     def refresh_inst(self):
 
-        self.synCtrl.setChecked(not(self.synHandle is None))
-        self.liaCtrl.setChecked(not(self.liaHandle is None))
-        self.scopeCtrl.setChecked(not(self.pciHandle is None))
-        self.motorCtrl.setChecked(not(self.motorHandle is None))
-        self.synStatus.update()
-        self.liaStatus.update()
-        self.scopeStatus.update()
+        if self.testModeAction.isChecked():
+            self.setWindowTitle('Yo! Go PySpec! [TEST MODE]')
+            self.testModeSignLabel.show()
+            self.synCtrl.setChecked(True)
+            self.liaCtrl.setChecked(True)
+            self.scopeCtrl.setChecked(True)
+            self.motorCtrl.setChecked(True)
+            self.synStatus.setChecked(True)
+            self.liaStatus.setChecked(True)
+            self.scopeStatus.setChecked(True)
+        else:
+            self.setWindowTitle('Yo! Go PySpec!')
+            self.testModeSignLabel.hide()
+            self.synCtrl.setChecked(not(self.synHandle is None))
+            self.liaCtrl.setChecked(not(self.liaHandle is None))
+            self.scopeCtrl.setChecked(not(self.pciHandle is None))
+            self.motorCtrl.setChecked(not(self.motorHandle is None))
+            self.synStatus.setChecked(not(self.synHandle is None))
+            self.liaStatus.setChecked(not(self.liaHandle is None))
+            self.scopeStatus.setChecked(not(self.pciHandle is None))
+
+        self.synStatus.manual_refresh()
+        self.liaStatus.manual_refresh()
+        self.scopeStatus.manual_refresh()
+
+    def load_dialogs(self):
+        ''' Load dialog widgets without showing them '''
+
+        self.selInstDialog = Dialogs.SelInstDialog(self)
+        self.viewInstDialog = Dialogs.ViewInstDialog(self)
+        self.closeInstDialog = Dialogs.CloseSelInstDialog(self)
+        self.synInfoDialog = Dialogs.SynInfoDialog(self)
+        self.liaInfoDialog = Dialogs.LockinInfoDialog(self)
 
     def on_exit(self):
         self.close()
 
     def on_sel_inst(self):
-        d = Dialogs.SelInstDialog(self)
-        result = d.exec_()
+        result = self.selInstDialog.exec_()
 
         if result:
             # simply uncheck panels to prevent the warning dialog
@@ -162,12 +209,12 @@ class MainWindow(QtGui.QMainWindow):
             pass
 
     def on_view_inst_stat(self):
-        d = Dialogs.ViewInstDialog(self)
-        d.show()
+
+        self.viewInstDialog.show()
 
     def on_close_sel_inst(self):
-        d = Dialogs.CloseSelInstDialog(self)
-        d.exec_()
+
+        self.closeInstDialog.exec_()
 
         # simply uncheck panels to prevent the warning dialog
         self.refresh_inst()
@@ -228,6 +275,15 @@ class MainWindow(QtGui.QMainWindow):
         else:   # initiate window instance
             self.p_reader_win = PresReader.PresReaderWindow(main=self)
         self.p_reader_win.show()
+
+    def on_lwa_parser(self):
+        ''' Launch lwa parser dialog window '''
+
+        filename, _ = QtGui.QFileDialog.getOpenFileName(self, 'Open LWA File',
+                                './default.lwa', 'SMAP Data File (*.lwa)')
+
+        d = Dialogs.LWAParserDialog(self, filename)
+        d.exec_()
 
     def closeEvent(self, event):
         q = QtGui.QMessageBox.question(self, 'Quit?',
