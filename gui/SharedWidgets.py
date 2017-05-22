@@ -143,13 +143,13 @@ class SynInfo():
         self.modToggle = False
         self.AM1Toggle = False
         self.AM1Freq = 0          # Hz
-        self.AM1DepthPercent = 0  # %
+        self.AM1DepthPercent = 0  # float
         self.AM1DepthDbm = -20    # dbm
         self.AM1Src = ''
         self.AM1Wave = ''
         self.AM2Toggle = False
         self.AM2Freq = 0          # Hz
-        self.AM2DepthPercent = 0  # %
+        self.AM2DepthPercent = 0  # float
         self.AM2DepthDbm = -20    # dbm
         self.AM2Src = ''
         self.AM2Wave = ''
@@ -354,13 +354,13 @@ class JPLLIAScanEntry(QtGui.QWidget):
 
     def val_start_freq(self, text):
 
-        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
+        vdi_index = self.main.synCtrl.bandSel.currentIndex()
         status, freq = api_val.val_syn_freq(text, vdi_index)
         self.startFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
     def val_stop_freq(self, text):
 
-        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
+        vdi_index = self.main.synCtrl.bandSel.currentIndex()
         status, freq = api_val.val_syn_freq(text, vdi_index)
         self.stopFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
@@ -371,7 +371,7 @@ class JPLLIAScanEntry(QtGui.QWidget):
 
     def val_avg(self, text):
 
-        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
+        vdi_index = self.main.synCtrl.bandSel.currentIndex()
         status, number = api_val.val_int(text, safe=[('>', 0)])
         self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
 
@@ -446,18 +446,19 @@ class LWAScanHdEntry(QtGui.QWidget):
              COMMENT [str],
              DATE [str],
              TIME [str],
-             SH [int],
              IT [float, ms],
              SENS [float, V],
              TAU [float, s],
-             MF [float, kHz],
-             MA [float, kHz],
+             MMODE [str],
+             MFREQ [float, kHz],
+             MAMP [float, kHz],
              START [float, MHz],
              STOP [float, MHz],
              STEP [float, MHz],
              PTS [int],
              AVG [int],
-             HARM [int]
+             HARM [int],
+             PHASE [float, degree]
              ) '''
 
     def __init__(self, parent, entry_setting=()):
@@ -469,10 +470,10 @@ class LWAScanHdEntry(QtGui.QWidget):
         self.commentLabel = QtGui.QLabel()
         self.dateLabel = QtGui.QLabel()
         self.timeLabel = QtGui.QLabel()
-        self.shLabel = QtGui.QLabel()
         self.itLabel = QtGui.QLabel()
         self.sensLabel = QtGui.QLabel()
         self.tcLabel = QtGui.QLabel()
+        self.modModeLabel = QtGui.QLabel()
         self.modFreqLabel = QtGui.QLabel()
         self.modAmpLabel = QtGui.QLabel()
         self.startFreqLabel = QtGui.QLabel()
@@ -481,16 +482,17 @@ class LWAScanHdEntry(QtGui.QWidget):
         self.ptsLabel = QtGui.QLabel()
         self.avgLabel = QtGui.QLabel()
         self.harmLabel = QtGui.QLabel()
+        self.phaseLabel = QtGui.QLabel()
 
         # set label text
         self.scanNumLabel.setText(str(entry_setting[0]))
         self.commentLabel.setText(entry_setting[1])
         self.dateLabel.setText(entry_setting[2])
         self.timeLabel.setText(entry_setting[3])
-        self.shLabel.setText(str(entry_setting[4]))
-        self.itLabel.setText(siFormat(entry_setting[5]*1e-3, suffix='s'))
-        self.sensLabel.setText(siFormat(entry_setting[6], suffix='V'))
-        self.tcLabel.setText(siFormat(entry_setting[7], suffix='s'))
+        self.itLabel.setText(siFormat(entry_setting[4]*1e-3, suffix='s'))
+        self.sensLabel.setText(siFormat(entry_setting[5], suffix='V'))
+        self.tcLabel.setText(siFormat(entry_setting[6], suffix='s'))
+        self.modModeLabel.setText(entry_setting[7])
         self.modFreqLabel.setText(siFormat(entry_setting[8]*1e3, suffix='Hz'))
         self.modAmpLabel.setText(siFormat(entry_setting[9]*1e3, suffix='Hz'))
         self.startFreqLabel.setText('{:.3f}'.format(entry_setting[10]))
@@ -499,6 +501,7 @@ class LWAScanHdEntry(QtGui.QWidget):
         self.ptsLabel.setText(str(entry_setting[13]))
         self.avgLabel.setText(str(entry_setting[14]))
         self.harmLabel.setText(str(entry_setting[15]))
+        self.phaseLabel.setText('{.2f} deg'.format(entry_setting[16]))
 
 
 def msgcolor(status_code):

@@ -639,10 +639,11 @@ class LWAParserDialog(QtGui.QDialog):
             self.batchLayout.addWidget(QtGui.QLabel('Sensitivity'), 0, 9)
             self.batchLayout.addWidget(QtGui.QLabel('Time Const'), 0, 10)
             self.batchLayout.addWidget(QtGui.QLabel('Wait Time'), 0, 11)
-            self.batchLayout.addWidget(QtGui.QLabel('SH'), 0, 12)
+            self.batchLayout.addWidget(QtGui.QLabel('Modulation'), 0, 12)
             self.batchLayout.addWidget(QtGui.QLabel('Harmonics'), 0, 13)
             self.batchLayout.addWidget(QtGui.QLabel('Mod Freq'), 0, 14)
             self.batchLayout.addWidget(QtGui.QLabel('Mod Amp'), 0, 15)
+            self.batchLayout.addWidget(QtGui.QLabel('Phase'), 0, 16)
 
             for row in range(len(self.entry_settings)):
                 current_setting = self.entry_settings[row]
@@ -662,10 +663,11 @@ class LWAParserDialog(QtGui.QDialog):
                 self.batchLayout.addWidget(entry.sensLabel, row+1, 9)
                 self.batchLayout.addWidget(entry.tcLabel, row+1, 10)
                 self.batchLayout.addWidget(entry.itLabel, row+1, 11)
-                self.batchLayout.addWidget(entry.shLabel, row+1, 12)
+                self.batchLayout.addWidget(entry.modModeLabel, row+1, 12)
                 self.batchLayout.addWidget(entry.harmLabel, row+1, 13)
                 self.batchLayout.addWidget(entry.modFreqLabel, row+1, 14)
                 self.batchLayout.addWidget(entry.modAmpLabel, row+1, 15)
+                self.batchLayout.addWidget(entry.phaseLabel, row+1, 16)
 
             self.batchListWidget.setLayout(self.batchLayout)
             self.mainLayout.addWidget(batchArea)

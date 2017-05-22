@@ -162,9 +162,9 @@ class JPLScanConfig(QtGui.QDialog):
              itgtime <ms>, waittime <ms>, lockin sens_index <int>)
         '''
 
-        vdi_index = self.main.synCtrl.bandSelect.currentIndex()
+        vdi_index = self.main.synCtrl.bandSel.currentIndex()
         if self.main.testModeAction.isChecked():
-            pass
+            tc_index = self.main.liaInfo.tcIndex
         else:
             tc_index = api_lia.read_tc(self.main.liaHandle)
 
@@ -372,7 +372,7 @@ class SingleScan(QtGui.QWidget):
         if self.main.testModeAction.isChecked():
             pass
         else:
-            self.multiplier = api_val.MULTIPLIER[self.main.synCtrl.bandSelect.currentIndex()]
+            self.multiplier = api_val.MULTIPLIER[self.main.synCtrl.bandSel.currentIndex()]
 
         # Initialize scan entry settings
         self.start_rf_freq = 0
@@ -536,15 +536,30 @@ class SingleScan(QtGui.QWidget):
         entry = self.parent.batchListWidget.entryList[self.parent.current_entry_index]
         self.current_comment = entry.commentFill.text()
 
+        # grab lockin & synthesizer information
         if self.main.testModeAction.isChecked():
-            h_info = (self.waittime, api_val.LIASENSLIST[self.sens_index],
-                      api_val.LIATCLIST[self.tc_index]*1e-3, 15, 75, self.x_min, self.step,
-                      self.acquired_avg, self.current_comment)
+            tc = self.main.liaInfo.tcIndex
         else:
             tc = api_lia.read_tc(self.main.liaHandle)
-            h_info = (self.waittime, api_val.LIASENSLIST[self.sens_index],
-                      api_val.LIATCLIST[tc]*1e-3, 15, 75, self.x_min, self.step,
-                      self.acquired_avg, self.current_comment)
+
+        mod_stat = self.main.synCtrl.modModeSel.currentText()
+        if mod_stat == 'AM':
+            mod_freq = self.main.synInfo.AM1Freq * 1e-3
+            mod_amp = self.main.synInfo.AM1DepthPercent * 1e2
+        elif mod_stat == 'FM':
+            mod_freq = self.main.synInfo.FM1Freq * 1e-3
+            mod_amp = self.main.synInfo.FM1Dev * 1e-3
+        else:
+            mod_freq = 0
+            mod_amp = 0
+
+        # prepare header
+        h_info = (self.main.synInfo.vdiBandMultiplication,
+                  self.waittime, api_val.LIASENSLIST[self.sens_index],
+                  api_val.LIATCLIST[tc]*1e-3, mod_freq, mod_amp, mod_stat,
+                  self.main.liaInfo.refHarm, self.main.liaInfo.refPhase,
+                  self.x_min, self.step, self.acquired_avg,
+                  self.current_comment)
 
         # if already finishes at least one sweep
         if self.acquired_avg > 0:
@@ -574,9 +589,9 @@ class SingleScan(QtGui.QWidget):
         else:
             pass
 
-        if self.acquired_avg % 2:
+        if self.acquired_avg % 2:   # even sweep, sweep down
             self.current_x_index = len(self.x) - 1
-        else:
+        else:                       # odd sweep, sweep up
             self.current_x_index = 0
 
         self.y = np.zeros_like(self.x)

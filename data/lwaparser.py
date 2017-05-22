@@ -56,12 +56,14 @@ def scan_header(filename):
                 _temp_list = a_line.split()
                 date = _temp_list[1]
                 time = _temp_list[3]
-                sh = _temp_list[5]
                 it = float(_temp_list[7])
                 sens = float(_temp_list[9])
                 tc = float(_temp_list[11])
                 mf = float(_temp_list[13])
                 ma = float(_temp_list[15])
+                mmode = _temp_list[17]
+                harm = int(_temp_list[19])
+                phase = float(_temp_list[21])
 
                 # move to next line to read comment
                 a_line = a_file.readline()
@@ -76,10 +78,12 @@ def scan_header(filename):
                 step = float(_temp_list[1])
                 pts = int(_temp_list[2])
                 stopf = startf + step*pts
-                avg = int(_temp_list[4])
-                harm = int(_temp_list[5])
-                entry_settings.append((scan_num, comment, date, time, sh, it, sens, tc, mf, ma, startf, stopf, step, pts,
-                                       avg, harm))
+                avg = int(_temp_list[3])
+
+                # append settings
+                entry_settings.append((scan_num, comment, date, time,
+                    it, sens, tc, mmode, mf, ma, startf, stopf,
+                    step, pts, avg, harm, phase))
             else:
                 a_line = a_file.readline()
                 line_num += 1
