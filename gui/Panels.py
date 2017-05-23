@@ -263,7 +263,7 @@ class LockinStatus(QtGui.QGroupBox):
         ''' Print instrument information in this panel '''
 
         self.addressText.setText(self.parent.liaInfo.instName)
-        self.liaHarmLabel.setText('{:d}'.format(self.parent.liaInfo.refHarm))
+        self.liaHarmLabel.setText(self.parent.liaInfo.refHarmText))
         self.liaPhaseLabel.setText('{:.2f}'.format(self.parent.liaInfo.refPhase))
         self.liaSensLabel.setText(self.parent.liaInfo.sensText)
         self.liaTCLabel.setText(self.parent.liaInfo.tcText)

@@ -239,7 +239,8 @@ class LiaInfo():
         self.instName = ''
         self.instInterface = ''
         self.instInterfaceNum = 0
-        self.refSrc = ''
+        self.refSrcIndex = 0
+        self.refSrcText = ''
         self.refFreq = 1
         self.refPhase = 0
         self.refHarm = 1
@@ -272,10 +273,11 @@ class LiaInfo():
         ''' Query all information '''
 
         if liaHandle:
-            self.instName = liaHandle.resource_name()
-            self.instInterface = str(liaHandle.interface_type())
+            self.instName = liaHandle.resource_name
+            self.instInterface = str(liaHandle.interface_type)
             self.instInterfaceNum = liaHandle.interface_number
-            self.refSrc = api_lia.read_ref_source(liaHandle)
+            self.refSrcIndex = api_lia.read_ref_source(liaHandle)
+            self.refSrcText = api_lia.REF_SRC_LIST[self.refSrcIndex]
             self.refFreq = api_lia.read_freq(liaHandle)
             self.refPhase = api_lia.read_phase(liaHandle)
             self.refHarm = api_lia.read_harm(liaHandle)

@@ -308,27 +308,27 @@ def query_single_x(liaHandle):
 def read_ref_source(liaHandle):
     ''' Read reference source
         Returns
-            text: str
+            reference source index (int)
     '''
 
     try:
         text = liaHandle.query('FMOD?')
-        return REF_SRC_LIST[int(text.strip())]
+        return int(text.strip())
     except:
-        return 'N.A.'
+        return 0
 
 
 def read_input_config(liaHandle):
     ''' Read input configuration
         Returns
-            text: str
+            input config index (int)
     '''
 
     try:
         text = liaHandle.query('ISRC?')
-        return INPUT_CONFIG_LIST[int(text.strip())]
+        return int(text.strip())
     except:
-        return 'N.A.'
+        return 0
 
 
 def read_input_grounding(liaHandle):

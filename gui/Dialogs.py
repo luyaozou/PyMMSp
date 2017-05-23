@@ -556,7 +556,7 @@ class LockinInfoDialog(QtGui.QDialog):
         self.instInterfaceNumLabel.setText(str(self.parent.liaInfo.instInterfaceNum))
 
         # update ref group
-        self.refSrcLabel.setText(self.parent.liaInfo.refSrc)
+        self.refSrcLabel.setText(self.parent.liaInfo.refSrcText)
         self.refFreqLabel.setText(siFormat(self.parent.liaInfo.refFreq, suffix='Hz'))
         self.refHarmLabel.setText('{:d}'.format(self.parent.liaInfo.refHrefHarm))
         self.refPhaseLabel.setText('{:.2f} deg'.format(self.parent.liaInfo.refPhase))
