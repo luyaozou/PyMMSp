@@ -64,7 +64,7 @@ class SynStatus(QtGui.QGroupBox):
         modGroupLayout.addWidget(QtGui.QLabel('Freq'), 2, 0)
         modGroupLayout.addWidget(self.synAMFreq, 2, 1)
         modGroupLayout.addWidget(self.synFMFreq, 2, 2)
-        modGroupLayout.addWidget(QtGui.QLabel('Amp'), 3, 0)
+        modGroupLayout.addWidget(QtGui.QLabel('Modulation'), 3, 0)
         modGroupLayout.addWidget(self.synAMDepth, 3, 1)
         modGroupLayout.addWidget(self.synFMDev, 3, 2)
         modGroup.setLayout(modGroupLayout)
