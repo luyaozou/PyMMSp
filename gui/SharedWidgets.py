@@ -136,7 +136,7 @@ class SynInfo():
         self.instRemoteDisp = False
         self.rfToggle = False
         self.synPower = -20
-        self.synFreq = 3*1e4      # MHz
+        self.synFreq = 3*1e10      # Hz
         self.vdiBandIndex = 4
         self.vdiBandMultiplication = api_val.VDIBANDMULTI[self.vdiBandIndex]
         self.probFreq = self.synFreq * self.vdiBandMultiplication

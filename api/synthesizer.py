@@ -242,7 +242,7 @@ def read_am_depth(synHandle, channel):
 
     try:
         text = synHandle.query(':AM{:d}:DEPT?'.format(channel))
-        depth_linear = float(text.strip()) * 1e2
+        depth_linear = float(text.strip())
         text = synHandle.query(':AM{:d}:DEPT:EXP?'.format(channel))
         depth_exp = float(text.strip())
         return depth_linear, depth_exp

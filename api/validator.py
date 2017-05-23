@@ -197,18 +197,18 @@ def val_syn_freq(probf_text, band_index):
             band_index: int, VDI band index
         Returns
             code: int (2: safe; 1: warning; 0: fatal)
-            syn_freq: float, synthesizer frequency (MHz)
+            syn_freq: float, synthesizer frequency (Hz)
     '''
 
     try:
         probf = float(probf_text)
         syn_freq = calc_syn_freq(probf, band_index)
         if syn_freq > 0 and syn_freq < 50000:
-            return 2, syn_freq
+            return 2, syn_freq * 1e6
         else:
-            return 0, 50000
+            return 0, 5 * 1e10
     except ValueError:
-        return 0, 50000
+        return 0, 5 * 1e10
 
 
 def val_prob_freq(probf_text, band_index):
@@ -218,6 +218,9 @@ def val_prob_freq(probf_text, band_index):
             band_index: int, VDI band index
         Safe range: specified in VDIBANDRANGE (GHz)
         Warning range: [20, 50] GHz * multiplication
+        Returns
+            code: int (2: safe; 1: warning; 0: fatal)
+            syn_freq: float, synthesizer frequency (Hz)
     '''
 
     try:
@@ -227,13 +230,13 @@ def val_prob_freq(probf_text, band_index):
         if syn_freq > 20000 and syn_freq < 50000:
             # prob freq in safe_range
             if (probf > safe_range[0]*1e3) and (probf < safe_range[1]*1e3):
-                return 2, syn_freq
+                return 2, syn_freq * 1e6
             else:   # return a warning sign
-                return 1, syn_freq
+                return 1, syn_freq * 1e6
         else:
-            return 0, 50000
+            return 0, 5 * 1e10
     except ValueError:
-        return 0, 50000
+        return 0, 5 * 1e10
 
 
 def val_syn_mod_freq(freq_text, freq_unit_text):
