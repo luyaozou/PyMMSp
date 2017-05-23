@@ -296,7 +296,7 @@ class LockinStatus(QtGui.QGroupBox):
     def pop_err_msg(self):
         ''' Pop error message '''
         if self.parent.liaHandle:
-            self.errMsgBtn.setText(api_lia.query_err_msg(self.parent.liaHandle))
+            self.errMsgLabel.setText(api_lia.query_err_msg(self.parent.liaHandle))
         else:
             pass
 
@@ -982,10 +982,12 @@ class LockinCtrl(QtGui.QGroupBox):
             if self.parent.testModeAction.isChecked():
                 # fake a successful communication on test mode
                 self.parent.liaInfo.refHarm = harm
+                self.parent.liaInfo.refHarmText = str(harm)
             else:
                 vCode = api_lia.set_harm(self.parent.liaHandle, harm)
                 if vCode == pyvisa.constants.StatusCode.success:
                     self.parent.liaInfo.refHarm = api_lia.read_harm(self.parent.liaHandle)
+                    self.parent.liaInfo.refHarmText = str(self.parent.liaInfo.refHarm)
                 else:
                     msg = Shared.InstStatus(self, vCode)
                     msg.exec_()
@@ -1068,6 +1070,7 @@ class LockinCtrl(QtGui.QGroupBox):
             vCode = api_lia.set_reserve(self.parent.liaHandle, idx)
             if vCode == pyvisa.constants.StatusCode.success:
                 self.parent.liaInfo.reserveIndex = api_lia.read_reserve(self.parent.liaHandle)
+                self.parent.liaInfo.reserveText = api_lia.RESERVE_LIST[self.parent.liaInfo.reserveIndex]
             else:
                 msg = Shared.InstStatus(self, vCode)
                 msg.exec_()
@@ -1087,6 +1090,7 @@ class LockinCtrl(QtGui.QGroupBox):
             vCode = api_lia.set_input_grounding(self.parent.liaHandle, idx)
             if vCode == pyvisa.constants.StatusCode.success:
                 self.parent.liaInfo.groundingIndex = api_lia.read_input_grounding(self.parent.liaHandle)
+                self.parent.liaInfo.groundingText = api_lia.INPUT_GND_LIST[self.parent.liaInfo.groundingIndex]
             else:
                 msg = Shared.InstStatus(self, vCode)
                 msg.exec_()
@@ -1106,6 +1110,7 @@ class LockinCtrl(QtGui.QGroupBox):
             vCode = api_lia.set_input_filter(self.parent.liaHandle, idx)
             if vCode == pyvisa.constants.StatusCode.success:
                 self.parent.liaInfo.inputFilterIndex = api_lia.read_input_filter(self.parent.liaHandle)
+                self.parent.liaInfo.inputFilterText = api_lia.INPUT_FILTER_LIST[self.parent.liaInfo.inputFilterIndex]
             else:
                 msg = Shared.InstStatus(self, vCode)
                 msg.exec_()

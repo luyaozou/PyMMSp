@@ -213,7 +213,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def on_close_sel_inst(self):
 
-        d = Dialogs.CloseInstDialog(self)
+        d = Dialogs.CloseSelInstDialog(self)
         d.exec_()
 
         # simply uncheck panels to prevent the warning dialog

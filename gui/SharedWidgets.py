@@ -389,7 +389,7 @@ class JPLLIAScanEntry(QtGui.QWidget):
         self.modAmp = default[10]
         self.modAmpFill.setText(siFormat(self.modAmp, suffix='Hz') if default[8]==2 else '{:g}'.format(self.modAmp))
         self.refHarm = default[11]
-        self.harmSel.setCurrentIndex(self.refHarm - 1)
+        self.harmSel.setCurrentIndex(self.refHarm-1 if self.refHarm < 5 else 0)
         self.refPhase = default[12]
         self.refPhaseFill.setText('{:.2f}'.format(self.refPhase))
         self.modModeSel.setCurrentIndex(default[8])
