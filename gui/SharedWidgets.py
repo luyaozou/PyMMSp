@@ -147,13 +147,13 @@ class SynInfo():
         self.modAmp = 0           # update according to modMode
         self.AM1Toggle = False
         self.AM1Freq = 0          # Hz
-        self.AM1DepthPercent = 0  # float
+        self.AM1DepthPercent = 0  # float, percent
         self.AM1DepthDbm = -20    # dbm
         self.AM1Src = ''
         self.AM1Wave = ''
         self.AM2Toggle = False
         self.AM2Freq = 0          # Hz
-        self.AM2DepthPercent = 0  # float
+        self.AM2DepthPercent = 0  # float, percent
         self.AM2DepthDbm = -20    # dbm
         self.AM2Src = ''
         self.AM2Wave = ''
@@ -286,14 +286,14 @@ class LiaInfo():
             self.configIndex = api_lia.read_input_config(liaHandle)
             self.configText = api_lia.INPUT_CONFIG_LIST[self.configIndex]
             self.groundingIndex = api_lia.read_input_grounding(liaHandle)
-            self.groundingText = api_lia.INPUT_GND_LIST[self.groundingText]
+            self.groundingText = api_lia.INPUT_GND_LIST[self.groundingIndex]
             self.coupleIndex = api_lia.read_couple(liaHandle)
             self.coupleText = api_lia.COUPLE_LIST[self.coupleIndex]
             self.inputFilterIndex = api_lia.read_input_filter(liaHandle)
             self.inputFilterText = api_lia.INPUT_FILTER_LIST[self.inputFilterIndex]
             self.sensIndex = api_lia.read_sens(liaHandle)
             self.sensText = api_lia.SENS_LIST[self.sensIndex]
-            self.tcIndex = api_lia.read_tc(liaHarmLabel)
+            self.tcIndex = api_lia.read_tc(liaHandle)
             self.tcText = api_lia.TC_LIST[self.tcIndex]
             self.reserveIndex = api_lia.read_reserve(liaHandle)
             self.reserveText = api_lia.RESERVE_LIST[self.reserveIndex]
@@ -302,7 +302,7 @@ class LiaInfo():
             self.disp1Text, self.disp2Text = api_lia.read_disp(liaHandle)
             self.front1Text, self.front2Text = api_lia.read_front_panel(liaHandle)
             self.sampleRateIndex = api_lia.read_sample_rate(liaHandle)
-            self.sampleRateText = api_lia.SAMPLE_RATE_LIST(self.sampleRateIndex)
+            self.sampleRateText = api_lia.SAMPLE_RATE_LIST[self.sampleRateIndex]
         else:
             self.instName = 'No Instrument'
 

@@ -184,7 +184,7 @@ def read_am_par(synHandle):
     ''' Read current amplitude modulation setting.
         Returns
             freq:  mod freq, float (Hz)
-            depth: mod depth, float
+            depth: mod depth, float (percent)
             status: on/off, bool
     '''
 
@@ -192,7 +192,7 @@ def read_am_par(synHandle):
         text = synHandle.query(':AM1:INT1:FREQ?')
         freq = float(text.strip())
         text = synHandle.query(':AM1:DEPT?')
-        depth = float(text.strip()) * 1e-2
+        depth = float(text.strip()) * 1e2
         text = synHandle.query(':AM1:STAT?')
         status = bool(int(text.strip()))
         return freq, depth, status
@@ -236,13 +236,13 @@ def read_am_depth(synHandle, channel):
             synHandle: pyvisa.resources.Resource
             channel: int
         Returns
-            depth_linear: float, depth
+            depth_linear: float, depth in percent
             depth_exp: float, depth in dB
     '''
 
     try:
         text = synHandle.query(':AM{:d}:DEPT?'.format(channel))
-        depth_linear = float(text.strip()) * 1e-2
+        depth_linear = float(text.strip()) * 1e2
         text = synHandle.query(':AM{:d}:DEPT:EXP?'.format(channel))
         depth_exp = float(text.strip())
         return depth_linear, depth_exp
@@ -284,7 +284,7 @@ def set_am(synHandle, freq, depth, toggle_state):
     ''' Set synthesizer AM to freq and depth.
         Arguments
             freq: float (Hz)
-            depth: float
+            depth: float (percent)
             toggle_state: boolean
         Returns visaCode
     '''
@@ -292,7 +292,7 @@ def set_am(synHandle, freq, depth, toggle_state):
     try:
         # set up AM freq and depth
         set_mod_toggle(synHandle, toggle_state)
-        num, vcode = synHandle.write(':AM1:INT1:FREQ {:.9f}HZ; :AM1 {:.3f}'.format(freq, depth))
+        num, vcode = synHandle.write(':AM1:INT1:FREQ {:.9f}HZ; :AM1 {:.1f}'.format(freq, depth))
     except:
         vcode = 'Synthesizer set AM: IOError'
 
@@ -373,7 +373,7 @@ def read_fm_freq(synHandle, channel):
     '''
 
     try:
-        text = synHandle.query(':AM{:d}:INT{:d}:FREQ?'.format(channel, channel))
+        text = synHandle.query(':FM{:d}:INT{:d}:FREQ?'.format(channel, channel))
         return float(text.strip())
     except:
         return 0

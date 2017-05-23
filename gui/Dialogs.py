@@ -386,13 +386,13 @@ class SynInfoDialog(QtGui.QDialog):
         # update modulation setting panel
         self.am1StateLabel.setText('ON' if self.parent.synInfo.AM1Toggle else 'OFF')
         self.am1SrcLabel.setText(self.parent.synInfo.AM1Src)
-        self.am1DepthLabel.setText('{:.1%} ({:.0f} dB)'.format(self.parent.synInfo.AM1DepthPercent, self.parent.synInfo.AM1DepthDbm))
+        self.am1DepthLabel.setText('{:.1f}% ({:.0f} dB)'.format(self.parent.synInfo.AM1DepthPercent, self.parent.synInfo.AM1DepthDbm))
         self.am1FreqLabel.setText(siFormat(self.parent.synInfo.AM1Freq, suffix='Hz'))
         self.am1WaveLabel.setText(self.parent.synInfo.AM1Wave)
 
         self.am2StateLabel.setText('ON' if self.parent.synInfo.AM2Toggle else 'OFF')
         self.am2SrcLabel.setText(self.parent.synInfo.AM2Src)
-        self.am2DepthLabel.setText('{:.1%} ({:.0f} dB)'.format(self.parent.synInfo.AM2DepthPercent, self.parent.synInfo.AM2DepthDbm))
+        self.am2DepthLabel.setText('{:.1f}% ({:.0f} dB)'.format(self.parent.synInfo.AM2DepthPercent, self.parent.synInfo.AM2DepthDbm))
         self.am2FreqLabel.setText(siFormat(self.parent.synInfo.AM2Freq, suffix='Hz'))
         self.am2WaveLabel.setText(self.parent.synInfo.AM2Wave)
 
