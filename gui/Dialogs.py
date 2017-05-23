@@ -381,7 +381,7 @@ class SynInfoDialog(QtGui.QDialog):
         # update RF setting panel
         self.rfOutputLabel.setText('ON' if self.parent.synInfo.rfToggle else 'OFF')
         self.modOutputLabel.setText('ON' if self.parent.synInfo.modToggle else 'OFF')
-        self.synFreqLabel.setText('{:.9f} MHz'.format(self.parent.synInfo.synFreqLabel * 1e-6))
+        self.synFreqLabel.setText('{:.9f} MHz'.format(self.parent.synInfo.synFreq * 1e-6))
 
         # update modulation setting panel
         self.am1StateLabel.setText('ON' if self.parent.synInfo.AM1Toggle else 'OFF')
@@ -558,7 +558,7 @@ class LockinInfoDialog(QtGui.QDialog):
         # update ref group
         self.refSrcLabel.setText(self.parent.liaInfo.refSrcText)
         self.refFreqLabel.setText(siFormat(self.parent.liaInfo.refFreq, suffix='Hz'))
-        self.refHarmLabel.setText('{:d}'.format(self.parent.liaInfo.refHrefHarm))
+        self.refHarmLabel.setText('{:d}'.format(self.parent.liaInfo.refHarm))
         self.refPhaseLabel.setText('{:.2f} deg'.format(self.parent.liaInfo.refPhase))
 
         # update input group

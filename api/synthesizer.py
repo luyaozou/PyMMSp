@@ -128,7 +128,7 @@ def set_syn_freq(synHandle, freq):
     '''
 
     try:
-        num, vcode = synHandle.write(':FREQ:CW {:.9f}MHZ'.format(freq))
+        num, vcode = synHandle.write(':FREQ:CW {:.3f}HZ'.format(freq))
         return vcode
     except:
         return 'Synthesizer set syn freq: IOError'

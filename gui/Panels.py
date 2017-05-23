@@ -874,7 +874,7 @@ class LockinCtrl(QtGui.QGroupBox):
 
         ## -- Define layout elements --
         self.harmSel = QtGui.QComboBox()
-        self.harmSel.addItems(api_lia.HARM_LIST)
+        self.harmSel.addItems(['1', '2', '3', '4'])
         self.harmSel.setCurrentIndex(0)
         self.phaseFill = QtGui.QLineEdit('0')
         self.sensSel = Shared.LIASensBox()

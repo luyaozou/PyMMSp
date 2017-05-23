@@ -199,10 +199,12 @@ class SynInfo():
             self.AM1Freq = api_syn.read_am_freq(synHandle, 1)
             self.AM1DepthPercent, self.AM1DepthDbm = api_syn.read_am_depth(synHandle, 1)
             self.AM1Src = api_syn.read_am_source(synHandle, 1)
+            self.AM1Wave = api_syn.read_am_waveform(synHandle, 1)
             self.AM2Toggle = api_syn.read_am_state(synHandle, 2)
             self.AM2Freq = api_syn.read_am_freq(synHandle, 2)
             self.AM2DepthPercent, self.AM2DepthDbm = api_syn.read_am_depth(synHandle, 2)
             self.AM2Src = api_syn.read_am_source(synHandle, 2)
+            self.AM2Wave = api_syn.read_am_waveform(synHandle, 2)
             self.FM1Toggle = api_syn.read_fm_state(synHandle, 1)
             self.FM1Freq = api_syn.read_fm_freq(synHandle, 1)
             self.FM1Dev = api_syn.read_fm_dev(synHandle, 1)
@@ -244,8 +246,8 @@ class LiaInfo():
         self.refFreq = 1
         self.refPhase = 0
         self.refHarm = 1
-        self.refHarmText = '1'
-        self.refHarmIndex = api_lia.HARM_LIST.index(str(self.refHarm))
+        self.refHarmText = str(self.refHarm)
+        self.refHarmIndex = self.refHarm - 1
         self.configIndex = 1
         self.configText = api_lia.INPUT_CONFIG_LIST[self.configIndex]
         self.groundingIndex = 1
@@ -282,7 +284,7 @@ class LiaInfo():
             self.refPhase = api_lia.read_phase(liaHandle)
             self.refHarm = api_lia.read_harm(liaHandle)
             self.refHarmText = str(self.refHarm)
-            self.refHarmIndex = api_lia.HARM_LIST.index(str(self.refHarm))
+            self.refHarmIndex = self.refHarm - 1
             self.configIndex = api_lia.read_input_config(liaHandle)
             self.configText = api_lia.INPUT_CONFIG_LIST[self.configIndex]
             self.groundingIndex = api_lia.read_input_grounding(liaHandle)
@@ -352,7 +354,7 @@ class JPLLIAScanEntry(QtGui.QWidget):
         self.modFreqFill = QtGui.QLineEdit()
         self.modAmpFill = QtGui.QLineEdit()
         self.harmSel = QtGui.QComboBox()
-        self.harmSel.addItems(api_lia.HARM_LIST)
+        self.harmSel.addItems(['1', '2', '3', '4'])
         self.refPhaseFill = QtGui.QLineEdit()
 
         self.startFreqFill.textChanged.connect(self.val_start_freq)

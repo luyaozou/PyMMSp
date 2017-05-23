@@ -15,9 +15,6 @@ TC_LIST = ['10 us', '30 us', '100 us', '300 us', '1 ms', '3 ms', '10 ms',
            '30 ms', '100 ms', '300 ms', '1 s', '3 s', '10 s', '30 s'
            ]
 
-# LOCKIN HARMONICS LIST
-HARM_LIST = ['1', '2', '3', '4']
-
 # LOCKIN COUPLE LIST
 COUPLE_LIST = ['AC', 'DC']
 

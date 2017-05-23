@@ -181,7 +181,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self.selInstDialog = Dialogs.SelInstDialog(self)
         self.viewInstDialog = Dialogs.ViewInstDialog(self)
-        self.closeInstDialog = Dialogs.CloseSelInstDialog(self)
         self.synInfoDialog = Dialogs.SynInfoDialog(self)
         self.liaInfoDialog = Dialogs.LockinInfoDialog(self)
 
@@ -214,7 +213,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def on_close_sel_inst(self):
 
-        self.closeInstDialog.exec_()
+        d = Dialogs.CloseInstDialog(self)
+        d.exec_()
 
         # simply uncheck panels to prevent the warning dialog
         self.refresh_inst()
