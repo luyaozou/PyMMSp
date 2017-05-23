@@ -24,7 +24,7 @@ class JPLScanConfig(QtGui.QDialog):
         QtGui.QDialog.__init__(self, main)
         self.main = main
         self.setWindowTitle('Lockin scan configuration (JPL style)')
-        self.setMinimumSize(900, 600)
+        self.setMinimumSize(1200, 600)
 
         # Add top buttons
         addBatchButton = QtGui.QPushButton('Add batch')
@@ -56,14 +56,19 @@ class JPLScanConfig(QtGui.QDialog):
         self.entryLayout = QtGui.QGridLayout()
         self.entryLayout.setAlignment(QtCore.Qt.AlignTop)
         # add entries
-        self.entryLayout.addWidget(QtGui.QLabel('Start Freq (MHz)'), 0, 0)
-        self.entryLayout.addWidget(QtGui.QLabel('Stop Freq (MHz)'), 0, 1)
-        self.entryLayout.addWidget(QtGui.QLabel('Step (MHz)'), 0, 2)
-        self.entryLayout.addWidget(QtGui.QLabel('Averages'), 0, 3)
-        self.entryLayout.addWidget(QtGui.QLabel('Sensitivity'), 0, 4)
-        self.entryLayout.addWidget(QtGui.QLabel('Time Constant'), 0, 5)
-        self.entryLayout.addWidget(QtGui.QLabel('Wait time (ms)'), 0, 6)
-        self.entryLayout.addWidget(QtGui.QLabel('Comment'), 0, 7)
+        self.entryLayout.addWidget(QtGui.QLabel('Comment'), 0, 0)
+        self.entryLayout.addWidget(QtGui.QLabel('Start Freq (MHz)'), 0, 1)
+        self.entryLayout.addWidget(QtGui.QLabel('Stop Freq (MHz)'), 0, 2)
+        self.entryLayout.addWidget(QtGui.QLabel('Step (MHz)'), 0, 3)
+        self.entryLayout.addWidget(QtGui.QLabel('Averages'), 0, 4)
+        self.entryLayout.addWidget(QtGui.QLabel('Sensitivity'), 0, 5)
+        self.entryLayout.addWidget(QtGui.QLabel('Time Const'), 0, 6)
+        self.entryLayout.addWidget(QtGui.QLabel('Wait time (ms)'), 0, 7)
+        self.entryLayout.addWidget(QtGui.QLabel('Modulation'), 0, 8)
+        self.entryLayout.addWidget(QtGui.QLabel('Mod Freq'), 0, 9)
+        self.entryLayout.addWidget(QtGui.QLabel('Mod Depth/Dev'), 0, 10)
+        self.entryLayout.addWidget(QtGui.QLabel('Harmonics'), 0, 11)
+        self.entryLayout.addWidget(QtGui.QLabel('Phase'), 0, 12)
 
         self.add_entry()
 
@@ -92,34 +97,52 @@ class JPLScanConfig(QtGui.QDialog):
         ''' Add batch entry to this dialog window '''
 
         # generate a new batch entry
-        if self.main.testModeAction.isChecked():
-            entry = Shared.JPLLIAScanEntry(self.main, init_setting=(6, 120, 1, 1, 0, 0, 1000, 'default'))
-        else:
-            entry = Shared.JPLLIAScanEntry(self.main)
+        default_setting = ('default', self.main.synInfo.probFreq,
+                            self.main.synInfo.probFreq+10.000, 0.1, 1,
+                            self.main.liaInfo.sensIndex,
+                            self.main.liaInfo.tcIndex, 60,
+                            self.main.synInfo.modModeIndex,
+                            self.main.synInfo.modFreq,
+                            self.main.synInfo.modAmp,
+                            self.main.liaInfo.refHarm,
+                            self.main.liaInfo.refPhase)
+        entry = Shared.JPLLIAScanEntry(self.main, default=default_setting)
 
         # get the current last entry
         if self.entryWidgetList:
             last_entry = self.entryWidgetList[-1]
             # set default values to be the same as the last one
+            entry.commentFill.setText(last_entry.commentFill.text())
+            entry.startFreqFill.setText(last_entry.startFreqFill.text())
+            entry.stopFreqFill.setText(last_entry.stopFreqFill.text())
             entry.stepFill.setText(last_entry.stepFill.text())
             entry.avgFill.setText(last_entry.avgFill.text())
             entry.sensSel.setCurrentIndex(last_entry.sensSel.currentIndex())
             entry.tcSel.setCurrentIndex(last_entry.tcSel.currentIndex())
             entry.waitTimeFill.setText(last_entry.waitTimeFill.text())
-            entry.commentFill.setText(last_entry.commentFill.text())
+            entry.modModeSel.setCurrentIndex(last_entry.modModeSel.currentIndex())
+            entry.modFreqFill.setText(last_entry.modFreqFill.text())
+            entry.modAmpFill.setText(last_entry.modAmpFill.text())
+            entry.harmSel.setCurrentIndex(last_entry.harmSel.currentIndex())
+            entry.refPhaseFill.setText(last_entry.refPhaseFill.text())
         else:
             pass
         # add this entry to the layout and to the entry list
         self.entryWidgetList.append(entry)
         row = len(self.entryWidgetList)
-        self.entryLayout.addWidget(entry.startFreqFill, row, 0)
-        self.entryLayout.addWidget(entry.stopFreqFill, row, 1)
-        self.entryLayout.addWidget(entry.stepFill, row, 2)
-        self.entryLayout.addWidget(entry.avgFill, row, 3)
-        self.entryLayout.addWidget(entry.sensSel, row, 4)
-        self.entryLayout.addWidget(entry.tcSel, row, 5)
-        self.entryLayout.addWidget(entry.waitTimeFill, row, 6)
-        self.entryLayout.addWidget(entry.commentFill, row, 7)
+        self.entryLayout.addWidget(entry.commentFill, row, 0)
+        self.entryLayout.addWidget(entry.startFreqFill, row, 1)
+        self.entryLayout.addWidget(entry.stopFreqFill, row, 2)
+        self.entryLayout.addWidget(entry.stepFill, row, 3)
+        self.entryLayout.addWidget(entry.avgFill, row, 4)
+        self.entryLayout.addWidget(entry.sensSel, row, 5)
+        self.entryLayout.addWidget(entry.tcSel, row, 6)
+        self.entryLayout.addWidget(entry.waitTimeFill, row, 7)
+        self.entryLayout.addWidget(entry.modModeSel, row, 8)
+        self.entryLayout.addWidget(entry.modFreqFill, row, 9)
+        self.entryLayout.addWidget(entry.modAmpFill, row, 10)
+        self.entryLayout.addWidget(entry.harmSel, row, 11)
+        self.entryLayout.addWidget(entry.refPhaseFill, row, 12)
 
     def remove_entry(self):
         ''' Remove last batch entry in this dialog window '''
@@ -132,6 +155,8 @@ class JPLScanConfig(QtGui.QDialog):
         else:
             # remove this entry
             entry = self.entryWidgetList.pop()
+            self.entryLayout.removeWidget(entry.commentFill)
+            entry.commentFill.deleteLater()
             self.entryLayout.removeWidget(entry.startFreqFill)
             entry.startFreqFill.deleteLater()
             self.entryLayout.removeWidget(entry.stopFreqFill)
@@ -146,8 +171,16 @@ class JPLScanConfig(QtGui.QDialog):
             entry.tcSel.deleteLater()
             self.entryLayout.removeWidget(entry.waitTimeFill)
             entry.waitTimeFill.deleteLater()
-            self.entryLayout.removeWidget(entry.commentFill)
-            entry.commentFill.deleteLater()
+            self.entryLayout.removeWidget(entry.modModeSel)
+            entry.modModeSel.deleteLater()
+            self.entryLayout.removeWidget(entry.modFreqFill)
+            entry.modFreqFill.deleteLater()
+            self.entryLayout.removeWidget(entry.modAmpFill)
+            entry.modAmpFill.deleteLater()
+            self.entryLayout.removeWidget(entry.harmSel)
+            entry.harmSel.deleteLater()
+            self.entryLayout.removeWidget(entry.refPhaseFill)
+            entry.refPhaseFill.deleteLater()
             entry.deleteLater()
 
     def set_file_directory(self):
@@ -158,15 +191,12 @@ class JPLScanConfig(QtGui.QDialog):
     def get_settings(self):
         ''' Read batch settings from entries and proceed.
             Returns a list of seting tuples in the format of
-            (start_freq <MHz>, stop_freq <MHz>, step <MHz>, averages <int>,
-             itgtime <ms>, waittime <ms>, lockin sens_index <int>)
+            (comment, start_freq <MHz>, stop_freq <MHz>, step <MHz>,
+             averages [int], sens_index [int], timeConst [int],
+             waittime <ms>, mod Mode index [int], mod freq <Hz>, mod Amp [float], harmonics [int], phase [float])
         '''
 
         vdi_index = self.main.synCtrl.bandSel.currentIndex()
-        if self.main.testModeAction.isChecked():
-            tc_index = self.main.liaInfo.tcIndex
-        else:
-            tc_index = api_lia.read_tc(self.main.liaHandle)
 
         entry_settings = []
         no_error = True
@@ -176,25 +206,21 @@ class JPLScanConfig(QtGui.QDialog):
         else:
             # get settings from entry
             for entry in self.entryWidgetList:
-                # read settings
-                status1, start_freq = api_val.val_prob_freq(entry.startFreqFill.text(), vdi_index)
-                status2, stop_freq = api_val.val_prob_freq(entry.stopFreqFill.text(), vdi_index)
-                status3, step = api_val.val_float(entry.stepFill.text())
-                status4, average = api_val.val_int(entry.avgFill.text())
-                sens_index = entry.sensSel.currentIndex()
-                tc_index = entry.tcSel.currentIndex()
-                status5, waittime = api_val.val_lia_waittime(entry.waitTimeFill.text(), tc_index)
-                comment = entry.commentFill.text()
-                # put them into a setting tuple
-                if status1 and status2 and status3 and status4 and status5:
+                # if all validation status in this entry are True
+                if (not list(entry.status.values()).count(False)):
                     no_error *= True
-                    setting_entry = (start_freq, stop_freq, step, average,
-                                     sens_index, tc_index, waittime, comment)
+                    # read settings
+                    setting_entry = (entry.commentFill.text(),
+                                     entry.startFreq, entry.stopFreq, entry.step,
+                                     entry.avg, entry.sensSel.currentIndex(),
+                                     entry.tcSel.currentIndex(), entry.waittime,
+                                     entry.modModeSel.currentIndex(),
+                                     entry.modFreq, entry.modAmp, entry.refHarm,
+                                     entry.refPhase)
                     # put the setting tuple into a list
                     entry_settings.append(setting_entry)
                 else:
                     no_error *= False
-
         if no_error:
             return entry_settings, self.filename
         else:
@@ -213,7 +239,7 @@ class JPLScanWindow(QtGui.QDialog):
         QtGui.QWidget.__init__(self, main)
         self.main = main
         self.setWindowTitle('Lockin scan monitor')
-        self.setMinimumSize(800, 600)
+        self.setMinimumSize(1200, 600)
         self.entry_settings = entry_settings
 
         # set up batch list display
@@ -253,7 +279,7 @@ class JPLScanWindow(QtGui.QDialog):
         total_time = ceil(Shared.jpl_scan_time(entry_settings))
         self.totalProgBar.setRange(0, total_time)
         self.totalProgBar.setValue(0)
-        self.batch_pts_taken = 0
+        self.batch_time_taken = 0
 
         # Start scan
         self.next_entry_signal.connect(self.next_entry)
@@ -326,12 +352,13 @@ class JPLBatchListWidget(QtGui.QWidget):
         self.batchLayout.addWidget(QtGui.QLabel('Step'), 0, 4)
         self.batchLayout.addWidget(QtGui.QLabel('Avg'), 0, 5)
         self.batchLayout.addWidget(QtGui.QLabel('Sens'), 0, 6)
-        self.batchLayout.addWidget(QtGui.QLabel('Time Const'), 0, 7)
-        self.batchLayout.addWidget(QtGui.QLabel('Wait time'), 0, 8)
+        self.batchLayout.addWidget(QtGui.QLabel('Time'), 0, 7)
+        self.batchLayout.addWidget(QtGui.QLabel('Const'), 1, 7)
+        self.batchLayout.addWidget(QtGui.QLabel('Modulation'), 0, 8)
+        self.batchLayout.addWidget(QtGui.QLabel('Harmonics'), 0, 9)
         self.batchLayout.addWidget(QtGui.QLabel('(MHz)'), 1, 2)
         self.batchLayout.addWidget(QtGui.QLabel('(MHz)'), 1, 3)
         self.batchLayout.addWidget(QtGui.QLabel('(MHz)'), 1, 4)
-        self.batchLayout.addWidget(QtGui.QLabel('(ms)'), 1, 8)
 
         # add batch list entry
         self.entryList = []
@@ -350,7 +377,8 @@ class JPLBatchListWidget(QtGui.QWidget):
             self.batchLayout.addWidget(entry.avgLabel, row+2, 5)
             self.batchLayout.addWidget(entry.sensLabel, row+2, 6)
             self.batchLayout.addWidget(entry.tcLabel, row+2, 7)
-            self.batchLayout.addWidget(entry.waitTimeLabel, row+2, 8)
+            self.batchLayout.addWidget(entry.modModeLabel, row+2, 8)
+            self.batchLayout.addWidget(entry.refHarmLabel, row+2, 9)
             self.entryList.append(entry)
 
         self.setLayout(self.batchLayout)
@@ -369,10 +397,7 @@ class SingleScan(QtGui.QWidget):
         self.filename = filename
 
         # Initialize shared settings
-        if self.main.testModeAction.isChecked():
-            pass
-        else:
-            self.multiplier = api_val.MULTIPLIER[self.main.synCtrl.bandSel.currentIndex()]
+        self.multiplier = self.main.synInfo.vdiBandMultiplication
 
         # Initialize scan entry settings
         self.start_rf_freq = 0
@@ -381,7 +406,7 @@ class SingleScan(QtGui.QWidget):
         self.acquired_avg = 0
         self.step = 0
         self.sens_index = 0
-        self.waittime = 30
+        self.waittime = 60
 
         self.waitTimer = QtCore.QTimer()
         self.waitTimer.setInterval(self.waittime)
@@ -390,12 +415,12 @@ class SingleScan(QtGui.QWidget):
 
         # set up main layout
         buttons = QtGui.QWidget()
-        jumpButton = QtGui.QPushButton('Jump to Next Window')
+        jumpButton = QtGui.QPushButton('Jump to Next Batch')
         abortAllButton = QtGui.QPushButton('Abort Batch Project')
-        self.pauseButton = QtGui.QPushButton('Pause Current Scan')
+        self.pauseButton = QtGui.QPushButton('Pause')
         self.pauseButton.setCheckable(True)
-        redoButton = QtGui.QPushButton('Redo Current Scan')
-        restartWinButton = QtGui.QPushButton('Restart Current Window')
+        redoButton = QtGui.QPushButton('Redo Current Sweep')
+        restartWinButton = QtGui.QPushButton('Restart Current Batch')
         saveButton = QtGui.QPushButton('Save and Continue')
         buttonLayout = QtGui.QGridLayout()
         buttonLayout.addWidget(self.pauseButton, 0, 0)
@@ -432,47 +457,98 @@ class SingleScan(QtGui.QWidget):
 
     def update_setting(self, entry_setting):
         ''' Update scan entry setting. Starts a scan after setting update.
-            entry = (start_freq <MHz>, stop_freq <MHz>, step <MHz>, averages <int>,
-            lockin sens_index <int>, lockin tc_index <int>, itgtime <ms>, waittime <ms>)
+            entry = (comment, start_freq <MHz>, stop_freq <MHz>, step <MHz>,
+             averages [int], sens_index [int], timeConst [int],
+             waittime <ms>, mod Mode index [int], mod freq <Hz>, mod Amp [float], harmonics [int], phase [float])
         '''
 
-        self.x = Shared.gen_x_array(*entry_setting[0:3])
-        self.x_min = min(entry_setting[0], entry_setting[1])
-        self.step = entry_setting[2]
+        self.x = Shared.gen_x_array(*entry_setting[1:4])
+        self.x_min = min(entry_setting[1], entry_setting[2])
+        self.step = entry_setting[3]
         self.current_x_index = 0
-        self.target_avg = entry_setting[3]
+        self.target_avg = entry_setting[4]
         self.acquired_avg = 0
-        self.sens_index = entry_setting[4]
-        self.tc_index = entry_setting[5]
-        self.waittime = entry_setting[6]
+        self.sens_index = entry_setting[5]
+        self.tc_index = entry_setting[6]
+        self.waittime = entry_setting[7]
         self.waitTimer.setInterval(self.waittime)
-        self.current_comment = entry_setting[7]
+        self.current_comment = entry_setting[0]
         self.y = np.zeros_like(self.x)
         self.y_sum = np.zeros_like(self.x)
         self.ySumCurve.setData(self.x, self.y_sum)
         total_pts =  len(self.x) * self.target_avg
         self.pts_taken = 0
-        self.parent.currentProgBar.setRange(0, ceil(total_pts*self.waittime*1e-3))
-        self.parent.currentProgBar.setValue(ceil(self.pts_taken*self.waittime*1e-3))
+        self.parent.currentProgBar.setRange(0, ceil(total_pts * self.waittime))
+        self.parent.currentProgBar.setValue(ceil(self.pts_taken * self.waittime))
 
-        # set lockin properties
+        # tune instrument
+        self.tune_inst(entry_setting)
+
+        # refresh [inst]Status Panels
+        self.main.synStatus.print_info()
+        self.main.liaStatus.print_info()
+
+        # start daq timer
+        self.waitTimer.start()
+
+    def tune_inst(self, entry_setting):
+        ''' Tune instrument '''
+
+        self.main.synInfo.modModeIndex = entry_setting[8]
+        self.main.synInfo.modModeText = api_syn.MOD_MODE_LIST[entry_setting[8]]
+        self.main.synInfo.modFreq = entry_setting[9]
+        self.main.synInfo.modAmp = entry_setting[10]
+
         if self.main.testModeAction.isChecked():
-            pass
-        else:
-            api_lia.set_sens(self.main.liaHandle, self.sens_index)
-            api_lia.set_tc(self.main.liaHandle, self.tc_index)
-
-        self.tune_syn()
-
-    def tune_syn(self):
-        ''' Tune synthesizer frequency '''
-
-        if self.main.testModeAction.isChecked():
-            pass
+            self.main.synInfo.probFreq = self.x[self.current_x_index]
+            self.main.synInfo.synFreq = self.x[self.current_x_index]/self.multiplier
+            if self.main.synInfo.modModeIndex == 1:
+                self.main.synInfo.modToggle = True
+                self.main.synInfo.AM1Freq = entry_setting[9]
+                self.main.synInfo.AM1DepthPercent = entry_setting[10]
+            elif self.main.synInfo.modModeIndex == 1:
+                self.main.synInfo.modToggle = True
+                self.main.synInfo.FM1Freq = entry_setting[9]
+                self.main.synInfo.FM1Dev = entry_setting[10]
+            else:
+                self.main.synInfo.modToggle = False
+            self.main.liaInfo.sensIndex = self.sens_index
+            self.main.liaInfo.sensText = api_lia.SENS_LIST[self.sens_index]
+            self.main.liaInfo.tcIndex = self.tc_index
+            self.main.liaInfo.tcText = api_lia.TC_LIST[self.tc_index]
+            self.main.liaInfo.refHarm = entry_setting[11]
+            self.main.liaInfo.refHarmText = str(entry_setting[11])
+            self.main.liaInfo.refPhase = entry_setting[12]
         else:
             api_syn.set_syn_freq(self.main.synHandle, self.x[self.current_x_index]/self.multiplier)
+            api_syn.set_mod_mode(self.main.synHandle, entry_setting[8])
+            if self.main.synInfo.modModeIndex == 1:
+                api_syn.set_am(self.main.synHandle, entry_setting[9], entry_setting[10], True)
+            elif self.main.synInfo.modModeIndex == 2:
+                api_syn.set_fm(self.main.synHandle, entry_setting[9], entry_setting[10], True)
+            else:
+                pass
+            api_lia.set_sens(self.main.liaHandle, self.sens_index)
+            api_lia.set_tc(self.main.liaHandle, self.tc_index)
+            api_lia.set_harm(self.main.liaHandle, entry_setting[11])
+            api_lia.set_phase(self.main.liaHandle, entry_setting[12])
 
-        self.waitTimer.start()
+            self.main.synInfo.full_info_query()
+            self.main.liaInfo.full_info_query()
+
+    def tune_syn_freq(self):
+            ''' Simply tune synthesizer frequency '''
+
+            self.main.synInfo.probFreq = self.x[self.current_x_index]
+            self.main.synInfo.synFreq = self.x[self.current_x_index] / self.multiplier
+            self.main.synStatus.print_info()
+
+            if self.main.testModeAction.isChecked():
+                pass
+            else:
+                api_syn.set_syn_freq(self.main.synHandle, self.main.synInfo.synFreq)
+
+            self.waitTimer.start()
 
     def query_lockin(self):
         ''' Query lockin data. Triggered by waitTimer.timeout() '''
@@ -489,10 +565,11 @@ class SingleScan(QtGui.QWidget):
         # if done
         if self.acquired_avg == self.target_avg:
             self.save_data()
-            self.parent.batch_pts_taken += ceil(len(self.x)*self.target_avg*self.waittime*1e-3)
+            self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.waittime)
             self.parent.next_entry_signal.emit()
         else:
-            self.tune_syn()
+            # tune syn to the next freq
+            self.tune_syn_freq()
 
     def next_freq(self):
         ''' move to the next frequency point '''
@@ -517,9 +594,9 @@ class SingleScan(QtGui.QWidget):
                 self.y = np.zeros_like(self.x)
 
         # update progress bar
-        self.parent.currentProgBar.setValue(ceil(self.pts_taken*self.waittime*1e-3))
-        self.parent.totalProgBar.setValue(self.parent.batch_pts_taken +
-                                          ceil(self.pts_taken*self.waittime*1e-3))
+        self.parent.currentProgBar.setValue(ceil(self.pts_taken * self.waittime))
+        self.parent.totalProgBar.setValue(self.parent.batch_time_taken +
+                                          ceil(self.pts_taken*self.waittime))
 
     def update_ysum(self):
         ''' Update sum plot '''
@@ -534,32 +611,23 @@ class SingleScan(QtGui.QWidget):
 
         # Grab current comment (in case edited during the scan) before saving data
         entry = self.parent.batchListWidget.entryList[self.parent.current_entry_index]
-        self.current_comment = entry.commentFill.text()
 
-        # grab lockin & synthesizer information
-        if self.main.testModeAction.isChecked():
-            tc = self.main.liaInfo.tcIndex
+        if self.main.synInfo.modModeIndex == 2:
+            mod_amp = self.main.synInfo.modAmp * 1e-3
+        elif self.main.synInfo.modModeIndex == 1:
+            mod_amp = self.main.synInfo.modAmp
         else:
-            tc = api_lia.read_tc(self.main.liaHandle)
-
-        mod_stat = self.main.synCtrl.modModeSel.currentText()
-        if mod_stat == 'AM':
-            mod_freq = self.main.synInfo.AM1Freq * 1e-3
-            mod_amp = self.main.synInfo.AM1DepthPercent * 1e2
-        elif mod_stat == 'FM':
-            mod_freq = self.main.synInfo.FM1Freq * 1e-3
-            mod_amp = self.main.synInfo.FM1Dev * 1e-3
-        else:
-            mod_freq = 0
             mod_amp = 0
 
         # prepare header
-        h_info = (self.main.synInfo.vdiBandMultiplication,
-                  self.waittime, api_val.LIASENSLIST[self.sens_index],
-                  api_val.LIATCLIST[tc]*1e-3, mod_freq, mod_amp, mod_stat,
+        h_info = (self.multiplier, self.waittime,
+                  api_val.LIASENSLIST[self.sens_index],
+                  api_val.LIATCLIST[self.tc_index]*1e-3,
+                  self.main.synInfo.modFreq * 1e-3, mod_amp,
+                  self.main.synInfo.modModeText,
                   self.main.liaInfo.refHarm, self.main.liaInfo.refPhase,
                   self.x_min, self.step, self.acquired_avg,
-                  self.current_comment)
+                  entry.commentFill.text())
 
         # if already finishes at least one sweep
         if self.acquired_avg > 0:
@@ -571,11 +639,11 @@ class SingleScan(QtGui.QWidget):
         ''' Pause/resume data acquisition '''
 
         if btn_pressed:
-            self.pauseButton.setText('Resume Current Scan')
+            self.pauseButton.setText('Resume')
             #print('pause')
             self.waitTimer.stop()
         else:
-            self.pauseButton.setText('Pause Current Scan')
+            self.pauseButton.setText('Pause')
             #print('resume')
             self.waitTimer.start()
 
@@ -595,7 +663,7 @@ class SingleScan(QtGui.QWidget):
             self.current_x_index = 0
 
         self.y = np.zeros_like(self.x)
-        self.tune_syn()
+        self.tune_syn_freq()
 
     def restart_avg(self):
         ''' Erase all current averages and start over '''
@@ -612,7 +680,7 @@ class SingleScan(QtGui.QWidget):
             self.y = np.zeros_like(self.x)
             self.y_sum = np.zeros_like(self.x)
             self.ySumCurve.setData(self.x, self.y_sum)
-            self.tune_syn()
+            self.tune_syn_freq()
         else:
             pass
 
@@ -633,13 +701,13 @@ class SingleScan(QtGui.QWidget):
         if q == QtGui.QMessageBox.Yes:
             #print('abort current')
             self.waitTimer.stop()
-            self.parent.batch_pts_taken += len(self.x)*self.target_avg
+            self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.waittime)
             self.save_data()
             self.parent.next_entry_signal.emit()
         elif q == QtGui.QMessageBox.No:
             #print('abort current')
             self.waitTimer.stop()
-            self.parent.batch_pts_taken += len(self.x)*self.target_avg
+            self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.waittime)
             self.parent.next_entry_signal.emit()
         else:
             pass

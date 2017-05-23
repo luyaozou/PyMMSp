@@ -4,7 +4,7 @@ from PyQt5 import QtGui, QtCore
 import random
 from math import ceil
 import numpy as np
-from pyqtgraph import siFormat
+from pyqtgraph import siFormat, siEval
 from api import validator as api_val
 from api import synthesizer as api_syn
 from api import lockin as api_lia
@@ -141,6 +141,10 @@ class SynInfo():
         self.vdiBandMultiplication = api_val.VDIBANDMULTI[self.vdiBandIndex]
         self.probFreq = self.synFreq * self.vdiBandMultiplication
         self.modToggle = False
+        self.modModeIndex = 0
+        self.modModeText = ''     # ['NONE', 'AM', 'FM']
+        self.modFreq = 0          # update according to modMode
+        self.modAmp = 0           # update according to modMode
         self.AM1Toggle = False
         self.AM1Freq = 0          # Hz
         self.AM1DepthPercent = 0  # float
@@ -239,6 +243,7 @@ class LiaInfo():
         self.refFreq = 1
         self.refPhase = 0
         self.refHarm = 1
+        self.refHarmText = '1'
         self.refHarmIndex = api_lia.HARM_LIST.index(str(self.refHarm))
         self.configIndex = 1
         self.configText = api_lia.INPUT_CONFIG_LIST[self.configIndex]
@@ -274,6 +279,7 @@ class LiaInfo():
             self.refFreq = api_lia.read_freq(liaHandle)
             self.refPhase = api_lia.read_phase(liaHandle)
             self.refHarm = api_lia.read_harm(liaHandle)
+            self.refHarmText = str(self.refHarm)
             self.refHarmIndex = api_lia.HARM_LIST.index(str(self.refHarm))
             self.configIndex = api_lia.read_input_config(liaHandle)
             self.configText = api_lia.INPUT_CONFIG_LIST[self.configIndex]
@@ -318,10 +324,20 @@ class MotorInfo():
 class JPLLIAScanEntry(QtGui.QWidget):
     ''' Frequency window entry for scanning job configuration with captions '''
 
-    def __init__(self, main, init_setting=()):
-        QtGui.QWidget.__init__(self, parent=None)
+    def __init__(self, main, default=()):
+        QtGui.QWidget.__init__(self)
         self.main = main
+        self.status = {'startFreq': True,
+                       'stopFreq': True,
+                       'step': True,
+                       'avg': True,
+                       'waittime': True,
+                       'modFreq': True,
+                       'modAmp': True,
+                       'refHarm': True,
+                       'refPhase': True}      # overall validator status
 
+        self.commentFill = QtGui.QLineEdit()
         self.startFreqFill = QtGui.QLineEdit()
         self.stopFreqFill = QtGui.QLineEdit()
         self.stepFill = QtGui.QLineEdit()
@@ -329,9 +345,13 @@ class JPLLIAScanEntry(QtGui.QWidget):
         self.sensSel = LIASensBox()
         self.tcSel = LIATCBox()
         self.waitTimeFill = QtGui.QLineEdit()
-        self.commentFill = QtGui.QLineEdit()
-        # validate default values
-        self.val_waittime()
+        self.modModeSel = QtGui.QComboBox()
+        self.modModeSel.addItems(api_syn.MOD_MODE_LIST)
+        self.modFreqFill = QtGui.QLineEdit()
+        self.modAmpFill = QtGui.QLineEdit()
+        self.harmSel = QtGui.QComboBox()
+        self.harmSel.addItems(api_lia.HARM_LIST)
+        self.refPhaseFill = QtGui.QLineEdit()
 
         self.startFreqFill.textChanged.connect(self.val_start_freq)
         self.stopFreqFill.textChanged.connect(self.val_stop_freq)
@@ -339,53 +359,142 @@ class JPLLIAScanEntry(QtGui.QWidget):
         self.avgFill.textChanged.connect(self.val_avg)
         self.tcSel.currentIndexChanged.connect(self.val_waittime)
         self.waitTimeFill.textChanged.connect(self.val_waittime)
+        self.modModeSel.currentIndexChanged.connect(self.set_mod_mode)
+        self.modFreqFill.textChanged.connect(self.val_syn_mod_freq)
+        self.modAmpFill.textChanged.connect(self.val_syn_amp)
+        self.harmSel.currentIndexChanged[str].connect(self.update_lia_harm)
+        self.refPhaseFill.textChanged.connect(self.val_lia_phase)
 
-        if init_setting:
-            self.startFreqFill.setText(str(init_setting[0]))
-            self.stopFreqFill.setText(str(init_setting[1]))
-            self.stepFill.setText(str(init_setting[2]))
-            self.avgFill.setText(str(init_setting[3]))
-            self.sensSel.setCurrentIndex(int(init_setting[4]))
-            self.tcSel.setCurrentIndex(int(init_setting[5]))
-            self.waitTimeFill.setText(str(init_setting[6]))
-            self.commentFill.setText(str(init_setting[7]))
+        # set up default values
+        self.commentStr = str(default[0])
+        self.commentFill.setText(self.commentStr)
+        self.startFreq = default[1]
+        self.startFreqFill.setText('{:.3f}'.format(self.startFreq))
+        self.stopFreq = default[2]
+        self.stopFreqFill.setText('{:.3f}'.format(self.stopFreq))
+        self.step = default[3]
+        self.stepFill.setText('{:.3f}'.format(self.step))
+        self.avg = default[4]
+        self.avgFill.setText(str(self.avg))
+        self.sensSel.setCurrentIndex(default[5])
+        self.tcSel.setCurrentIndex(default[6])
+        self.waittime = default[7]
+        self.waitTimeFill.setText('{:g}'.format(self.waittime))
+        self.modFreq = default[9]
+        self.modFreqFill.setText(siFormat(self.modFreq, suffix='Hz'))
+        self.modAmp = default[10]
+        self.modAmpFill.setText(siFormat(self.modAmp, suffix='Hz') if default[8]==2 else '{:g}'.format(self.modAmp))
+        self.refHarm = default[11]
+        self.harmSel.setCurrentIndex(self.refHarm - 1)
+        self.refPhase = default[12]
+        self.refPhaseFill.setText('{:.2f}'.format(self.refPhase))
+        self.modModeSel.setCurrentIndex(default[8])
+        self.set_mod_mode(default[8])
+
+    def set_mod_mode(self, index):
+
+        if (not index):     # no modulation, turn off mod freq edits
+            self.modFreqFill.setReadOnly(True)
+            self.modAmpFill.setReadOnly(True)
+            self.modFreqFill.setStyleSheet('color: grey')
+            self.modAmpFill.setStyleSheet('color: grey')
+            self.status['refHarm'] = True
         else:
-            pass
+            self.modFreqFill.setReadOnly(False)
+            self.modAmpFill.setReadOnly(False)
+            self.modFreqFill.setStyleSheet('color: black')
+            self.modAmpFill.setStyleSheet('color: black')
 
     def val_start_freq(self, text):
 
         vdi_index = self.main.synCtrl.bandSel.currentIndex()
-        status, freq = api_val.val_syn_freq(text, vdi_index)
+        status, _temp = api_val.val_prob_freq(text, vdi_index)
         self.startFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.status['startFreq'] = bool(status)
+        self.startFreq = _temp * self.main.synInfo.vdiBandMultiplication
 
     def val_stop_freq(self, text):
 
         vdi_index = self.main.synCtrl.bandSel.currentIndex()
-        status, freq = api_val.val_syn_freq(text, vdi_index)
+        status, _temp = api_val.val_prob_freq(text, vdi_index)
         self.stopFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.status['stopFreq'] = bool(status)
+        self.stopFreq = _temp * self.main.synInfo.vdiBandMultiplication
 
     def val_step(self, text):
 
-        status, number = api_val.val_float(text, safe=[('>=', 0.01)], warning=[('>', 0)])
+        status, self.step = api_val.val_float(text, safe=[('>=', 0.01)], warning=[('>', 0)])
         self.stepFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.status['step'] = bool(status)
 
     def val_avg(self, text):
 
         vdi_index = self.main.synCtrl.bandSel.currentIndex()
-        status, number = api_val.val_int(text, safe=[('>', 0)])
+        status, self.avg = api_val.val_int(text, safe=[('>', 0)])
         self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.status['avg'] = bool(status)
 
     def val_waittime(self):
 
         text = self.waitTimeFill.text()
         tc_index = self.tcSel.currentIndex()
-        status, waittime = api_val.val_lia_waittime(text, tc_index)
+        status, self.waittime = api_val.val_lia_waittime(text, tc_index)
         self.waitTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.status['waittime'] = bool(status)
 
+    def val_syn_mod_freq(self, text):
+
+        try:
+            status1, self.modFreq = api_val.val_syn_mod_freq(str(siEval(text)), 'Hz')
+        except:
+            status1, self.modFreq = 0, 0
+
+        try:
+            status2, self.refHarm = api_val.val_lia_harm(self.harmSel.currentText(), self.modFreq)
+        except:
+            status2, self.refHarm = 0, 1
+
+        # if no modulation, move forward
+        if self.modModeSel.currentIndex():
+            # this ceil(status1 * status2 /2) trick makes sure
+            # only safe (2) if both status are 2, warning (1) if one is warning, and fatal (0) if any of the two is 0
+            status = ceil(status1 * status2 / 2)
+        else:
+            status = 2
+
+        self.modFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.harmSel.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+
+        self.status['modFreq'] = bool(status1)
+        self.status['refHarm'] = bool(status2)
+
+    def val_syn_amp(self, text):
+
+        if self.modModeSel.currentIndex() == 1:     # AM
+            status, self.modAmp = api_val.val_syn_am_depth(str(siEval(text)), '%')
+        elif self.modModeSel.currentIndex() == 2:   # FM
+            status, self.modAmp = api_val.val_syn_fm_depth(str(siEval(text)),
+            'Hz')
+        else:
+            status = 2
+        self.modAmpFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.status['modAmp'] = bool(status)
+
+    def val_lia_phase(self, text):
+
+        status, self.refPhase = api_val.val_lia_phase(text)
+        self.refPhaseFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.status['refPhase'] = bool(status)
+
+    def update_lia_harm(self, text):
+
+        self.refHarm = int(text)
 
 class JPLLIABatchListEntry(QtGui.QWidget):
     ''' Single batch list entry in display mode.
-    entry = (start, stop, step, avg, sens_idx, tc_idx, waittime, comment) '''
+    entry = (comment [str], start [float, MHz], stop [float, MHz],
+             step [float, MHz], avg [int], sens_idx [int], tc_idx [int],
+             mod mode index [int], harmonics [int]) '''
 
     def __init__(self, parent, entry_setting=()):
         QtGui.QWidget.__init__(self, parent=None)
@@ -400,17 +509,19 @@ class JPLLIABatchListEntry(QtGui.QWidget):
         self.avgLabel = QtGui.QLabel()
         self.sensLabel = QtGui.QLabel()
         self.tcLabel = QtGui.QLabel()
-        self.waitTimeLabel = QtGui.QLabel()
+        self.modModeLabel = QtGui.QLabel()
+        self.refHarmLabel = QtGui.QLabel()
 
         # set label text
-        self.commentFill.setText(entry_setting[-1])
-        self.startFreqLabel.setText('{:.3f}'.format(entry_setting[0]))
-        self.stopFreqLabel.setText('{:.3f}'.format(entry_setting[1]))
-        self.stepLabel.setText('{:.3f}'.format(entry_setting[2]))
-        self.avgLabel.setText('{:d}'.format(entry_setting[3]))
-        self.sensLabel.setText(api_lia.SENS_LIST[entry_setting[4]])
-        self.tcLabel.setText(api_lia.TC_LIST[entry_setting[5]])
-        self.waitTimeLabel.setText('{:4g}'.format(entry_setting[6]))
+        self.commentFill.setText(entry_setting[0])
+        self.startFreqLabel.setText('{:.3f}'.format(entry_setting[1]))
+        self.stopFreqLabel.setText('{:.3f}'.format(entry_setting[2]))
+        self.stepLabel.setText('{:.3f}'.format(entry_setting[3]))
+        self.avgLabel.setText('{:d}'.format(entry_setting[4]))
+        self.sensLabel.setText(api_lia.SENS_LIST[entry_setting[5]])
+        self.tcLabel.setText(api_lia.TC_LIST[entry_setting[6]])
+        self.modModeLabel.setText(api_syn.MOD_MODE_LIST[entry_setting[8]])
+        self.refHarmLabel.setText('{:d}'.format(entry_setting[11]))
 
         # set text color to grey
         self.set_color_grey()
@@ -424,7 +535,8 @@ class JPLLIABatchListEntry(QtGui.QWidget):
         self.avgLabel.setStyleSheet('color: grey')
         self.sensLabel.setStyleSheet('color: grey')
         self.tcLabel.setStyleSheet('color: grey')
-        self.waitTimeLabel.setStyleSheet('color: grey')
+        self.modModeLabel.setStyleSheet('color: grey')
+        self.refHarmLabel.setStyleSheet('color: grey')
 
     def set_color_black(self):
         ''' Set text color to black '''
@@ -437,7 +549,8 @@ class JPLLIABatchListEntry(QtGui.QWidget):
         self.avgLabel.setStyleSheet('color: black')
         self.sensLabel.setStyleSheet('color: black')
         self.tcLabel.setStyleSheet('color: black')
-        self.waitTimeLabel.setStyleSheet('color: black')
+        self.modModeLabel.setStyleSheet('color: black')
+        self.refHarmLabel.setStyleSheet('color: black')
 
 
 class LWAScanHdEntry(QtGui.QWidget):
@@ -559,10 +672,10 @@ def jpl_scan_time(jpl_entry_settings):
 
     total_time = 0
     for entry in jpl_entry_settings:
-        start, stop, step = entry[0:3]
+        start, stop, step = entry[1:4]
         # estimate total data points to be taken
-        data_points = ceil((abs(stop - start) + step) / step) * entry[3]
-        # time expense for this entry in seconds
-        total_time += data_points * entry[6] * 1e-3
+        data_points = ceil((abs(stop - start) + step) / step) * entry[4]
+        # time expense for this entry in milliseconds
+        total_time += data_points * entry[7]
 
     return total_time

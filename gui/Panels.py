@@ -122,7 +122,7 @@ class SynStatus(QtGui.QGroupBox):
         self.addressText.setText(self.parent.synInfo.instName)
         self.synRF.setText('On' if self.parent.synInfo.rfToggle else 'Off')
         self.synPower.setText('{:.1f} dbm'.format(self.parent.synInfo.synPower))
-        self.synFreq.setText(pg.siFormat(self.parent.synInfo.synFreq*1e6, suffix='Hz', precision=12))
+        self.synFreq.setText(pg.siFormat(self.parent.synInfo.synFreq*1e6, suffix='Hz', precision=6))
         self.synMod.setText('On' if self.parent.synInfo.modToggle else 'Off')
         self.synAMStat.setText('On' if self.parent.synInfo.AM1Toggle else 'Off')
         self.synFMStat.setText('On' if self.parent.synInfo.FM1Toggle else 'Off')
@@ -399,7 +399,7 @@ class SynCtrl(QtGui.QGroupBox):
         modLayout.setSpacing(0)
 
         self.modModeSel = QtGui.QComboBox()
-        self.modModeSel.addItems(['None', 'AM', 'FM'])
+        self.modModeSel.addItems(api_syn.MOD_MODE_LIST)
 
         self.modFreq = QtGui.QWidget()
         self.modFreqFill = QtGui.QLineEdit()
@@ -489,7 +489,7 @@ class SynCtrl(QtGui.QGroupBox):
         self.bandSel.currentIndexChanged.connect(self.tune_freq)
 
         # Trigger modulation status auto_refresh and communication
-        self.modModeSel.currentIndexChanged.connect(self.switch_modWidgets)
+        self.modModeSel.currentIndexChanged[int].connect(self.switch_modWidgets)
         self.modFreqFill.textChanged.connect(self.tune_mod_parameter)
         self.modFreqUnitSel.currentIndexChanged.connect(self.tune_mod_parameter)
         self.modDepthFill.textChanged.connect(self.tune_mod_parameter)
@@ -679,12 +679,13 @@ class SynCtrl(QtGui.QGroupBox):
         else:
             self.synPowerSwitchBtn.setText('OFF')
 
-    def switch_modWidgets(self):
+    def switch_modWidgets(self, mod_index):
         '''
             Switch modulation setting widgets
         '''
 
-        mod_index = self.modModeSel.currentIndex()
+        self.parent.synInfo.modModeIndex = mod_index
+        self.parent.synInfo.modModeText = self.modModeSel.currentText()
         self.tune_mod_mode(mod_index)
 
         if mod_index:     # Modulation selected. Show modulation widget
@@ -698,6 +699,8 @@ class SynCtrl(QtGui.QGroupBox):
                 self.modDepthAMUnitSel.hide()
                 self.modDepthFMUnitSel.show()
         else:            # No modulation. Hide modulation widget
+            self.parent.synInfo.modFreq = 0
+            self.parent.synInfo.modAmp = 0
             self.modFreq.hide()
             self.modDepth.hide()
             self.lfVol.hide()
@@ -709,17 +712,25 @@ class SynCtrl(QtGui.QGroupBox):
 
         if self.parent.testModeAction.isChecked():
             # fake a successful communication on test mode
-            vCode = pyvisa.constants.StatusCode.success
+            if mod_index == 1:
+                self.parent.synInfo.AM1Toggle = True
+                self.parent.synInfo.FM1Toggle = False
+            elif mod_index == 2:
+                self.parent.synInfo.AM1Toggle = False
+                self.parent.synInfo.FM1Toggle = True
+            else:
+                self.parent.synInfo.AM1Toggle = False
+                self.parent.synInfo.FM1Toggle = False
         else:
             vCode = api_syn.set_mod_mode(self.parent.synHandle, mod_index)
+            if vCode == pyvisa.constants.StatusCode.success:
+                # update synInfo
+                self.parent.synInfo.AM1Toggle = api_syn.read_am_state(synHandle, 1)
+                self.parent.synInfo.FM1Toggle = api_syn.read_fm_state(synHandle, 1)
+            else:
+                msg = Shared.InstStatus(self, vCode)
+                msg.exec_()
 
-        if vCode == pyvisa.constants.StatusCode.success:
-            # update synInfo
-            self.parent.synInfo.AM1Toggle = api_syn.read_am_state(synHandle, 1)
-            self.parent.synInfo.FM1Toggle = api_syn.read_fm_state(synHandle, 1)
-        else:
-            msg = Shared.InstStatus(self, vCode)
-            msg.exec_()
 
         self.parent.synStatus.print_info()
 
@@ -739,16 +750,12 @@ class SynCtrl(QtGui.QGroupBox):
         if mod_index == 1:      # AM
             depth_status, mod_depth = api_val.val_syn_am_depth(self.modDepthFill.text(),
                                              self.modDepthAMUnitSel.currentText())
-            self.modDepthFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(depth_status)))
-            depth_status, mod_depth = api_val.val_syn_am_depth(self.modDepthFill.text(),
-                                             self.modDepthUnitSel.currentText())
-            self.modDepthFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(depth_status)))
         elif mod_index == 2:    # FM
             depth_status, mod_depth = api_val.val_syn_fm_depth(self.modDepthFill.text(),
             self.modDepthFMUnitSel.currentText())
-            self.modDepthFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(depth_status)))
         else:
-            depth_status = 0
+            depth_status = 2
+        self.modDepthFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(depth_status)))
 
         if freq_status and depth_status and (not self.parent.testModeAction.isChecked()):
             if mod_index == 1:      # AM
@@ -761,6 +768,8 @@ class SynCtrl(QtGui.QGroupBox):
                 vCode = pyvisa.constants.StatusCode.success
 
             if vCode == pyvisa.constants.StatusCode.success:
+                self.parent.synInfo.modFreq = mod_freq
+                self.parent.synInfo.modAmp = mod_depth
                 self.parent.synInfo.AM1Freq = api_syn.read_am_freq(synHandle, 1)
                 self.parent.synInfo.AM1DepthPercent, self.parent.synInfo.AM1DepthDbm = api_syn.read_am_depth(synHandle, 1)
                 self.parent.synInfo.FM1Freq = api_syn.read_fm_freq(synHandle, 1)

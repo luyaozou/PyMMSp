@@ -1,6 +1,8 @@
 #! encoding = utf-8
 import pyvisa
 
+MOD_MODE_LIST = ['NONE', 'AM', 'FM']
+
 
 def ramp_up(start, stop):
     ''' A integer list generator. start < stop '''

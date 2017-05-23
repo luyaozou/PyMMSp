@@ -22,7 +22,7 @@ def save_lwa(filename, y, h_info):
     '''
 
     d = datetime.datetime.today()
-    synmulti, mitgtime, sens, tc, mod_freq, mod_depth, mod_mode, lia_harm, lia_phase, start_freq, step, avg, comment = h_info
+    synmulti, itgtime, sens, tc, mod_freq, mod_depth, mod_mode, lia_harm, lia_phase, start_freq, step, avg, comment = h_info
     # rescale y based on sensitivity, full scale is 1e4
     y = y / sens * 1e4
 
@@ -50,7 +50,7 @@ def save_lwa(filename, y, h_info):
         # write y data
         fmt = '{:10.3f}'*10     # 10 numbers each row
         for i in range(len(y)//10 + 1):
-            f.write(fmt.format(*yscale[i:i+10]))
+            f.write(fmt.format(*y[i:i+10]))
             f.write('\n')
 
     return None
