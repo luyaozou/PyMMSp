@@ -61,9 +61,17 @@ def scan_header(filename):
                 tc = float(_temp_list[11])
                 mf = float(_temp_list[13])
                 ma = float(_temp_list[15])
-                mmode = _temp_list[17]
-                harm = int(_temp_list[19])
-                phase = float(_temp_list[21])
+
+                # the following fields are newly introduced in PySpec
+                # make it compatible with old "standard" JPL LWA header
+                try:
+                    mmode = _temp_list[17]
+                    harm = int(_temp_list[19])
+                    phase = float(_temp_list[21])
+                except IndexError:
+                    mmode = 'UNKNOWN'
+                    harm = 0
+                    phase = 0
 
                 # move to next line to read comment
                 a_line = a_file.readline()
