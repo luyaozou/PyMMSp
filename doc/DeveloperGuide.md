@@ -75,6 +75,11 @@ There are two exceptions to this general unit conversion rule:
     This includes the synthesizer control panel, and the setting entries in the JPL scanning routine.
     When saving the data array, the frequency vector is also in the unit of `MHz`.
     This means unit conversion of a factor of `1e6` or `1e-6` will be involved in the conversion of user inputs and data arrays to `PySpec` internal and instrumental frequency values.
+3.  QTimer.
+    `Qt.QTimer` uses millisecond, instead of second, as the time unit.
+    The `waittime` in lockin scans also use millisecond.
+    In estimating the batch project time for JPL scanning routine, the batch time, as well as the `QProgressBar`, is calculated in the unit of second.
+    Make sure to use the correct unit, otherwise time estimation will be off by *a lot*.
 
 
 # Test Mode
