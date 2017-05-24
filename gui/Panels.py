@@ -204,6 +204,7 @@ class LockinStatus(QtGui.QGroupBox):
         self.liaReserveLabel = QtGui.QLabel()
         self.liaGroundingLabel = QtGui.QLabel()
         self.liaFilterLabel = QtGui.QLabel()
+        self.liaRefSrcLabel = QtGui.QLabel()
         self.errMsgLabel = QtGui.QLabel('N.A.')
 
         ## -- Set layout and add GUI elements
@@ -222,8 +223,8 @@ class LockinStatus(QtGui.QGroupBox):
         mainLayout.addWidget(self.liaSensLabel, 4, 1)
         mainLayout.addWidget(QtGui.QLabel('Time Const'), 5, 0)
         mainLayout.addWidget(self.liaTCLabel, 5, 1)
-        mainLayout.addWidget(QtGui.QLabel('Locked Freq'), 6, 0)
-        mainLayout.addWidget(self.liaFreqLabel, 6, 1)
+        mainLayout.addWidget(QtGui.QLabel('Ref Source'), 6, 0)
+        mainLayout.addWidget(self.liaRefSrcLabel, 6, 1)
         mainLayout.addWidget(errMsgBtn, 7, 0)
         mainLayout.addWidget(self.errMsgLabel, 7, 1, 1, 3)
         # second column
@@ -235,6 +236,8 @@ class LockinStatus(QtGui.QGroupBox):
         mainLayout.addWidget(self.liaGroundingLabel, 4, 3)
         mainLayout.addWidget(QtGui.QLabel('Filter'), 5, 2)
         mainLayout.addWidget(self.liaFilterLabel, 5, 3)
+        mainLayout.addWidget(QtGui.QLabel('Locked Freq'), 6, 2)
+        mainLayout.addWidget(self.liaFreqLabel, 6, 3)
         self.setLayout(mainLayout)
 
         # this dialog is a child class of the main window
@@ -272,6 +275,7 @@ class LockinStatus(QtGui.QGroupBox):
         self.liaReserveLabel.setText(self.parent.liaInfo.reserveText)
         self.liaGroundingLabel.setText(self.parent.liaInfo.groundingText)
         self.liaFilterLabel.setText(self.parent.liaInfo.inputFilterText)
+        self.liaRefSrcLabel.setText(self.parent.liaInfo.refSrcText)
 
     def manual_refresh(self):
         ''' Manually refresh status. Also update the LIACtrl widgets,

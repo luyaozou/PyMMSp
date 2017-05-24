@@ -97,8 +97,8 @@ class JPLScanConfig(QtGui.QDialog):
         ''' Add batch entry to this dialog window '''
 
         # generate a new batch entry
-        default_setting = ('default', self.main.synInfo.probFreq,
-                            self.main.synInfo.probFreq+10.000, 0.1, 1,
+        default_setting = ('default', self.main.synInfo.probFreq*1e-6,
+                            self.main.synInfo.probFreq*1e-6+10.000, 0.1, 1,
                             self.main.liaInfo.sensIndex,
                             self.main.liaInfo.tcIndex, 60,
                             self.main.synInfo.modModeIndex,
@@ -478,8 +478,8 @@ class SingleScan(QtGui.QWidget):
         self.ySumCurve.setData(self.x, self.y_sum)
         total_pts =  len(self.x) * self.target_avg
         self.pts_taken = 0
-        self.parent.currentProgBar.setRange(0, ceil(total_pts * self.waittime))
-        self.parent.currentProgBar.setValue(ceil(self.pts_taken * self.waittime))
+        self.parent.currentProgBar.setRange(0, ceil(total_pts * self.waittime * 1e-3))
+        self.parent.currentProgBar.setValue(ceil(self.pts_taken * self.waittime * 1e-3))
 
         # tune instrument
         self.tune_inst(entry_setting)
@@ -500,8 +500,8 @@ class SingleScan(QtGui.QWidget):
         self.main.synInfo.modAmp = entry_setting[10]
 
         if self.main.testModeAction.isChecked():
-            self.main.synInfo.probFreq = self.x[self.current_x_index]
-            self.main.synInfo.synFreq = self.x[self.current_x_index]/self.multiplier
+            self.main.synInfo.probFreq = self.x[self.current_x_index] * 1e6
+            self.main.synInfo.synFreq = self.main.synInfo.probFreq/self.multiplier
             if self.main.synInfo.modModeIndex == 1:
                 self.main.synInfo.modToggle = True
                 self.main.synInfo.AM1Freq = entry_setting[9]
@@ -533,14 +533,14 @@ class SingleScan(QtGui.QWidget):
             api_lia.set_harm(self.main.liaHandle, entry_setting[11])
             api_lia.set_phase(self.main.liaHandle, entry_setting[12])
 
-            self.main.synInfo.full_info_query()
-            self.main.liaInfo.full_info_query()
+            self.main.synInfo.full_info_query(self.main.synHandle)
+            self.main.liaInfo.full_info_query(self.main.liaHandle)
 
     def tune_syn_freq(self):
             ''' Simply tune synthesizer frequency '''
 
-            self.main.synInfo.probFreq = self.x[self.current_x_index]
-            self.main.synInfo.synFreq = self.x[self.current_x_index] / self.multiplier
+            self.main.synInfo.probFreq = self.x[self.current_x_index] * 1e6
+            self.main.synInfo.synFreq = self.main.synInfo.probFreq / self.multiplier
             self.main.synStatus.print_info()
 
             if self.main.testModeAction.isChecked():
@@ -565,7 +565,7 @@ class SingleScan(QtGui.QWidget):
         # if done
         if self.acquired_avg == self.target_avg:
             self.save_data()
-            self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.waittime)
+            self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.waittime * 1e-3)
             self.parent.next_entry_signal.emit()
         else:
             # tune syn to the next freq
@@ -594,9 +594,9 @@ class SingleScan(QtGui.QWidget):
                 self.y = np.zeros_like(self.x)
 
         # update progress bar
-        self.parent.currentProgBar.setValue(ceil(self.pts_taken * self.waittime))
+        self.parent.currentProgBar.setValue(ceil(self.pts_taken * self.waittime * 1e-3))
         self.parent.totalProgBar.setValue(self.parent.batch_time_taken +
-                                          ceil(self.pts_taken*self.waittime))
+                                          ceil(self.pts_taken * self.waittime * 1e-3))
 
     def update_ysum(self):
         ''' Update sum plot '''
@@ -701,13 +701,13 @@ class SingleScan(QtGui.QWidget):
         if q == QtGui.QMessageBox.Yes:
             #print('abort current')
             self.waitTimer.stop()
-            self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.waittime)
+            self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.waittime * 1e-3)
             self.save_data()
             self.parent.next_entry_signal.emit()
         elif q == QtGui.QMessageBox.No:
             #print('abort current')
             self.waitTimer.stop()
-            self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.waittime)
+            self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.waittime * 1e-3)
             self.parent.next_entry_signal.emit()
         else:
             pass

@@ -359,6 +359,8 @@ class JPLLIAScanEntry(QtGui.QWidget):
 
         self.startFreqFill.textChanged.connect(self.val_start_freq)
         self.stopFreqFill.textChanged.connect(self.val_stop_freq)
+        self.startFreqFill.textChanged.connect(self.val_step)
+        self.stopFreqFill.textChanged.connect(self.val_step)
         self.stepFill.textChanged.connect(self.val_step)
         self.avgFill.textChanged.connect(self.val_avg)
         self.tcSel.currentIndexChanged.connect(self.val_waittime)
@@ -373,8 +375,11 @@ class JPLLIAScanEntry(QtGui.QWidget):
         self.commentStr = str(default[0])
         self.commentFill.setText(self.commentStr)
         self.startFreq = default[1]
-        self.startFreqFill.setText('{:.3f}'.format(self.startFreq))
         self.stopFreq = default[2]
+        # the value assign for self.stopFreq has to proceed first
+        # because once self.startFreqFill is set, it triggers the val_step
+        # which will need self.stopFreq
+        self.startFreqFill.setText('{:.3f}'.format(self.startFreq))
         self.stopFreqFill.setText('{:.3f}'.format(self.stopFreq))
         self.step = default[3]
         self.stepFill.setText('{:.3f}'.format(self.step))
@@ -415,7 +420,7 @@ class JPLLIAScanEntry(QtGui.QWidget):
         status, _temp = api_val.val_prob_freq(text, vdi_index)
         self.startFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
         self.status['startFreq'] = bool(status)
-        self.startFreq = _temp * self.main.synInfo.vdiBandMultiplication
+        self.startFreq = _temp * self.main.synInfo.vdiBandMultiplication * 1e-6
 
     def val_stop_freq(self, text):
 
@@ -423,11 +428,14 @@ class JPLLIAScanEntry(QtGui.QWidget):
         status, _temp = api_val.val_prob_freq(text, vdi_index)
         self.stopFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
         self.status['stopFreq'] = bool(status)
-        self.stopFreq = _temp * self.main.synInfo.vdiBandMultiplication
+        self.stopFreq = _temp * self.main.synInfo.vdiBandMultiplication * 1e-6
 
-    def val_step(self, text):
+    def val_step(self):
 
-        status, self.step = api_val.val_float(text, safe=[('>=', 0.01)], warning=[('>', 0)])
+        win = abs(self.startFreq - self.stopFreq)
+        text = self.stepFill.text()
+        status, self.step = api_val.val_float(text, safe=[('>=', 0.01), ('<', win)],
+                                              warning=[('>', 0), ('<', win)])
         self.stepFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
         self.status['step'] = bool(status)
 
@@ -679,7 +687,7 @@ def jpl_scan_time(jpl_entry_settings):
         start, stop, step = entry[1:4]
         # estimate total data points to be taken
         data_points = ceil((abs(stop - start) + step) / step) * entry[4]
-        # time expense for this entry in milliseconds
-        total_time += data_points * entry[7]
+        # time expense for this entry in seconds
+        total_time += data_points * entry[7] * 1e-3
 
     return total_time

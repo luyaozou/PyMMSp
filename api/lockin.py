@@ -346,7 +346,7 @@ def set_input_grounding(liaHandle, gnd_index):
     '''
 
     try:
-        num, vcode = liaHandle.write(INPUT_GND_LIST[gnd_index])
+        num, vcode = liaHandle.write('IGND{:d}'.format(gnd_index))
         return vcode
     except:
         return 'Lockin set input grounding: IOError'
