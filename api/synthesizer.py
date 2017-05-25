@@ -1,6 +1,8 @@
 #! encoding = utf-8
 import pyvisa
 
+MOD_MODE_LIST = ['NONE', 'AM', 'FM']
+
 
 def ramp_up(start, stop):
     ''' A integer list generator. start < stop '''
@@ -29,7 +31,7 @@ def init_syn(synHandle):
         num, vcode = synHandle.write(':AM1:SOUR INT1; :AM1:STAT 0; :FM1:SOUR INT1; :FM1:STAT 0; :OUTP:MOD 0; :LFO:SOUR INT1; :LFO:AMPL 0VP; :POW:MODE FIX; :FREQ:MODE CW; :DISP:REM 0')
         return vcode
     except:
-        return 'IOError'
+        return 'Synthesizer initialization: IOError'
 
 
 def query_inst_name(synHandle):
@@ -69,7 +71,7 @@ def set_power_toggle(synHandle, toggle_state):
             num, vcode = synHandle.write(':OUTP 0')
         return vcode
     except:
-        return 'IOError'
+        return 'Synthesizer set RF power toggle: IOError'
 
 
 def read_syn_power(synHandle):
@@ -101,7 +103,7 @@ def set_syn_power(synHandle, set_power):
         num, vcode = synHandle.write(':POW {:g}DBM'.format(set_power))
         return vcode
     except:
-        return 'IOError'
+        return 'Synthesizer set RF power: IOError'
 
 
 def read_syn_freq(synHandle):
@@ -126,10 +128,10 @@ def set_syn_freq(synHandle, freq):
     '''
 
     try:
-        num, vcode = synHandle.write(':FREQ:CW {:.9f}MHZ'.format(freq))
+        num, vcode = synHandle.write(':FREQ:CW {:.3f}HZ'.format(freq))
         return vcode
     except:
-        return 'IOError'
+        return 'Synthesizer set syn freq: IOError'
 
 
 def set_mod_mode(synHandle, mod_index):
@@ -149,7 +151,7 @@ def set_mod_mode(synHandle, mod_index):
         num, vcode = synHandle.write(a_dict[mod_index])
         return vcode
     except:
-        return 'IOError'
+        return 'Synthesizer set modulation mode: IOError'
 
 
 def read_mod_toggle(synHandle):
@@ -175,14 +177,14 @@ def set_mod_toggle(synHandle, toggle_state):
         num, vcode = synHandle.write(':OUTP:MOD {:d}'.format(toggle_state))
         return vcode
     except:
-        return 'IOError'
+        return 'Synthesizer set modulation toggle: IOError'
 
 
 def read_am_par(synHandle):
     ''' Read current amplitude modulation setting.
         Returns
             freq:  mod freq, float (Hz)
-            depth: mod depth, float (%)
+            depth: mod depth, float (percent)
             status: on/off, bool
     '''
 
@@ -190,7 +192,7 @@ def read_am_par(synHandle):
         text = synHandle.query(':AM1:INT1:FREQ?')
         freq = float(text.strip())
         text = synHandle.query(':AM1:DEPT?')
-        depth = float(text.strip())
+        depth = float(text.strip()) * 1e2
         text = synHandle.query(':AM1:STAT?')
         status = bool(int(text.strip()))
         return freq, depth, status
@@ -234,13 +236,13 @@ def read_am_depth(synHandle, channel):
             synHandle: pyvisa.resources.Resource
             channel: int
         Returns
-            depth_linear: float, depth in %
+            depth_linear: float, depth in percent
             depth_exp: float, depth in dB
     '''
 
     try:
         text = synHandle.query(':AM{:d}:DEPT?'.format(channel))
-        depth_linear = float(text.strip()) * 100
+        depth_linear = float(text.strip())
         text = synHandle.query(':AM{:d}:DEPT:EXP?'.format(channel))
         depth_exp = float(text.strip())
         return depth_linear, depth_exp
@@ -282,7 +284,7 @@ def set_am(synHandle, freq, depth, toggle_state):
     ''' Set synthesizer AM to freq and depth.
         Arguments
             freq: float (Hz)
-            depth: float
+            depth: float (percent)
             toggle_state: boolean
         Returns visaCode
     '''
@@ -290,9 +292,9 @@ def set_am(synHandle, freq, depth, toggle_state):
     try:
         # set up AM freq and depth
         set_mod_toggle(synHandle, toggle_state)
-        num, vcode = synHandle.write(':AM1:INT1:FREQ {:.9f}HZ; :AM1 {:.3f}'.format(freq, depth))
+        num, vcode = synHandle.write(':AM1:INT1:FREQ {:.9f}HZ; :AM1 {:.1f}'.format(freq, depth))
     except:
-        vcode = 'IOError'
+        vcode = 'Synthesizer set AM: IOError'
 
     return vcode
 
@@ -371,7 +373,7 @@ def read_fm_freq(synHandle, channel):
     '''
 
     try:
-        text = synHandle.query(':AM{:d}:INT{:d}:FREQ?'.format(channel, channel))
+        text = synHandle.query(':FM{:d}:INT{:d}:FREQ?'.format(channel, channel))
         return float(text.strip())
     except:
         return 0
@@ -406,7 +408,7 @@ def set_fm(synHandle, freq, depth, toggle_state):
         set_mod_toggle(synHandle, toggle_state)
         num, vcode = synHandle.write(':FM1:INT1:FREQ {:.9f}HZ; :FM1:DEV {:.9f}HZ'.format(freq, depth))
     except:
-        vcode = 'IOError'
+        vcode = 'Synthesizer set FM: IOError'
 
     return vcode
 
@@ -488,22 +490,32 @@ def read_pm_waveform(synHandle, channel):
         return 'N.A.'
 
 
-def read_lf(synHandle):
+def read_lf_toggle(synHandle):
     ''' Read current LF settings.
         Returns
-            vol: LF voltage, str
             status: on/off, bool
+    '''
+
+    try:
+        text = synHandle.query(':LFO:STAT?')
+        status = bool(int(text.strip()))
+        return status
+    except:
+        return False
+
+
+def read_lf_voltage(synHandle):
+    ''' Read current LF voltage
+        Returns
+            vol: LF voltage, float (V)
     '''
 
     try:
         text = synHandle.query(':LFO:AMPL?')
         vol = float(text.strip())
-        text = synHandle.query(':LFO:STAT?')
-        status = bool(int(text.strip()))
-        return vol, status
+        return vol
     except:
-        return 0, False
-
+        return 0
 
 def read_lf_source(synHandle):
     ''' Read synthesizer LF source
@@ -529,7 +541,7 @@ def set_lf_toggle(synHandle, toggle_state):
         num, vcode = synHandle.write(':LFO:STAT {:d}'.format(toggle_state))
         return vcode
     except:
-        return 'IOError'
+        return 'Synthesizer set LF toggle: IOError'
 
 
 def set_lf_amp(synHandle, lf_amp):
@@ -543,7 +555,7 @@ def set_lf_amp(synHandle, lf_amp):
         num, vcode = synHandle.write(':LFO:AMPL {:.3f}VP'.format(lf_amp))
         return vcode
     except:
-        return 'IOError'
+        return 'Synthesizer set LF AMP: IOError'
 
 
 def query_err_msg(synHandle):

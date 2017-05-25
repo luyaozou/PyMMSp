@@ -7,6 +7,7 @@ from api import general as api_gen
 from api import synthesizer as api_syn
 from api import lockin as api_lia
 from gui import SharedWidgets as Shared
+from data import lwaparser
 from pyqtgraph import siFormat
 
 
@@ -335,6 +336,7 @@ class SynInfoDialog(QtGui.QDialog):
         modGroupLayout.addWidget(self.lfVolLabel, 7, 3)
         self.modGroup.setLayout(modGroupLayout)
 
+        self.refreshButton = QtGui.QPushButton('Manual Refresh')
         self.acceptButton = QtGui.QPushButton(Shared.btn_label('accept'))
 
         mainLayout = QtGui.QGridLayout()
@@ -344,6 +346,7 @@ class SynInfoDialog(QtGui.QDialog):
         mainLayout.addWidget(self.acceptButton, 3, 2, 1, 1)
         self.setLayout(mainLayout)
 
+        self.refreshButton.clicked.connect(self.manual_refresh)
         self.acceptButton.clicked.connect(self.accept)
 
     def display(self):
@@ -351,7 +354,7 @@ class SynInfoDialog(QtGui.QDialog):
         self.acceptButton.setText(Shared.btn_label('accept'))
 
         if self.parent.synHandle:
-            self.update()
+            self.print_info()
             self.instGroup.show()
             self.rfGroup.show()
             self.modGroup.show()
@@ -362,60 +365,64 @@ class SynInfoDialog(QtGui.QDialog):
 
         self.exec_()
 
-    def update(self):
+    def manual_refresh(self):
+
+        self.parent.synInfo.full_info_query(self.parent.synHandle)
+        self.print_info()
+
+    def print_info(self):
 
         # update instrument panel
-        self.instNameLabel.setText(self.parent.synHandle.resource_name)
-        self.instInterfaceLabel.setText(str(self.parent.synHandle.interface_type))
-        self.instInterfaceNumLabel.setText(str(self.parent.synHandle.interface_number))
-        self.instRemoteDispLabel.setText('ON' if api_syn.read_remote_disp(self.parent.synHandle) else 'OFF')
+        self.instNameLabel.setText(self.parent.synInfo.instName)
+        self.instInterfaceLabel.setText(self.parent.synInfo.instInterface)
+        self.instInterfaceNumLabel.setText(str(self.parent.synInfo.instInterfaceNum))
+        self.instRemoteDispLabel.setText('ON' if self.parent.synInfo.instRemoteDisp else 'OFF')
 
         # update RF setting panel
-        self.rfOutputLabel.setText('ON' if api_syn.read_power_toggle(self.parent.synHandle) else 'OFF')
-        self.modOutputLabel.setText('ON' if api_syn.read_mod_toggle(self.parent.synHandle) else 'OFF')
-        self.synFreqLabel.setText('{:.12f} MHz'.format(api_syn.read_syn_freq(self.parent.synHandle)))
+        self.rfOutputLabel.setText('ON' if self.parent.synInfo.rfToggle else 'OFF')
+        self.modOutputLabel.setText('ON' if self.parent.synInfo.modToggle else 'OFF')
+        self.synFreqLabel.setText('{:.9f} MHz'.format(self.parent.synInfo.synFreq * 1e-6))
 
         # update modulation setting panel
-        self.am1StateLabel.setText('ON' if api_syn.read_am_state(self.parent.synHandle, 1) else 'OFF')
-        self.am1SrcLabel.setText(api_syn.read_am_source(self.parent.synHandle, 1))
-        self.am1DepthLabel.setText('{:.1f} % ({:.0f} dB)'.format(*api_syn.read_am_depth(self.parent.synHandle, 1)))
-        self.am1FreqLabel.setText(siFormat(api_syn.read_am_freq(self.parent.synHandle, 1), suffix='Hz'))
-        self.am1WaveLabel.setText(api_syn.read_am_waveform(self.parent.synHandle, 1))
+        self.am1StateLabel.setText('ON' if self.parent.synInfo.AM1Toggle else 'OFF')
+        self.am1SrcLabel.setText(self.parent.synInfo.AM1Src)
+        self.am1DepthLabel.setText('{:.1f}% ({:.0f} dB)'.format(self.parent.synInfo.AM1DepthPercent, self.parent.synInfo.AM1DepthDbm))
+        self.am1FreqLabel.setText(siFormat(self.parent.synInfo.AM1Freq, suffix='Hz'))
+        self.am1WaveLabel.setText(self.parent.synInfo.AM1Wave)
 
-        self.am2StateLabel.setText('ON' if api_syn.read_am_state(self.parent.synHandle, 2) else 'OFF')
-        self.am2SrcLabel.setText(api_syn.read_am_source(self.parent.synHandle, 2))
-        self.am2DepthLabel.setText('{:.1f} % ({:.0f} dB)'.format(*api_syn.read_am_depth(self.parent.synHandle, 2)))
-        self.am2FreqLabel.setText(siFormat(api_syn.read_am_freq(self.parent.synHandle, 2), suffix='Hz'))
-        self.am2WaveLabel.setText(api_syn.read_am_waveform(self.parent.synHandle, 2))
+        self.am2StateLabel.setText('ON' if self.parent.synInfo.AM2Toggle else 'OFF')
+        self.am2SrcLabel.setText(self.parent.synInfo.AM2Src)
+        self.am2DepthLabel.setText('{:.1f}% ({:.0f} dB)'.format(self.parent.synInfo.AM2DepthPercent, self.parent.synInfo.AM2DepthDbm))
+        self.am2FreqLabel.setText(siFormat(self.parent.synInfo.AM2Freq, suffix='Hz'))
+        self.am2WaveLabel.setText(self.parent.synInfo.AM2Wave)
 
-        self.fm1StateLabel.setText('ON' if api_syn.read_fm_state(self.parent.synHandle, 1) else 'OFF')
-        self.fm1SrcLabel.setText(api_syn.read_fm_source(self.parent.synHandle, 1))
-        self.fm1DevLabel.setText(siFormat(api_syn.read_fm_dev(self.parent.synHandle, 1), suffix='Hz'))
-        self.fm1FreqLabel.setText(siFormat(api_syn.read_fm_freq(self.parent.synHandle, 1), suffix='Hz'))
-        self.fm1WaveLabel.setText(api_syn.read_fm_waveform(self.parent.synHandle, 1))
+        self.fm1StateLabel.setText('ON' if self.parent.synInfo.FM1Toggle else 'OFF')
+        self.fm1SrcLabel.setText(self.parent.synInfo.FM1Src)
+        self.fm1DevLabel.setText(siFormat(self.parent.synInfo.FM1Dev, suffix='Hz'))
+        self.fm1FreqLabel.setText(siFormat(self.parent.synInfo.FM1Freq, suffix='Hz'))
+        self.fm1WaveLabel.setText(self.parent.synInfo.FM1Wave)
 
-        self.fm2StateLabel.setText('ON' if api_syn.read_fm_state(self.parent.synHandle, 2) else 'OFF')
-        self.fm2SrcLabel.setText(api_syn.read_fm_source(self.parent.synHandle, 2))
-        self.fm2DevLabel.setText(siFormat(api_syn.read_fm_dev(self.parent.synHandle, 2), suffix='Hz'))
-        self.fm2FreqLabel.setText(siFormat(api_syn.read_fm_freq(self.parent.synHandle, 2), suffix='Hz'))
-        self.fm2WaveLabel.setText(api_syn.read_fm_waveform(self.parent.synHandle, 2))
+        self.fm2StateLabel.setText('ON' if self.parent.synInfo.FM2Toggle else 'OFF')
+        self.fm2SrcLabel.setText(self.parent.synInfo.FM2Src)
+        self.fm2DevLabel.setText(siFormat(self.parent.synInfo.FM2Dev, suffix='Hz'))
+        self.fm2FreqLabel.setText(siFormat(self.parent.synInfo.FM2Freq, suffix='Hz'))
+        self.fm2WaveLabel.setText(self.parent.synInfo.FM2Wave)
 
-        self.pm1StateLabel.setText('ON' if api_syn.read_pm_state(self.parent.synHandle, 1) else 'OFF')
-        self.pm1SrcLabel.setText(api_syn.read_pm_source(self.parent.synHandle, 1))
-        self.pm1DevLabel.setText(siFormat(api_syn.read_pm_dev(self.parent.synHandle, 1), suffix='rad'))
-        self.pm1FreqLabel.setText(siFormat(api_syn.read_pm_freq(self.parent.synHandle, 1), suffix='Hz'))
-        self.pm1WaveLabel.setText(api_syn.read_pm_waveform(self.parent.synHandle, 1))
+        self.pm1StateLabel.setText('ON' if self.parent.synInfo.PM1Toggle else 'OFF')
+        self.pm1SrcLabel.setText(self.parent.synInfo.PM1Src)
+        self.pm1DevLabel.setText(siFormat(self.parent.synInfo.PM1Dev, suffix='rad'))
+        self.pm1FreqLabel.setText(siFormat(self.parent.synInfo.PM1Freq, suffix='Hz'))
+        self.pm1WaveLabel.setText(self.parent.synInfo.PM1Wave)
 
-        self.pm2StateLabel.setText('ON' if api_syn.read_pm_state(self.parent.synHandle, 2) else 'OFF')
-        self.pm2SrcLabel.setText(api_syn.read_pm_source(self.parent.synHandle, 2))
-        self.pm2DevLabel.setText(siFormat(api_syn.read_pm_dev(self.parent.synHandle, 2), suffix='rad'))
-        self.pm2FreqLabel.setText(siFormat(api_syn.read_pm_freq(self.parent.synHandle, 2), suffix='Hz'))
-        self.pm2WaveLabel.setText(api_syn.read_pm_waveform(self.parent.synHandle, 2))
+        self.pm2StateLabel.setText('ON' if self.parent.synInfo.PM2Toggle else 'OFF')
+        self.pm2SrcLabel.setText(self.parent.synInfo.PM2Src)
+        self.pm2DevLabel.setText(siFormat(self.parent.synInfo.PM2Dev, suffix='rad'))
+        self.pm2FreqLabel.setText(siFormat(self.parent.synInfo.PM2Freq,  suffix='Hz'))
+        self.pm2WaveLabel.setText(self.parent.synInfo.PM2Wave)
 
-        lf_vol, lf_status = api_syn.read_lf(self.parent.synHandle)
-        self.lfStateLabel.setText('ON' if lf_status else 'OFF')
-        self.lfSrcLabel.setText(api_syn.read_lf_source(self.parent.synHandle))
-        self.lfVolLabel.setText(siFormat(lf_vol, suffix='V'))
+        self.lfStateLabel.setText('ON' if self.parent.synInfo.LFToggle else 'OFF')
+        self.lfSrcLabel.setText(self.parent.synInfo.LFSrc)
+        self.lfVolLabel.setText(siFormat(self.parent.synInfo.LFVoltage, suffix='V'))
 
 
 class LockinInfoDialog(QtGui.QDialog):
@@ -461,12 +468,12 @@ class LockinInfoDialog(QtGui.QDialog):
         self.inputGroup.setTitle('Input and Filter')
         self.inputConfigLabel = QtGui.QLabel()
         self.inputGroundingLabel = QtGui.QLabel()
-        self.inputCouplingLabel = QtGui.QLabel()
+        self.inputCoupleLabel = QtGui.QLabel()
         self.inputFilterLabel = QtGui.QLabel()
         inputGroupLayout = QtGui.QFormLayout()
         inputGroupLayout.addRow(QtGui.QLabel('Input Config'), self.inputConfigLabel)
         inputGroupLayout.addRow(QtGui.QLabel('Input Grounding'), self.inputGroundingLabel)
-        inputGroupLayout.addRow(QtGui.QLabel('Input Coupling'), self.inputCouplingLabel)
+        inputGroupLayout.addRow(QtGui.QLabel('Input Coupling'), self.inputCoupleLabel)
         inputGroupLayout.addRow(QtGui.QLabel('Input Filter'), self.inputFilterLabel)
         self.inputGroup.setLayout(inputGroupLayout)
 
@@ -474,12 +481,12 @@ class LockinInfoDialog(QtGui.QDialog):
         self.gainSensLabel = QtGui.QLabel()
         self.gainReserveLabel = QtGui.QLabel()
         self.gainTCLabel = QtGui.QLabel()
-        self.gainFilterLabel = QtGui.QLabel()
+        self.lpSlopeLabel = QtGui.QLabel()
         gainGroupLayout = QtGui.QFormLayout()
         gainGroupLayout.addRow(QtGui.QLabel('Sensitivity'), self.gainSensLabel)
         gainGroupLayout.addRow(QtGui.QLabel('Time Constant'), self.gainTCLabel)
         gainGroupLayout.addRow(QtGui.QLabel('Reserve'), self.gainReserveLabel)
-        gainGroupLayout.addRow(QtGui.QLabel('Low-pass Filter Slope'), self.gainFilterLabel)
+        gainGroupLayout.addRow(QtGui.QLabel('Low-pass Filter Slope'), self.lpSlopeLabel)
         self.gainGroup.setLayout(gainGroupLayout)
 
         self.outputGroup.setTitle('Display and Output')
@@ -501,6 +508,7 @@ class LockinInfoDialog(QtGui.QDialog):
         outputGroupLayout.addWidget(self.outputSRateLabel, 3, 1, 1, 2)
         self.outputGroup.setLayout(outputGroupLayout)
 
+        self.refreshButton = QtGui.QPushButton('Manual Refresh')
         self.acceptButton = QtGui.QPushButton(Shared.btn_label('accept'))
 
         mainLayout = QtGui.QGridLayout()
@@ -512,6 +520,7 @@ class LockinInfoDialog(QtGui.QDialog):
         mainLayout.addWidget(self.acceptButton, 3, 2, 1, 2)
         self.setLayout(mainLayout)
 
+        self.refreshButton.clicked.connect(self.manual_refresh)
         self.acceptButton.clicked.connect(self.accept)
 
     def display(self):
@@ -519,7 +528,7 @@ class LockinInfoDialog(QtGui.QDialog):
         self.acceptButton.setText(Shared.btn_label('accept'))
 
         if self.parent.liaHandle:
-            self.update()
+            self.print_info()
             self.instGroup.show()
             self.refGroup.show()
             self.gainGroup.show()
@@ -534,36 +543,174 @@ class LockinInfoDialog(QtGui.QDialog):
 
         self.exec_()
 
-    def update(self):
+    def manual_refresh(self):
+
+        self.parent.synInfo.full_info_query(self.parent.liaHandle)
+        self.print_info()
+
+    def print_info(self):
 
         # update instrument panel
-        self.instNameLabel.setText(self.parent.liaHandle.resource_name)
-        self.instInterfaceLabel.setText(str(self.parent.liaHandle.interface_type))
-        self.instInterfaceNumLabel.setText(str(self.parent.liaHandle.interface_number))
+        self.instNameLabel.setText(self.parent.liaInfo.instName)
+        self.instInterfaceLabel.setText(self.parent.liaInfo.instInterface)
+        self.instInterfaceNumLabel.setText(str(self.parent.liaInfo.instInterfaceNum))
 
         # update ref group
-        self.refSrcLabel.setText(api_lia.read_ref_source(self.parent.liaHandle))
-        self.refFreqLabel.setText(siFormat(api_lia.read_freq(self.parent.liaHandle), suffix='Hz'))
-        self.refHarmLabel.setText('{:d}'.format(api_lia.read_harm(self.parent.liaHandle)))
-        self.refPhaseLabel.setText('{:.2f} deg'.format(api_lia.read_phase(self.parent.liaHandle)))
+        self.refSrcLabel.setText(self.parent.liaInfo.refSrcText)
+        self.refFreqLabel.setText(siFormat(self.parent.liaInfo.refFreq, suffix='Hz'))
+        self.refHarmLabel.setText('{:d}'.format(self.parent.liaInfo.refHarm))
+        self.refPhaseLabel.setText('{:.2f} deg'.format(self.parent.liaInfo.refPhase))
 
         # update input group
-        self.inputConfigLabel.setText(api_lia.read_input_config(self.parent.liaHandle))
-        self.inputGroundingLabel.setText(api_lia.read_input_grounding(self.parent.liaHandle))
-        self.inputCouplingLabel.setText(api_lia.read_couple(self.parent.liaHandle))
-        self.inputFilterLabel.setText(api_lia.read_input_filter(self.parent.liaHandle))
+        self.inputConfigLabel.setText(self.parent.liaInfo.configText)
+        self.inputGroundingLabel.setText(self.parent.liaInfo.groundingText)
+        self.inputCoupleLabel.setText(self.parent.liaInfo.coupleText)
+        self.inputFilterLabel.setText(self.parent.liaInfo.inputFilterText)
 
         # update gain group
-        self.gainSensLabel.setText(Shared.LIASENSLIST[api_lia.read_sens(self.parent.liaHandle)])
-        self.gainTCLabel.setText(Shared.LIATCLIST[api_lia.read_tc(self.parent.liaHandle)])
-        self.gainReserveLabel.setText(api_lia.read_reserve(self.parent.liaHandle))
-        self.gainFilterLabel.setText(api_lia.read_lp_slope(self.parent.liaHandle))
+        self.gainSensLabel.setText(self.parent.liaInfo.sensText)
+        self.gainTCLabel.setText(self.parent.liaInfo.tcText)
+        self.gainReserveLabel.setText(self.parent.liaInfo.reserveText)
+        self.lpSlopeLabel.setText(self.parent.liaInfo.lpSlopeText)
 
         # update output group
-        disp1, disp2 = api_lia.read_disp(self.parent.liaHandle)
-        self.outputDisp1Label.setText(disp1)
-        self.outputDisp2Label.setText(disp2)
-        front1, front2 = api_lia.read_front_panel(self.parent.liaHandle)
-        self.outputFront1Label.setText(front1)
-        self.outputFront2Label.setText(front2)
-        self.outputSRateLabel.setText(api_lia.read_sample_rate(self.parent.liaHandle))
+        self.outputDisp1Label.setText(self.parent.liaInfo.disp1Text)
+        self.outputDisp2Label.setText(self.parent.liaInfo.disp2Text)
+        self.outputFront1Label.setText(self.parent.liaInfo.front1Text)
+        self.outputFront2Label.setText(self.parent.liaInfo.front2Text)
+        self.outputSRateLabel.setText(self.parent.liaInfo.sampleRateText)
+
+
+class LWAParserDialog(QtGui.QDialog):
+    '''
+        Dialog window for the LWA file previewer & parser.
+    '''
+
+    def __init__(self, parent, filename):
+        QtGui.QDialog.__init__(self, parent)
+        self.parent = parent
+        self.filename = filename
+        self.setMinimumWidth(1200)
+        self.setMinimumHeight(600)
+        self.setWindowTitle('LWA Preview & Parser')
+        self.entry_id_to_export = []
+
+        self.mainLayout = QtGui.QVBoxLayout()
+        self.mainLayout.setAlignment(QtCore.Qt.AlignTop)
+        self.mainLayout.addWidget(QtGui.QLabel('Source file: {:s}'.format(filename)))
+
+        # read lwa batch scan entry from file
+        self.entry_settings, self.hd_line_num = lwaparser.scan_header(filename)
+
+        if self.entry_settings:
+            # set top buttons
+            topButtons = QtGui.QWidget()
+            self.exportButton = QtGui.QPushButton('Export selected scans')
+            self.exportButton.clicked.connect(self.export_lwa)
+            self.openFileButton = QtGui.QPushButton('Open New File')
+            self.openFileButton.clicked.connect(self.open_new_file)
+            topButtonLayout = QtGui.QHBoxLayout()
+            topButtonLayout.addWidget(self.exportButton)
+            topButtonLayout.addWidget(self.openFileButton)
+            topButtons.setLayout(topButtonLayout)
+            self.mainLayout.addWidget(topButtons)
+
+            # set up a QButtonGroup to manage checkboxes
+            self.entryGroup = QtGui.QButtonGroup()
+            self.entryGroup.setExclusive(False)
+            # set up the batch list area
+            self.batchListWidget = QtGui.QWidget()
+            batchArea = QtGui.QScrollArea()
+            batchArea.setWidgetResizable(True)
+            batchArea.setWidget(self.batchListWidget)
+
+            self.batchLayout = QtGui.QGridLayout()
+            self.batchLayout.setAlignment(QtCore.Qt.AlignTop)
+            # row of names
+            self.batchLayout.addWidget(QtGui.QLabel('Scan #'), 0, 0)
+            self.batchLayout.addWidget(QtGui.QLabel('Comment'), 0, 1)
+            self.batchLayout.addWidget(QtGui.QLabel('Date'), 0, 2)
+            self.batchLayout.addWidget(QtGui.QLabel('Time'), 0, 3)
+            self.batchLayout.addWidget(QtGui.QLabel('Start Freq (MHz)'), 0, 4)
+            self.batchLayout.addWidget(QtGui.QLabel('Stop Freq (MHz)'), 0, 5)
+            self.batchLayout.addWidget(QtGui.QLabel('Step Freq'), 0, 6)
+            self.batchLayout.addWidget(QtGui.QLabel('Points'), 0, 7)
+            self.batchLayout.addWidget(QtGui.QLabel('Average'), 0, 8)
+            self.batchLayout.addWidget(QtGui.QLabel('Sensitivity'), 0, 9)
+            self.batchLayout.addWidget(QtGui.QLabel('Time Const'), 0, 10)
+            self.batchLayout.addWidget(QtGui.QLabel('Wait Time'), 0, 11)
+            self.batchLayout.addWidget(QtGui.QLabel('Modulation'), 0, 12)
+            self.batchLayout.addWidget(QtGui.QLabel('Harmonics'), 0, 13)
+            self.batchLayout.addWidget(QtGui.QLabel('Mod Freq'), 0, 14)
+            self.batchLayout.addWidget(QtGui.QLabel('Mod Amp'), 0, 15)
+            self.batchLayout.addWidget(QtGui.QLabel('Phase'), 0, 16)
+
+            for row in range(len(self.entry_settings)):
+                current_setting = self.entry_settings[row]
+                entry = Shared.LWAScanHdEntry(self, entry_setting=current_setting)
+                # add entry number checkbox to the button group
+                self.entryGroup.addButton(entry.scanNumLabel, row)
+                # add widgets to the dispaly panel layout
+                self.batchLayout.addWidget(entry.scanNumLabel, row+1, 0)
+                self.batchLayout.addWidget(entry.commentLabel, row+1, 1)
+                self.batchLayout.addWidget(entry.dateLabel, row+1, 2)
+                self.batchLayout.addWidget(entry.timeLabel, row+1, 3)
+                self.batchLayout.addWidget(entry.startFreqLabel, row+1, 4)
+                self.batchLayout.addWidget(entry.stopFreqLabel, row+1, 5)
+                self.batchLayout.addWidget(entry.stepLabel, row+1, 6)
+                self.batchLayout.addWidget(entry.ptsLabel, row+1, 7)
+                self.batchLayout.addWidget(entry.avgLabel, row+1, 8)
+                self.batchLayout.addWidget(entry.sensLabel, row+1, 9)
+                self.batchLayout.addWidget(entry.tcLabel, row+1, 10)
+                self.batchLayout.addWidget(entry.itLabel, row+1, 11)
+                self.batchLayout.addWidget(entry.modModeLabel, row+1, 12)
+                self.batchLayout.addWidget(entry.harmLabel, row+1, 13)
+                self.batchLayout.addWidget(entry.modFreqLabel, row+1, 14)
+                self.batchLayout.addWidget(entry.modAmpLabel, row+1, 15)
+                self.batchLayout.addWidget(entry.phaseLabel, row+1, 16)
+
+            self.batchListWidget.setLayout(self.batchLayout)
+            self.mainLayout.addWidget(batchArea)
+            self.entryGroup.buttonClicked[int].connect(self.add_to_list)
+        else:
+            self.mainLayout.addWidget(QtGui.QLabel('Invalid file! No scans found.'))
+
+        self.setLayout(self.mainLayout)
+
+    def add_to_list(self, id):
+        ''' Add checked buttons to list. id starts at 0 '''
+
+        if self.entryGroup.button(id).isChecked():
+            # check if id is already in the list
+            if id in self.entry_id_to_export:
+                pass
+            else:
+                self.entry_id_to_export.append(id)
+        else:
+            # check if id is already in the list
+            if id in self.entry_id_to_export:
+                self.entry_id_to_export.remove(id)
+            else:
+                pass
+
+    def export_lwa(self):
+
+        outputfile, _ = QtGui.QFileDialog.getSaveFileName(self, 'Save Data', '', 'SMAP File (*.lwa)')
+
+        # prevent from overwriting
+        if outputfile == self.filename:
+            msg = Shared.MsgError(self, 'Cannot save!',
+                             'Output file shall not overwrite source file')
+            msg.exec_()
+        elif outputfile:
+            lwaparser.export(list(set(self.entry_id_to_export)), self.hd_line_num, src=self.filename, output=outputfile)
+        else:
+            pass
+
+    def open_new_file(self):
+
+        # close this window and delete this instance
+        self.close()
+        self.deleteLater()
+        # launch a new dialog window
+        self.parent.on_lwa_parser()
