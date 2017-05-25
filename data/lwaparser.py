@@ -68,7 +68,7 @@ def scan_header(filename):
                 # move to next line to read comment
                 a_line = a_file.readline()
                 line_num += 1
-                comment = a_line
+                comment = a_line.strip()    # remove the new line char
 
                 # move to next line to read freqs
                 a_line = a_file.readline()

@@ -65,10 +65,10 @@ class JPLScanConfig(QtGui.QDialog):
         self.entryLayout.addWidget(QtGui.QLabel('Time Const'), 0, 6)
         self.entryLayout.addWidget(QtGui.QLabel('Wait time (ms)'), 0, 7)
         self.entryLayout.addWidget(QtGui.QLabel('Modulation'), 0, 8)
-        self.entryLayout.addWidget(QtGui.QLabel('Mod Freq'), 0, 9)
-        self.entryLayout.addWidget(QtGui.QLabel('Mod Depth/Dev'), 0, 10)
-        self.entryLayout.addWidget(QtGui.QLabel('Harmonics'), 0, 11)
-        self.entryLayout.addWidget(QtGui.QLabel('Phase'), 0, 12)
+        self.entryLayout.addWidget(QtGui.QLabel('Mod Freq (Hz)'), 0, 9)
+        self.entryLayout.addWidget(QtGui.QLabel('Mod Depth/Dev'), 0, 10, 1, 2)
+        self.entryLayout.addWidget(QtGui.QLabel('Harmonics'), 0, 12)
+        self.entryLayout.addWidget(QtGui.QLabel('Phase'), 0, 13)
 
         self.add_entry()
 
@@ -141,8 +141,9 @@ class JPLScanConfig(QtGui.QDialog):
         self.entryLayout.addWidget(entry.modModeSel, row, 8)
         self.entryLayout.addWidget(entry.modFreqFill, row, 9)
         self.entryLayout.addWidget(entry.modAmpFill, row, 10)
-        self.entryLayout.addWidget(entry.harmSel, row, 11)
-        self.entryLayout.addWidget(entry.refPhaseFill, row, 12)
+        self.entryLayout.addWidget(entry.modAmpUnitLabel, row, 11)
+        self.entryLayout.addWidget(entry.harmSel, row, 12)
+        self.entryLayout.addWidget(entry.refPhaseFill, row, 13)
 
     def remove_entry(self):
         ''' Remove last batch entry in this dialog window '''
@@ -177,6 +178,8 @@ class JPLScanConfig(QtGui.QDialog):
             entry.modFreqFill.deleteLater()
             self.entryLayout.removeWidget(entry.modAmpFill)
             entry.modAmpFill.deleteLater()
+            self.entryLayout.removeWidget(entry.modAmpUnitLabel)
+            entry.modAmpUnitLabel.deleteLater()
             self.entryLayout.removeWidget(entry.harmSel)
             entry.harmSel.deleteLater()
             self.entryLayout.removeWidget(entry.refPhaseFill)
@@ -210,7 +213,7 @@ class JPLScanConfig(QtGui.QDialog):
                 if (not list(entry.status.values()).count(False)):
                     no_error *= True
                     # read settings
-                    setting_entry = (entry.commentFill.text(),
+                    entry_setting = (entry.commentFill.text(),
                                      entry.startFreq, entry.stopFreq, entry.step,
                                      entry.avg, entry.sensSel.currentIndex(),
                                      entry.tcSel.currentIndex(), entry.waittime,
@@ -218,7 +221,7 @@ class JPLScanConfig(QtGui.QDialog):
                                      entry.modFreq, entry.modAmp, entry.refHarm,
                                      entry.refPhase)
                     # put the setting tuple into a list
-                    entry_settings.append(setting_entry)
+                    entry_settings.append(entry_setting)
                 else:
                     no_error *= False
         if no_error:

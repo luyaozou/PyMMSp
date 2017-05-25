@@ -353,6 +353,8 @@ class JPLLIAScanEntry(QtGui.QWidget):
         self.modModeSel.addItems(api_syn.MOD_MODE_LIST)
         self.modFreqFill = QtGui.QLineEdit()
         self.modAmpFill = QtGui.QLineEdit()
+        self.modAmpUnitLabel = QtGui.QLabel()
+
         self.harmSel = QtGui.QComboBox()
         self.harmSel.addItems(['1', '2', '3', '4'])
         self.refPhaseFill = QtGui.QLineEdit()
@@ -390,9 +392,9 @@ class JPLLIAScanEntry(QtGui.QWidget):
         self.waittime = default[7]
         self.waitTimeFill.setText('{:g}'.format(self.waittime))
         self.modFreq = default[9]
-        self.modFreqFill.setText(siFormat(self.modFreq, suffix='Hz'))
+        self.modFreqFill.setText('{:g}'.format(self.modFreq))
         self.modAmp = default[10]
-        self.modAmpFill.setText(siFormat(self.modAmp, suffix='Hz') if default[8]==2 else '{:g}'.format(self.modAmp))
+        self.modAmpFill.setText('{:g}'.format(self.modAmp))
         self.refHarm = default[11]
         self.harmSel.setCurrentIndex(self.refHarm-1 if self.refHarm < 5 else 0)
         self.refPhase = default[12]
@@ -407,12 +409,26 @@ class JPLLIAScanEntry(QtGui.QWidget):
             self.modAmpFill.setReadOnly(True)
             self.modFreqFill.setStyleSheet('color: grey')
             self.modAmpFill.setStyleSheet('color: grey')
+            # bypass mod & harmonics validation status
             self.status['refHarm'] = True
+            self.status['modFreq'] = True
+            self.status['modAmp'] = True
+            self.modAmpUnitLabel.setText('')
         else:
             self.modFreqFill.setReadOnly(False)
             self.modAmpFill.setReadOnly(False)
             self.modFreqFill.setStyleSheet('color: black')
             self.modAmpFill.setStyleSheet('color: black')
+            if index == 1:
+                self.modAmpUnitLabel.setText('%')
+            elif index == 2:
+                self.modAmpUnitLabel.setText('Hz')
+            else:
+                pass
+            # recheck the values
+            self.val_syn_mod_freq(self.modFreqFill.text())
+            self.val_syn_amp(self.modAmpFill.text())
+
 
     def val_start_freq(self, text):
 
@@ -457,7 +473,7 @@ class JPLLIAScanEntry(QtGui.QWidget):
     def val_syn_mod_freq(self, text):
 
         try:
-            status1, self.modFreq = api_val.val_syn_mod_freq(str(siEval(text)), 'Hz')
+            status1, self.modFreq = api_val.val_syn_mod_freq(text, 'Hz')
         except:
             status1, self.modFreq = 0, 0
 
@@ -483,12 +499,12 @@ class JPLLIAScanEntry(QtGui.QWidget):
     def val_syn_amp(self, text):
 
         if self.modModeSel.currentIndex() == 1:     # AM
-            status, self.modAmp = api_val.val_syn_am_depth(str(siEval(text)), '%')
+            status, self.modAmp = api_val.val_syn_am_depth(text, '%')
         elif self.modModeSel.currentIndex() == 2:   # FM
-            status, self.modAmp = api_val.val_syn_fm_depth(str(siEval(text)),
-            'Hz')
+            status, self.modAmp = api_val.val_syn_fm_depth(text, 'Hz')
         else:
             status = 2
+
         self.modAmpFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
         self.status['modAmp'] = bool(status)
 
@@ -626,7 +642,7 @@ class LWAScanHdEntry(QtGui.QWidget):
         self.ptsLabel.setText(str(entry_setting[13]))
         self.avgLabel.setText(str(entry_setting[14]))
         self.harmLabel.setText(str(entry_setting[15]))
-        self.phaseLabel.setText('{.2f} deg'.format(entry_setting[16]))
+        self.phaseLabel.setText('{:.2f} deg'.format(entry_setting[16]))
 
 
 def msgcolor(status_code):

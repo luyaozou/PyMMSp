@@ -263,13 +263,13 @@ def val_syn_am_depth(depth_text, depth_unit_text):
         Arguments
             depth_text: str, modulation depth user input
             depth_unit_text: int, modulation depth unit
-        Safe range: [0, 75] '%'
-        Warning range: [0, 75] '%'
+        Safe range: (0, 75] '%'
+        Warning range: (0, 75] '%'
     '''
 
     if depth_unit_text == '%':
-        code, depth = val_float(depth_text, safe=[('>=', 0), ('<=', 75)],
-                                warning=[('>=', 0), ('<=', 75)])
+        code, depth = val_float(depth_text, safe=[('>', 0), ('<=', 75)],
+                                warning=[('>', 0), ('<=', 75)])
         return code, depth
     else:
         return 0, 0
@@ -280,7 +280,7 @@ def val_syn_fm_depth(depth_text, depth_unit_text):
         Arguments
             depth_text: str, modulation depth user input
             depth_unit_text: int, modulation depth unit
-        Safe range: [0, 5e6] Hz for FM
+        Safe range: (0, 5e6] Hz for FM
         Warning range: (5e6, 64e6] Hz for FM (max 64 MHz)
     '''
 
@@ -289,7 +289,7 @@ def val_syn_fm_depth(depth_text, depth_unit_text):
     else:
         return 0, 0
 
-    code, depth = val_float(depth_num, safe=[('>=', 0), ('<=', 5e6)],
+    code, depth = val_float(depth_num, safe=[('>', 0), ('<=', 5e6)],
                             warning=[('>', 5e6), ('<=', 6.4e7)])
     return code, depth
 
