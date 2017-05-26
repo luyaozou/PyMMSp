@@ -50,7 +50,7 @@ def save_lwa(filename, y, h_info):
         # write y data
         fmt = '{:10.3f}'*10     # 10 numbers each row
         for i in range(len(y)//10 + 1):
-            f.write(fmt.format(*y[i:i+10]))
+            f.write(fmt.format(*y[i*10:(i+1)*10]))
             f.write('\n')
 
     return None

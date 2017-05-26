@@ -146,6 +146,7 @@ class SynStatus(QtGui.QGroupBox):
             self.parent.synCtrl.synPowerSwitchBtn.setChecked(self.parent.synInfo.rfToggle)
             self.parent.synCtrl.probFreqFill.setText('{:.9f}'.format(self.parent.synInfo.probFreq*1e-6))
             self.parent.synCtrl.modSwitchBtn.setChecked(self.parent.synInfo.modToggle)
+            self.parent.synCtrl.modSwitchBtn.setText('ON' if self.parent.synInfo.modToggle else 'OFF')
             if self.parent.synInfo.AM1Toggle and (not self.parent.synInfo.FM1Toggle):
                 self.parent.synCtrl.modModeSel.setCurrentIndex(1)
                 self.parent.synCtrl.modFreqFill.setText('{:.1f}'.format(self.parent.synInfo.AM1Freq*1e-3))
@@ -161,6 +162,7 @@ class SynStatus(QtGui.QGroupBox):
             else:
                 self.parent.synCtrl.modModeSel.setCurrentIndex(0)
             self.parent.synCtrl.lfSwitchBtn.setChecked(self.parent.synInfo.LFToggle)
+            self.parent.synCtrl.lfSwitchBtn.setText('ON' if self.parent.synInfo.LFToggle else 'OFF')
             self.parent.synCtrl.lfVolFill.setText('{:.3f}'.format(self.parent.synInfo.LFVoltage))
 
     def show_info_dialog(self):
@@ -1280,6 +1282,8 @@ class LockinMonitor(QtGui.QWidget):
         self.slenFill.setText('100')
         self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(2)))
         self.data = np.zeros(100)
+        self.yMaxSel = QtGui.QComboBox()
+        self.yMaxSel.addItems(['1 V', '100 mV', '10 mV', '1 mV', '100 uV', '10 uV', '1 uV', '100 nV', '10 nV'])
         self.updateRate = QtGui.QComboBox()
         self.updateRate.addItems(['10 Hz', '5 Hz', '2 Hz', '1 Hz',
                                    '0.5 Hz', '0.2 Hz', '0.1 Hz'])
@@ -1289,6 +1293,8 @@ class LockinMonitor(QtGui.QWidget):
         self.restartButton = QtGui.QPushButton('Restart')
         self.stopButton = QtGui.QPushButton('Stop')
         panelLayout = QtGui.QHBoxLayout()
+        panelLayout.addWidget(QtGui.QLabel('Y Max'))
+        panelLayout.addWidget(self.yMaxSel)
         panelLayout.addWidget(QtGui.QLabel('Trace Length'))
         panelLayout.addWidget(self.slenFill)
         panelLayout.addWidget(QtGui.QLabel('Update Rate'))
@@ -1300,6 +1306,8 @@ class LockinMonitor(QtGui.QWidget):
         settingPanel.setLayout(panelLayout)
 
         self.pgPlot = pg.PlotWidget(title='Lockin Monitor')
+        self.pgPlot.setLabel('left', text='Lockin Signal', units='V')
+        self.pgPlot.setYRange(0, 1)
         self.curve = self.pgPlot.plot(self.data)
         mainLayout = QtGui.QVBoxLayout()
         mainLayout.setAlignment(QtCore.Qt.AlignTop)
@@ -1312,12 +1320,17 @@ class LockinMonitor(QtGui.QWidget):
         self.timer.setInterval(1000)        # default interval 1 second
 
         # trigger settings
+        self.yMaxSel.currentIndexChanged.connect(self.rescale)
         self.slenFill.textChanged.connect(self.set_len)
         self.startButton.clicked.connect(self.start)
         self.restartButton.clicked.connect(self.restart)
         self.stopButton.clicked.connect(self.stop)
         self.updateRate.currentIndexChanged[int].connect(self.set_waittime)
         self.timer.timeout.connect(self.update_plot)
+
+    def rescale(self, idx):
+
+        self.pgPlot.setYRange(0, 10**(-idx))
 
     def start(self, btn_pressed):
 

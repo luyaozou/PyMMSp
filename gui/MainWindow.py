@@ -135,8 +135,8 @@ class MainWindow(QtGui.QMainWindow):
         self.mainLayout.addWidget(self.liaCtrl, 3, 2, 2, 3)
         self.mainLayout.addWidget(self.scopeCtrl, 5, 2, 2, 3)
         self.mainLayout.addWidget(self.motorCtrl, 7, 2, 1, 3)
-        self.mainLayout.addWidget(self.scopeMonitor, 0, 5, 2, 4)
-        self.mainLayout.addWidget(self.liaMonitor, 2, 5, 4, 4)
+        self.mainLayout.addWidget(self.liaMonitor, 0, 5, 4, 4)
+        self.mainLayout.addWidget(self.scopeMonitor, 4, 5, 2, 4)
         self.mainLayout.addWidget(self.specMonitor, 6, 5, 2, 4)
 
         # Enable main window
