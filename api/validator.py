@@ -311,12 +311,17 @@ def val_monitor_sample_len(len_text):
     ''' Validate sample length for real-time monitor.
         Arguments
             len_text: str, samplen length user input
-        Safe range: [20, 500]
-        Warning range: > 0
+        Safe range: [20, 200]
+        Warning range: > (0, 500]
     '''
 
-    code, slen = val_int(len_text, safe=[('>=', 20), ('<=', 500)],
-                         warning=[('>', 0)])
+    code, slen = val_int(len_text, safe=[('>=', 20), ('<=', 200)],
+                         warning=[('>', 0), ('<=', 500)])
+    if slen > 500:
+        slen = 0
+    else:
+        pass
+
     return code, slen
 
 
@@ -329,16 +334,17 @@ def val_lia_monitor_srate(srate_index, tc_index):
         Warning range: > 2pi*tc + 10
     '''
 
-    waittime_list = [100, 200, 500, 1000, 2000, 5000, 10000]    # milliseconds
-    waittime = waittime_list[srate_index]
     tc = LIATCLIST[tc_index]
-
-    code, waittime = val_float(waittime, safe=[('>', tc*3*pi + 10)],
-                               warning=[('>', tc*2*pi + 10)])
-    if code:
-        return code, waittime
+    if srate_index < 7: # the last index is auto
+        waittime_list = [100, 200, 500, 1000, 2000, 5000, 10000]    # milliseconds
+        waittime = waittime_list[srate_index]
+        code, waittime = val_float(waittime, safe=[('>', tc*3*pi + 10)],
+                                   warning=[('>', tc*2*pi + 10)])
     else:
-        return code, tc*3*pi
+        code = 2
+        waittime = tc*3*pi if tc*3*pi>20 else 20
+
+    return code, waittime
 
 
 def val_lia_waittime(text, tc_index):

@@ -49,8 +49,12 @@ def save_lwa(filename, y, h_info):
 
         # write y data
         fmt = '{:10.3f}'*10     # 10 numbers each row
-        for i in range(len(y)//10 + 1):
+        for i in range(len(y)//10):
             f.write(fmt.format(*y[i*10:(i+1)*10]))
             f.write('\n')
+        # for the last row which may not have 10 numbers. Avoid index error
+        for i in range(len(y) - len(y)//10*10):
+            f.write('{:10.3f}'.format(y[len(y)//10*10+i]))
+        f.write('\n')
 
     return None

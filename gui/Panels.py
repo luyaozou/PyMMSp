@@ -294,6 +294,7 @@ class LockinStatus(QtGui.QGroupBox):
             self.parent.liaCtrl.tcSel.setCurrentIndex(self.parent.liaInfo.tcIndex)
             self.parent.liaCtrl.coupleSel.setCurrentIndex(self.parent.liaInfo.coupleIndex)
             self.parent.liaCtrl.reserveSel.setCurrentIndex(self.parent.liaInfo.reserveIndex)
+            self.parent.liaMonitor.set_waittime()
 
     def show_info_dialog(self):
 
@@ -1042,6 +1043,7 @@ class LockinCtrl(QtGui.QGroupBox):
                 msg.exec_()
 
         self.parent.liaStatus.print_info()  # auto refresh status panel
+        self.parent.liaMonitor.set_waittime()
 
     def tune_couple(self, idx):
         '''
@@ -1286,8 +1288,8 @@ class LockinMonitor(QtGui.QWidget):
         self.yMaxSel.addItems(['1 V', '100 mV', '10 mV', '1 mV', '100 uV', '10 uV', '1 uV', '100 nV', '10 nV'])
         self.updateRate = QtGui.QComboBox()
         self.updateRate.addItems(['10 Hz', '5 Hz', '2 Hz', '1 Hz',
-                                   '0.5 Hz', '0.2 Hz', '0.1 Hz'])
-        self.updateRate.setCurrentIndex(3)  # default update rate 1s
+                                   '0.5 Hz', '0.2 Hz', '0.1 Hz', 'Auto'])
+        self.updateRate.setCurrentIndex(2)  # default update rate 0.5s
         self.startButton = QtGui.QPushButton('Start')
         self.startButton.setCheckable(True)
         self.restartButton = QtGui.QPushButton('Restart')
@@ -1295,9 +1297,9 @@ class LockinMonitor(QtGui.QWidget):
         panelLayout = QtGui.QHBoxLayout()
         panelLayout.addWidget(QtGui.QLabel('Y Max'))
         panelLayout.addWidget(self.yMaxSel)
-        panelLayout.addWidget(QtGui.QLabel('Trace Length'))
+        panelLayout.addWidget(QtGui.QLabel('Length'))
         panelLayout.addWidget(self.slenFill)
-        panelLayout.addWidget(QtGui.QLabel('Update Rate'))
+        panelLayout.addWidget(QtGui.QLabel('Rate'))
         panelLayout.addWidget(self.updateRate)
         panelLayout.addWidget(self.startButton)
         panelLayout.addWidget(self.restartButton)
@@ -1317,7 +1319,7 @@ class LockinMonitor(QtGui.QWidget):
 
         # set up timer
         self.timer = QtCore.QTimer()
-        self.timer.setInterval(1000)        # default interval 1 second
+        self.set_waittime()
 
         # trigger settings
         self.yMaxSel.currentIndexChanged.connect(self.rescale)
@@ -1325,7 +1327,7 @@ class LockinMonitor(QtGui.QWidget):
         self.startButton.clicked.connect(self.start)
         self.restartButton.clicked.connect(self.restart)
         self.stopButton.clicked.connect(self.stop)
-        self.updateRate.currentIndexChanged[int].connect(self.set_waittime)
+        self.updateRate.currentIndexChanged.connect(self.set_waittime)
         self.timer.timeout.connect(self.update_plot)
 
     def rescale(self, idx):
@@ -1364,18 +1366,20 @@ class LockinMonitor(QtGui.QWidget):
         else:
             self.stop()
 
-    def set_waittime(self, srate_index):
+    def set_waittime(self):
         ''' Set wait time according to self.updateRate '''
 
-        status, waittime = api_val.val_lia_monitor_srate(srate_index, api_lia.read_tc(self.parent.liaHandle))
+        status, waittime = api_val.val_lia_monitor_srate(self.updateRate.currentIndex(), self.parent.liaInfo.tcIndex)
         self.timer.setInterval(waittime)
+        self.updateRate.setStyleSheet('border: 1px solid {:s}'.format(Shared.msgcolor(status)))
         if status:
             pass
         else:
-            msg = Shared.MsgWarning('Update speed warning!',
-            '''The picked update speed is faster than the lockin time constant.
-            Automatically reset the update speed to 2pi * time_constant ''')
+            msg = Shared.MsgWarning(self, 'Update speed warning!',
+'''The picked update speed is faster than the lockin time constant.
+Automatically reset the update speed to 3pi * time_constant ''')
             msg.exec_()
+            self.updateRate.setCurrentIndex(7)
 
     def daq(self):
         ''' If sampled points are less than the set length, fill up the array
