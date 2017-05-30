@@ -607,12 +607,15 @@ class LWAParserDialog(QtGui.QDialog):
         if self.entry_settings:
             # set top buttons
             topButtons = QtGui.QWidget()
-            self.exportButton = QtGui.QPushButton('Export selected scans')
-            self.exportButton.clicked.connect(self.export_lwa)
+            self.exportLWAButton = QtGui.QPushButton('Export (LWA Format)')
+            self.exportLWAButton.clicked.connect(self.export_lwa)
+            self.exportXYButton = QtGui.QPushButton('Export (XY Format)')
+            self.exportXYButton.clicked.connect(self.export_xy)
             self.openFileButton = QtGui.QPushButton('Open New File')
             self.openFileButton.clicked.connect(self.open_new_file)
             topButtonLayout = QtGui.QHBoxLayout()
-            topButtonLayout.addWidget(self.exportButton)
+            topButtonLayout.addWidget(self.exportLWAButton)
+            topButtonLayout.addWidget(self.exportXYButton)
             topButtonLayout.addWidget(self.openFileButton)
             topButtons.setLayout(topButtonLayout)
             self.mainLayout.addWidget(topButtons)
@@ -620,8 +623,8 @@ class LWAParserDialog(QtGui.QDialog):
             # set up QButtonGroup to manage checkboxes
             self.previewButtonGroup = QtGui.QButtonGroup()
             self.previewButtonGroup.setExclusive(True)
-            self.exportButtonGroup = QtGui.QButtonGroup()
-            self.exportButtonGroup.setExclusive(False)
+            self.exportLWAButtonGroup = QtGui.QButtonGroup()
+            self.exportLWAButtonGroup.setExclusive(False)
             # set up the batch list area
             self.batchListWidget = QtGui.QWidget()
             batchArea = QtGui.QScrollArea()
@@ -656,7 +659,7 @@ class LWAParserDialog(QtGui.QDialog):
                 entry = Shared.LWAScanHdEntry(self, entry_setting=current_setting)
                 # add entry number checkbox to the button group
                 self.previewButtonGroup.addButton(entry.previewCheck, row)
-                self.exportButtonGroup.addButton(entry.exportCheck, row)
+                self.exportLWAButtonGroup.addButton(entry.exportCheck, row)
                 # add widgets to the dispaly panel layout
                 self.batchLayout.addWidget(entry.previewCheck, row+1, 0)
                 self.batchLayout.addWidget(entry.exportCheck, row+1, 1)
@@ -681,7 +684,7 @@ class LWAParserDialog(QtGui.QDialog):
             self.batchListWidget.setLayout(self.batchLayout)
             self.mainLayout.addWidget(batchArea)
             self.previewButtonGroup.buttonToggled.connect(self.preview_entry)
-            self.exportButtonGroup.buttonClicked[int].connect(self.add_to_export_list)
+            self.exportLWAButtonGroup.buttonClicked[int].connect(self.add_to_export_list)
         else:
             self.mainLayout.addWidget(QtGui.QLabel('Invalid file! No scans found.'))
 
@@ -699,7 +702,7 @@ class LWAParserDialog(QtGui.QDialog):
         ''' Add checked buttons to export list. id_ starts at 0 '''
 
         # if the button is checked, add to export list
-        if self.exportButtonGroup.button(id_).isChecked():
+        if self.exportLWAButtonGroup.button(id_).isChecked():
             # check if id is already in the list
             if id_ in self.entry_id_to_export:
                 pass
@@ -716,22 +719,44 @@ class LWAParserDialog(QtGui.QDialog):
     def export_lwa(self):
         ''' Export to new lwa file '''
 
-        outputfile, _ = QtGui.QFileDialog.getSaveFileName(self, 'Save Data', '', 'SMAP File (*.lwa)')
+        # check if entry_id_to_export list is not empty
+        if self.entry_id_to_export:
+            output_file, _ = QtGui.QFileDialog.getSaveFileName(self, 'Save lwa file', '', 'SMAP File (*.lwa)')
+        else:
+            d = Shared.MsgError(self, 'Empty List!', 'No scan is selected!')
+            d.exec_()
+            output_file = None
 
         # prevent from overwriting
-        if outputfile == self.filename:
+        if output_file == self.filename:
             msg = Shared.MsgError(self, 'Cannot save!',
                              'Output file shall not overwrite source file')
             msg.exec_()
-        elif outputfile:
-            lwaparser.export(list(set(self.entry_id_to_export)), self.hd_line_num, src=self.filename, output=outputfile)
+        elif output_file:
+            lwaparser.export_lwa(list(set(self.entry_id_to_export)), self.hd_line_num, src=self.filename, output=output_file)
         else:
             pass
 
     def export_xy(self):
         ''' Export to xy text file. User can select delimiter '''
 
-        pass
+        # check if entry_id_to_export list is not empty
+        if self.entry_id_to_export:
+            output_dir = QtGui.QFileDialog.getExistingDirectory(self, 'Select directory to save xy files')
+        else:
+            d = Shared.MsgError(self, 'Empty List!', 'No scan is selected!')
+            d.exec_()
+            output_dir = None
+
+        # prevent from overwriting
+        if output_dir == self.filename:
+            msg = Shared.MsgError(self, 'Cannot save!',
+                             'Output file shall not overwrite source file')
+            msg.exec_()
+        elif output_dir:
+            lwaparser.export_xy(list(set(self.entry_id_to_export)), self.hd_line_num, src=self.filename, output_dir=output_dir)
+        else:
+            pass
 
     def open_new_file(self):
 
