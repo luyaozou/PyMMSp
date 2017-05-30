@@ -607,7 +607,9 @@ class LWAScanHdEntry(QtGui.QWidget):
         self.parent = parent
 
         # add labels
-        self.scanNumLabel = QtGui.QCheckBox()
+        self.previewCheck = QtGui.QCheckBox()
+        self.exportCheck = QtGui.QCheckBox()
+        self.scanNumLabel = QtGui.QLabel()
         self.commentLabel = QtGui.QLabel()
         self.dateLabel = QtGui.QLabel()
         self.timeLabel = QtGui.QLabel()

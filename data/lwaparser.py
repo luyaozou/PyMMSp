@@ -113,7 +113,7 @@ def export(id_list, hd_line_num, src='src.lwa', output='output.lwa'):
 
     # get line number window to be copied
     hd_line_num.append(0)   # add 0 for the last one
-    win = lambda id, hd: list((hd[i], hd[i+1]-1) for i in id)
+    win = lambda id_, hd: list((hd[i], hd[i+1]-1) for i in id_)
     line_num_win = win(id_list, hd_line_num)
     # reverse list order for pop ups
     line_num_win.reverse()
@@ -138,3 +138,46 @@ def export(id_list, hd_line_num, src='src.lwa', output='output.lwa'):
 
     srcfile.close()
     outputfile.close()
+
+
+def preview(id_, hd_line_num, src='src.lwa'):
+    ''' Preview the scan #id.
+        Returns np.array (x, y)
+            x, frequency vector, unit in Hz
+            y, intensity vector
+    '''
+
+    srcfile = open(src, 'r')
+    ylist = []
+
+    # get line number window to be copied
+    hd_line_num.append(0)   # add 0 for the last one
+    line_num = 1
+    start = hd_line_num[id_]
+    stop = hd_line_num[id_+1] - 1
+
+    # start reading
+    a_line = srcfile.readline()
+    while a_line:
+        if (line_num >= start+3) and ((line_num <= stop) or (stop == -1)):
+            # add this line to y list
+            ylist.append(a_line.split())
+        elif line_num == start: # get 1st header for sensitivity
+            a_list = a_line.split()
+            sens = float(a_list[9])
+        elif line_num == start+2: # get 3rd header line for x array
+            a_list = a_line.split()
+            xstart = float(a_list[0])
+            xstep = float(a_list[1])
+            pts = int(a_list[2])
+            x = np.linspace(xstart, xstart + xstep*pts, num=pts, endpoint=False)
+            pass
+        a_line = srcfile.readline()
+        line_num += 1
+
+    srcfile.close()
+
+    # flatten ylist
+    y = [i for j in ylist for i in j]
+
+    return np.column_stack((x*1e6, np.asarray(y, dtype=float)*1e-4*sens))
