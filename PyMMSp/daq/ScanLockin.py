@@ -3,16 +3,13 @@
 ''' Lockin scanning routine in JPL style '''
 
 
-from PyQt5 import QtGui, QtCore
+from PyQt6 import QtGui, QtCore
 import numpy as np
 from math import ceil
 import pyqtgraph as pg
-from gui import SharedWidgets as Shared
-from api import general as api_gen
-from api import validator as api_val
-from api import lockin as api_lia
-from api import synthesizer as api_syn
-from data import save
+from PyMMSp.PySpec import SharedWidgets as Shared
+from PyMMSp.PySpec import lockin as api_lia, validator as api_val, synthesizer as api_syn
+from PyMMSp.PySpec import save
 
 
 class JPLScanConfig(QtGui.QDialog):

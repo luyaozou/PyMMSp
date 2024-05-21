@@ -4,6 +4,7 @@
 *.dat
 *.html
 *.lwa
+*.idea/*
 
 # Internal config files
 *inst.cfg

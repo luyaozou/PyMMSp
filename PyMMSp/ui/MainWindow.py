@@ -1,16 +1,11 @@
 #! encoding = utf-8
 ''' Main GUI Window '''
 
-from PyQt5 import QtCore, QtGui
+from PyQt6 import QtCore, QtGui
 import datetime
-from gui import SharedWidgets as Shared
-from gui import Panels
-from gui import Dialogs
-from daq import ScanLockin
-from daq import PresReader
-from api import general as api_gen
-from api import synthesizer as api_syn
-from api import lockin as api_lia
+from PyMMSp.PySpec import Panels, Dialogs, SharedWidgets as Shared
+from PyMMSp.PySpec import ScanLockin, PresReader
+from PyMMSp.PySpec import lockin as api_lia, general as api_gen, synthesizer as api_syn
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -21,7 +16,7 @@ class MainWindow(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self)
 
         # Set global window properties
-        self.setWindowTitle('Yo! Go PySpec!')
+        self.setWindowTitle('Yo! Go PyMMSp!')
         self.setMinimumWidth(1500)
         self.setMinimumHeight(840)
         self.testModeSignLabel = QtGui.QLabel('[TEST MODE ACTIVE -- NOTHING IS REAL]!')
@@ -152,7 +147,7 @@ class MainWindow(QtGui.QMainWindow):
     def refresh_inst(self):
 
         if self.testModeAction.isChecked():
-            self.setWindowTitle('Yo! Go PySpec! [TEST MODE]')
+            self.setWindowTitle('Yo! Go PyMMSp! [TEST MODE]')
             self.testModeSignLabel.show()
             self.synCtrl.setChecked(True)
             self.liaCtrl.setChecked(True)
@@ -162,7 +157,7 @@ class MainWindow(QtGui.QMainWindow):
             self.liaStatus.setChecked(True)
             self.scopeStatus.setChecked(True)
         else:
-            self.setWindowTitle('Yo! Go PySpec!')
+            self.setWindowTitle('Yo! Go PyMMSp!')
             self.testModeSignLabel.hide()
             self.synCtrl.setChecked(not(self.synHandle is None))
             self.liaCtrl.setChecked(not(self.liaHandle is None))

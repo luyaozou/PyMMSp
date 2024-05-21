@@ -2,19 +2,14 @@
 ''' GUI Panels. '''
 
 # import standard libraries
-from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import QObject
+from PyQt6 import QtGui, QtCore
 import pyqtgraph as pg
 import pyvisa
 import numpy as np
-# import shared gui widgets
-from gui import SharedWidgets as Shared
-from gui import Dialogs
+# import shared ui widgets
+from PyMMSp.PySpec import Dialogs, SharedWidgets as Shared
 # import instrument api
-from api import synthesizer as api_syn
-from api import lockin as api_lia
-from api import pci as api_pci
-from api import validator as api_val
+from PyMMSp.PySpec import lockin as api_lia, validator as api_val, synthesizer as api_syn, pci as api_pci
 
 
 class SynStatus(QtGui.QGroupBox):

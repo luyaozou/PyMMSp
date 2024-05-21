@@ -13,7 +13,7 @@
   Package Requirments:
     > numpy 1.8+
     > scipy 0.16+
-    > PyQt5
+    > PyQt6
     > matplotlib
 
   Written by Luyao Zou @ https://github.com/luyaozou
@@ -23,7 +23,7 @@ __author__ = 'Luyao Zou, zouluyao@hotmail.com'
 __version__ = 'Beta 0.1'
 __date__ = 'Date: 07/22/2016'
 
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt6 import QtWidgets, QtCore, QtGui
 import sys
 import os
 import numpy as np
@@ -305,7 +305,7 @@ class FitMainGui(QtWidgets.QMainWindow):
                 # re-load data with boxcar win and rescale
                 xdata, ydata = self.load_data()
                 popt, uncertainty, noise, ppoly, self.fit_stat.stat = sflib.fit_spectrum(f,
-                xdata, ydata, self.fit_par.par, self.fit_par.deg, self.fit_par.smooth_edge)
+                                                                                         xdata, ydata, self.fit_par.par, self.fit_par.deg, self.fit_par.smooth_edge)
             else:    # if no peak, fit baseline
                 xdata, ydata = self.load_data()
                 popt, uncertainty, noise, ppoly, self.fit_stat.stat = sflib.fit_baseline(xdata, ydata, self.fit_par.deg)
@@ -348,7 +348,7 @@ class FitMainGui(QtWidgets.QMainWindow):
                 return None, None
         # try load data
         xdata, ydata, self.fit_stat.stat = sflib.read_file(filename,
-                                 self.fit_par.boxwin, self.fit_par.rescale)
+                                                           self.fit_par.boxwin, self.fit_par.rescale)
         # if file is readable, plot raw data and return xy data
         if not self.fit_stat.stat:
             self.plot_data(xdata, ydata)
@@ -411,13 +411,13 @@ class FitMainGui(QtWidgets.QMainWindow):
                   'Save Current Fit Spectrum', '/'.join([self.current_dir, default_fitname]))[0]
         if fitname:
             sflib.save_fit(fitname, data_table, popt,
-                       self.fit_par.ftype, self.fit_par.der, self.fit_par.peak)
+                           self.fit_par.ftype, self.fit_par.der, self.fit_par.peak)
         logname = QtWidgets.QFileDialog.getSaveFileName(self,
                    'Save Current Fit Log', '/'.join([self.current_dir, default_logname]))[0]
         if logname:
             sflib.save_log(logname, popt, uncertainty, ppoly,
-                       self.fit_par.ftype, self.fit_par.der,
-                       self.fit_par.peak, self.fit_par.par_name)
+                           self.fit_par.ftype, self.fit_par.der,
+                           self.fit_par.peak, self.fit_par.par_name)
         self.list_success_file.append('/'.join([self.current_dir, self.current_file]))
 
     def next_file(self):
@@ -584,7 +584,7 @@ class FitMainGui(QtWidgets.QMainWindow):
 # ------ run script ------
 if __name__ == '__main__':
     args = sys.argv
-    # get around the gtk error on linux systems (sacrifice the gui appearance)
+    # get around the gtk error on linux systems (sacrifice the ui appearance)
     #if sys.platform == 'linux':
     #    args.append('-style')
     #    args.append('Cleanlooks')

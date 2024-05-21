@@ -2,12 +2,10 @@
 ''' Dialog windows for system menues '''
 
 
-from PyQt5 import QtGui, QtCore
-from api import general as api_gen
-from api import synthesizer as api_syn
-from api import lockin as api_lia
-from gui import SharedWidgets as Shared
-from data import lwaparser
+from PyQt6 import QtGui, QtCore
+from PyMMSp.PySpec import general as api_gen
+from PyMMSp.PySpec import SharedWidgets as Shared
+from PyMMSp.PySpec import lwaparser
 from pyqtgraph import siFormat
 import pyqtgraph as pg
 

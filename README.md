@@ -1,13 +1,7 @@
 PySpec is an integrated spectral analysis python GUI for spectroscopist.
 PySpec is developed solely in Python, and uses third-party C-wrappers for National Instrument drivers.
 
-System Requirement:
-* Python 3
-* PyQt 5: provides the GUI framework
-* numpy: provides data array storage and manipulation functionality
-* scipy: provides data manipulation functionality
-* pyqtgraph: provides real time visualization. Built on PyQt
-* PyVisa 1.8: provides API for VISA instruments. Requires National Instrument VISA C library.
+Requires:
 * pyniscope from [Bernardo Kyotoku](https://github.com/bernardokyotoku/pyniscope "target=_blank"): provides API for National Instrument Digitizer Card. Requires National Instrument NISCOPE C library.
 
 Documentation includes a user guide and a developer's guide.

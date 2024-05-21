@@ -3,14 +3,13 @@
 ''' CENTER TWO pressure reader routine '''
 
 
-from PyQt5 import QtGui, QtCore
+from PyQt6 import QtGui, QtCore
 import numpy as np
-from math import ceil
 import pyqtgraph as pg
 import datetime
-from gui import SharedWidgets as Shared
-from api import validator as api_val
-from api import pressure as api_pres
+from PyMMSp.PySpec import SharedWidgets as Shared
+from PyMMSp.PySpec import validator as api_val, pressure as api_pres
+
 
 class PresReaderWindow(QtGui.QDialog):
     '''

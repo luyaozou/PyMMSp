@@ -1,15 +1,11 @@
 #! encoding = utf-8
 
-from PyQt5 import QtGui, QtCore
+from PyQt6 import QtGui
 import random
 from math import ceil
 import numpy as np
-from pyqtgraph import siFormat, siEval
-from api import validator as api_val
-from api import synthesizer as api_syn
-from api import lockin as api_lia
-from api import pci as api_pci
-
+from pyqtgraph import siFormat
+from PyMMSp.PySpec import lockin as api_lia, validator as api_val, synthesizer as api_syn
 
 # QPushButton label dictionary
 BUTTONLABEL = {'confirm':['Lets do it', 'Go forth and conquer', 'Ready to go',

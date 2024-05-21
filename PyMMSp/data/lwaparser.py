@@ -62,7 +62,7 @@ def scan_header(filename):
                 mf = float(_temp_list[13])
                 ma = float(_temp_list[15])
 
-                # the following fields are newly introduced in PySpec
+                # the following fields are newly introduced in PyMMSp
                 # make it compatible with old "standard" JPL LWA header
                 try:
                     mmode = _temp_list[17]
