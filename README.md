@@ -1,5 +1,11 @@
-PySpec is an integrated spectral analysis python GUI for spectroscopist.
-PySpec is developed solely in Python, and uses third-party C-wrappers for National Instrument drivers.
+PyMMSp is an interactive controller for millimeter-wave absorption spectrometer.
+PyMMSp is developed solely in Python, and uses third-party C-wrappers for National Instrument drivers (if applicable).
+
+The standard application scenario is to control multiplier-chain-based millimeter-wave sources and detectors,
+using step-by-step frequency scan and lock-in detection. 
+Additional apparatus such as pressure gauge, power supply (to apply bias voltage to the source or / and detector),
+electronically controlled dosing valves, temperature controller, and so on,
+can also be controlled by PyMMSp.
 
 Requires:
 * pyniscope from [Bernardo Kyotoku](https://github.com/bernardokyotoku/pyniscope "target=_blank"): provides API for National Instrument Digitizer Card. Requires National Instrument NISCOPE C library.

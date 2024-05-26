@@ -1,27 +1,30 @@
 #! encoding = utf-8
 ''' Main GUI Window '''
 
-from PyQt6 import QtCore, QtGui
+from PyQt6 import QtCore, QtGui, QtWidgets
 import datetime
-from PyMMSp.PySpec import Panels, Dialogs, SharedWidgets as Shared
-from PyMMSp.PySpec import ScanLockin, PresReader
-from PyMMSp.PySpec import lockin as api_lia, general as api_gen, synthesizer as api_syn
+from PyMMSp.ui import Panels, Dialogs, SharedWidgets as Shared
+from PyMMSp.daq import ScanLockin, PresReader
+from PyMMSp.inst import lockin as api_lia
+from PyMMSp.inst import general as api_gen
+from PyMMSp.inst import synthesizer as api_syn
 
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
     '''
         Implements the main window
     '''
+
     def __init__(self, parent=None):
-        QtGui.QMainWindow.__init__(self)
+        QtWidgets.QMainWindow.__init__(self)
 
         # Set global window properties
         self.setWindowTitle('Yo! Go PyMMSp!')
         self.setMinimumWidth(1500)
         self.setMinimumHeight(840)
-        self.testModeSignLabel = QtGui.QLabel('[TEST MODE ACTIVE -- NOTHING IS REAL]!')
+        self.testModeSignLabel = QtWidgets.QLabel('[TEST MODE ACTIVE -- NOTHING IS REAL]!')
         self.testModeSignLabel.setStyleSheet('color: {:s}'.format(Shared.msgcolor(0)))
-        self.testModeSignLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.testModeSignLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
         # Initiate pyvisa instrument objects
         self.synHandle = None
@@ -80,7 +83,8 @@ class MainWindow(QtGui.QMainWindow):
         self.testModeAction = QtGui.QAction('Test Mode', self)
         self.testModeAction.setCheckable(True)
         self.testModeAction.setShortcut('Ctrl+T')
-        self.testModeAction.setWhatsThis('Toggle the test mode to bypass all instrument communication for GUI development.')
+        self.testModeAction.setWhatsThis(
+            'Toggle the test mode to bypass all instrument communication for GUI development.')
 
         # Set menu bar
         self.statusBar()
@@ -120,7 +124,7 @@ class MainWindow(QtGui.QMainWindow):
         self.specMonitor = Panels.SpectrumMonitor(self)
 
         # Set main window layout
-        self.mainLayout = QtGui.QGridLayout()
+        self.mainLayout = QtWidgets.QGridLayout()
         self.mainLayout.setSpacing(6)
         self.mainLayout.addWidget(self.synStatus, 0, 0, 3, 2)
         self.mainLayout.addWidget(self.liaStatus, 3, 0, 3, 2)
@@ -135,12 +139,15 @@ class MainWindow(QtGui.QMainWindow):
         self.mainLayout.addWidget(self.specMonitor, 6, 5, 2, 4)
 
         # Enable main window
-        self.mainWidget = QtGui.QWidget()
+        self.mainWidget = QtWidgets.QWidget()
         self.mainWidget.setLayout(self.mainLayout)
         self.setCentralWidget(self.mainWidget)
 
         # Preload system dialog widgets
-        self.load_dialogs()
+        self.selInstDialog = Dialogs.SelInstDialog(self)
+        self.viewInstDialog = Dialogs.ViewInstDialog(self)
+        self.synInfoDialog = Dialogs.SynInfoDialog(self)
+        self.liaInfoDialog = Dialogs.LockinInfoDialog(self)
         self.refresh_inst()
         self.testModeAction.toggled.connect(self.refresh_inst)
 
@@ -159,31 +166,23 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.setWindowTitle('Yo! Go PyMMSp!')
             self.testModeSignLabel.hide()
-            self.synCtrl.setChecked(not(self.synHandle is None))
-            self.liaCtrl.setChecked(not(self.liaHandle is None))
-            self.scopeCtrl.setChecked(not(self.pciHandle is None))
-            self.motorCtrl.setChecked(not(self.motorHandle is None))
-            self.synStatus.setChecked(not(self.synHandle is None))
-            self.liaStatus.setChecked(not(self.liaHandle is None))
-            self.scopeStatus.setChecked(not(self.pciHandle is None))
+            self.synCtrl.setChecked(not (self.synHandle is None))
+            self.liaCtrl.setChecked(not (self.liaHandle is None))
+            self.scopeCtrl.setChecked(not (self.pciHandle is None))
+            self.motorCtrl.setChecked(not (self.motorHandle is None))
+            self.synStatus.setChecked(not (self.synHandle is None))
+            self.liaStatus.setChecked(not (self.liaHandle is None))
+            self.scopeStatus.setChecked(not (self.pciHandle is None))
 
         self.synStatus.manual_refresh()
         self.liaStatus.manual_refresh()
         self.scopeStatus.manual_refresh()
 
-    def load_dialogs(self):
-        ''' Load dialog widgets without showing them '''
-
-        self.selInstDialog = Dialogs.SelInstDialog(self)
-        self.viewInstDialog = Dialogs.ViewInstDialog(self)
-        self.synInfoDialog = Dialogs.SynInfoDialog(self)
-        self.liaInfoDialog = Dialogs.LockinInfoDialog(self)
-
     def on_exit(self):
         self.close()
 
     def on_sel_inst(self):
-        result = self.selInstDialog.exec_()
+        result = self.selInstDialog.exec()
 
         if result:
             # simply uncheck panels to prevent the warning dialog
@@ -209,7 +208,7 @@ class MainWindow(QtGui.QMainWindow):
     def on_close_sel_inst(self):
 
         d = Dialogs.CloseSelInstDialog(self)
-        d.exec_()
+        d.exec()
 
         # simply uncheck panels to prevent the warning dialog
         self.refresh_inst()
@@ -223,11 +222,12 @@ class MainWindow(QtGui.QMainWindow):
         if self.testModeAction.isChecked() or (self.synHandle and self.liaHandle):
             dconfig = ScanLockin.JPLScanConfig(main=self)
             entry_settings = None
-            dconfig_result = dconfig.exec_()
+            dconfig_result = dconfig.exec()
         else:
             # instrument handle is None, pop up error
-            msg = Shared.MsgError(self, 'Instrument Offline!', 'Connect to the synthesizer and lockin first before proceed.')
-            msg.exec_()
+            msg = Shared.MsgError(self, 'Instrument Offline!',
+                                  'Connect to the synthesizer and lockin first before proceed.')
+            msg.exec()
             return None
 
         # this loop makes sure the config dialog does not disappear
@@ -239,62 +239,64 @@ class MainWindow(QtGui.QMainWindow):
                 now = datetime.datetime.today()
                 length = datetime.timedelta(seconds=total_time)
                 then = now + length
-                text = 'This batch job is estimated to take {:s}.\nIt is expected to finish at {:s}.'.format(str(length), then.strftime('%I:%M %p, %m-%d-%Y (%a)'))
+                text = 'This batch job is estimated to take {:s}.\nIt is expected to finish at {:s}.'.format(
+                    str(length), then.strftime('%I:%M %p, %m-%d-%Y (%a)'))
                 q = Shared.MsgInfo(self, 'Time Estimation', text)
-                q.addButton(QtGui.QMessageBox.Cancel)
-                qres = q.exec_()
-                if qres == QtGui.QMessageBox.Ok:
+                q.addButton(QtWidgets.QMessageBox.StandardButton.Cancel)
+                qres = q.exec()
+                if qres == QtWidgets.QMessageBox.StandardButton.Ok:
                     break
                 else:
-                    dconfig_result = dconfig.exec_()
+                    dconfig_result = dconfig.exec()
             else:
-                dconfig_result = dconfig.exec_()
+                dconfig_result = dconfig.exec()
 
         if entry_settings and dconfig_result:
             dscan = ScanLockin.JPLScanWindow(entry_settings, filename, main=self)
-            dscan.exec_()
+            dscan.exec()
         else:
             pass
 
     def on_scan_pci(self):
         d = Dialogs.ViewPG(self)
-        d.exec_()
+        d.exec()
 
     def on_scan_cavity(self):
         pass
 
     def on_pres_reader(self):
         # this is a modaless window, save this attribute to the main class for reuse
-        if hasattr(self, 'p_reader_win'):       # if window already activated
-            self.p_reader_win.timer.start()     # restart reading
-        else:   # initiate window instance
+        if hasattr(self, 'p_reader_win'):  # if window already activated
+            self.p_reader_win.timer.start()  # restart reading
+        else:  # initiate window instance
             self.p_reader_win = PresReader.PresReaderWindow(main=self)
         self.p_reader_win.show()
 
     def on_lwa_parser(self):
         ''' Launch lwa parser dialog window '''
 
-        filename, _ = QtGui.QFileDialog.getOpenFileName(self, 'Open LWA File',
-                                './default.lwa', 'SMAP Data File (*.lwa)')
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Open LWA File',
+                                                            './default.lwa', 'SMAP Data File (*.lwa)')
 
         d = Dialogs.LWAParserDialog(self, filename)
-        d.exec_()
+        d.exec()
 
     def closeEvent(self, event):
-        q = QtGui.QMessageBox.question(self, 'Quit?',
-                       'Are you sure to quit?', QtGui.QMessageBox.Yes |
-                       QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
-        if q == QtGui.QMessageBox.Yes:
+        q = QtWidgets.QMessageBox.question(
+            self, 'Quit?', 'Are you sure to quit?',
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+            QtWidgets.QMessageBox.StandardButton.Yes)
+        if q == QtWidgets.QMessageBox.StandardButton.Yes:
             status = api_gen.close_inst(self.synHandle, self.liaHandle,
-                                       self.pciHandle, self.motorHandle)
-            if not status:    # safe to close
+                                        self.pciHandle, self.motorHandle)
+            if not status:  # safe to close
                 self.close()
             else:
-                qq = QtGui.QMessageBox.question(self, 'Error',
-                        '''Error in disconnecting instruments.
-                        Are you sure to force quit?''', QtGui.QMessageBox.Yes |
-                        QtGui.QMessageBox.No, QtGui.QMessageBox.No)
-                if qq == QtGui.QMessageBox.Yes:
+                qq = QtWidgets.QMessageBox.question(
+                    self, 'Error', 'Error in disconnecting instruments. Are you sure to force quit?',
+                    QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+                    QtWidgets.QMessageBox.StandardButton.No)
+                if qq == QtWidgets.QMessageBox.StandardButton.Yes:
                     self.close()
                 else:
                     event.ignore()

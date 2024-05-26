@@ -1,16 +1,15 @@
 #! encoding = utf-8
 
 import sys
-from PyQt6 import QtGui
-from PyMMSp
+from PyQt6 import QtWidgets
+from PyMMSp.ui import MainWindow
 
-import PyMMSp.ui.MainWindow
 
 if __name__ == '__main__':
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
-    window = PyMMSp.gui.MainWindow.MainWindow()
+    window = MainWindow.MainWindow()
     window.show()
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

@@ -1,20 +1,22 @@
 #! encoding = utf-8
 
-from PyQt6 import QtGui
+from PyQt6 import QtWidgets
 import random
 from math import ceil
 import numpy as np
 from pyqtgraph import siFormat
-from PyMMSp.PySpec import lockin as api_lia, validator as api_val, synthesizer as api_syn
+from PyMMSp.inst import lockin as api_lia
+from PyMMSp.inst import validator as api_val
+from PyMMSp.inst import synthesizer as api_syn
 
 # QPushButton label dictionary
-BUTTONLABEL = {'confirm':['Lets do it', 'Go forth and conquer', 'Ready to go',
-                          'Looks good', 'Sounds about right'],
-               'complete':['Nice job', 'Sweet', 'Well done', 'Mission complete'],
-               'accept':['I see', 'Gotcha', 'Okay', 'Yes master'],
-               'reject':['Never mind', 'I changed my mind', 'Cancel', 'I refuse'],
-               'error':['Oopsy!', 'Something got messed up', 'Bad']
-                }
+BUTTONLABEL = {'confirm': ['Lets do it', 'Go forth and conquer', 'Ready to go',
+                           'Looks good', 'Sounds about right'],
+               'complete': ['Nice job', 'Sweet', 'Well done', 'Mission complete'],
+               'accept': ['I see', 'Gotcha', 'Okay', 'Yes master'],
+               'reject': ['Never mind', 'I changed my mind', 'Cancel', 'I refuse'],
+               'error': ['Oopsy!', 'Something got messed up', 'Bad']
+               }
 
 
 def btn_label(btn_type):
@@ -32,62 +34,62 @@ def btn_label(btn_type):
         return 'A Button'
 
 
-class InstStatus(QtGui.QMessageBox):
+class InstStatus(QtWidgets.QMessageBox):
     ''' Message box of instrument communication status. Silent if communication
         is successful. Pop up error message in pyvisa.constants.StatusCode
     '''
 
     def __init__(self, parent, code):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
 
-        self.setIcon(QtGui.QMessageBox.Critical)
-        self.addButton(QtGui.QMessageBox.Ok)
+        self.setIcon(QtWidgets.QMessageBox.Icon.Critical)
+        self.addButton(QtWidgets.QMessageBox.StandardButton.Ok)
         self.setText(str(code))
         self.setWindowTitle('Instrument Communication Failure!')
 
 
-class MsgError(QtGui.QMessageBox):
+class MsgError(QtWidgets.QMessageBox):
     ''' Error message box '''
 
     def __init__(self, parent, title_text, moretext=''):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
 
-        self.setIcon(QtGui.QMessageBox.Critical)
-        self.addButton(QtGui.QMessageBox.Ok)
+        self.setIcon(QtWidgets.QMessageBox.Icon.Critical)
+        self.addButton(QtWidgets.QMessageBox.StandardButton.Ok)
         self.setWindowTitle(title_text)
         self.setText(moretext)
 
 
-class MsgWarning(QtGui.QMessageBox):
+class MsgWarning(QtWidgets.QMessageBox):
     ''' Warning message box '''
 
     def __init__(self, parent, title_text, moretext=''):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
 
-        self.setIcon(QtGui.QMessageBox.Warning)
-        self.addButton(QtGui.QMessageBox.Ok)
+        self.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+        self.addButton(QtWidgets.QMessageBox.StandardButton.Ok)
         self.setWindowTitle(title_text)
         self.setText(moretext)
 
 
-class MsgInfo(QtGui.QMessageBox):
+class MsgInfo(QtWidgets.QMessageBox):
     ''' Information message box '''
 
     def __init__(self, parent, title_text, moretext=''):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
 
-        self.setIcon(QtGui.QMessageBox.Information)
-        self.addButton(QtGui.QMessageBox.Ok)
+        self.setIcon(QtWidgets.QMessageBox.Information)
+        self.addButton(QtWidgets.QMessageBox.Ok)
         self.setWindowTitle(title_text)
         self.setText(moretext)
         self.setWindowModality(0)
 
 
-class VDIBandComboBox(QtGui.QComboBox):
+class VDIBandComboBox(QtWidgets.QComboBox):
     ''' Selection box for VDI multiplier chain '''
 
     def __init__(self):
-        QtGui.QWidget.__init__(self)
+        QtWidgets.QWidget.__init__(self)
 
         bandList = []
 
@@ -101,21 +103,21 @@ class VDIBandComboBox(QtGui.QComboBox):
         self.setCurrentIndex(4)
 
 
-class LIASensBox(QtGui.QComboBox):
+class LIASensBox(QtWidgets.QComboBox):
     ''' Lockin sensitivity selection box '''
 
     def __init__(self):
-        QtGui.QWidget.__init__(self)
+        QtWidgets.QWidget.__init__(self)
 
         self.addItems(api_lia.SENS_LIST)
         self.setCurrentIndex(26)
 
 
-class LIATCBox(QtGui.QComboBox):
+class LIATCBox(QtWidgets.QComboBox):
     ''' Lockin time constant selection box '''
 
     def __init__(self):
-        QtGui.QWidget.__init__(self)
+        QtWidgets.QWidget.__init__(self)
 
         self.addItems(api_lia.TC_LIST)
         self.setCurrentIndex(5)
@@ -321,11 +323,11 @@ class MotorInfo():
         self.instName = ''
 
 
-class JPLLIAScanEntry(QtGui.QWidget):
+class JPLLIAScanEntry(QtWidgets.QWidget):
     ''' Frequency window entry for scanning job configuration with captions '''
 
     def __init__(self, main, default=()):
-        QtGui.QWidget.__init__(self)
+        QtWidgets.QWidget.__init__(self)
         self.main = main
         self.status = {'startFreq': True,
                        'stopFreq': True,
@@ -337,23 +339,23 @@ class JPLLIAScanEntry(QtGui.QWidget):
                        'refHarm': True,
                        'refPhase': True}      # overall validator status
 
-        self.commentFill = QtGui.QLineEdit()
-        self.startFreqFill = QtGui.QLineEdit()
-        self.stopFreqFill = QtGui.QLineEdit()
-        self.stepFill = QtGui.QLineEdit()
-        self.avgFill = QtGui.QLineEdit()
+        self.commentFill = QtWidgets.QLineEdit()
+        self.startFreqFill = QtWidgets.QLineEdit()
+        self.stopFreqFill = QtWidgets.QLineEdit()
+        self.stepFill = QtWidgets.QLineEdit()
+        self.avgFill = QtWidgets.QLineEdit()
         self.sensSel = LIASensBox()
         self.tcSel = LIATCBox()
-        self.waitTimeFill = QtGui.QLineEdit()
-        self.modModeSel = QtGui.QComboBox()
+        self.waitTimeFill = QtWidgets.QLineEdit()
+        self.modModeSel = QtWidgets.QComboBox()
         self.modModeSel.addItems(api_syn.MOD_MODE_LIST)
-        self.modFreqFill = QtGui.QLineEdit()
-        self.modAmpFill = QtGui.QLineEdit()
-        self.modAmpUnitLabel = QtGui.QLabel()
+        self.modFreqFill = QtWidgets.QLineEdit()
+        self.modAmpFill = QtWidgets.QLineEdit()
+        self.modAmpUnitLabel = QtWidgets.QLabel()
 
-        self.harmSel = QtGui.QComboBox()
+        self.harmSel = QtWidgets.QComboBox()
         self.harmSel.addItems(['1', '2', '3', '4'])
-        self.refPhaseFill = QtGui.QLineEdit()
+        self.refPhaseFill = QtWidgets.QLineEdit()
 
         self.startFreqFill.textChanged.connect(self.val_start_freq)
         self.stopFreqFill.textChanged.connect(self.val_stop_freq)
@@ -514,27 +516,27 @@ class JPLLIAScanEntry(QtGui.QWidget):
 
         self.refHarm = int(text)
 
-class JPLLIABatchListEntry(QtGui.QWidget):
+class JPLLIABatchListEntry(QtWidgets.QWidget):
     ''' Single batch list entry in display mode.
     entry = (comment [str], start [float, MHz], stop [float, MHz],
              step [float, MHz], avg [int], sens_idx [int], tc_idx [int],
              mod mode index [int], harmonics [int]) '''
 
     def __init__(self, parent, entry_setting=()):
-        QtGui.QWidget.__init__(self, parent=None)
+        QtWidgets.QWidget.__init__(self, parent=None)
         self.parent = parent
 
         # add labels
-        self.numberLabel = QtGui.QLabel()
-        self.commentFill = QtGui.QLineEdit()
-        self.startFreqLabel = QtGui.QLabel()
-        self.stopFreqLabel = QtGui.QLabel()
-        self.stepLabel = QtGui.QLabel()
-        self.avgLabel = QtGui.QLabel()
-        self.sensLabel = QtGui.QLabel()
-        self.tcLabel = QtGui.QLabel()
-        self.modModeLabel = QtGui.QLabel()
-        self.refHarmLabel = QtGui.QLabel()
+        self.numberLabel = QtWidgets.QLabel()
+        self.commentFill = QtWidgets.QLineEdit()
+        self.startFreqLabel = QtWidgets.QLabel()
+        self.stopFreqLabel = QtWidgets.QLabel()
+        self.stepLabel = QtWidgets.QLabel()
+        self.avgLabel = QtWidgets.QLabel()
+        self.sensLabel = QtWidgets.QLabel()
+        self.tcLabel = QtWidgets.QLabel()
+        self.modModeLabel = QtWidgets.QLabel()
+        self.refHarmLabel = QtWidgets.QLabel()
 
         # set label text
         self.commentFill.setText(entry_setting[0])
@@ -577,7 +579,7 @@ class JPLLIABatchListEntry(QtGui.QWidget):
         self.refHarmLabel.setStyleSheet('color: black')
 
 
-class LWAScanHdEntry(QtGui.QWidget):
+class LWAScanHdEntry(QtWidgets.QWidget):
     ''' Display lwa scan header settings.
     entry = (SCAN# [int],
              COMMENT [str],
@@ -599,29 +601,29 @@ class LWAScanHdEntry(QtGui.QWidget):
              ) '''
 
     def __init__(self, parent, entry_setting=()):
-        QtGui.QWidget.__init__(self, parent=None)
+        QtWidgets.QWidget.__init__(self, parent=None)
         self.parent = parent
 
         # add labels
-        self.previewCheck = QtGui.QCheckBox()
-        self.exportCheck = QtGui.QCheckBox()
-        self.scanNumLabel = QtGui.QLabel()
-        self.commentLabel = QtGui.QLabel()
-        self.dateLabel = QtGui.QLabel()
-        self.timeLabel = QtGui.QLabel()
-        self.itLabel = QtGui.QLabel()
-        self.sensLabel = QtGui.QLabel()
-        self.tcLabel = QtGui.QLabel()
-        self.modModeLabel = QtGui.QLabel()
-        self.modFreqLabel = QtGui.QLabel()
-        self.modAmpLabel = QtGui.QLabel()
-        self.startFreqLabel = QtGui.QLabel()
-        self.stopFreqLabel = QtGui.QLabel()
-        self.stepLabel = QtGui.QLabel()
-        self.ptsLabel = QtGui.QLabel()
-        self.avgLabel = QtGui.QLabel()
-        self.harmLabel = QtGui.QLabel()
-        self.phaseLabel = QtGui.QLabel()
+        self.previewCheck = QtWidgets.QCheckBox()
+        self.exportCheck = QtWidgets.QCheckBox()
+        self.scanNumLabel = QtWidgets.QLabel()
+        self.commentLabel = QtWidgets.QLabel()
+        self.dateLabel = QtWidgets.QLabel()
+        self.timeLabel = QtWidgets.QLabel()
+        self.itLabel = QtWidgets.QLabel()
+        self.sensLabel = QtWidgets.QLabel()
+        self.tcLabel = QtWidgets.QLabel()
+        self.modModeLabel = QtWidgets.QLabel()
+        self.modFreqLabel = QtWidgets.QLabel()
+        self.modAmpLabel = QtWidgets.QLabel()
+        self.startFreqLabel = QtWidgets.QLabel()
+        self.stopFreqLabel = QtWidgets.QLabel()
+        self.stepLabel = QtWidgets.QLabel()
+        self.ptsLabel = QtWidgets.QLabel()
+        self.avgLabel = QtWidgets.QLabel()
+        self.harmLabel = QtWidgets.QLabel()
+        self.phaseLabel = QtWidgets.QLabel()
 
         # set label text
         self.scanNumLabel.setText(str(entry_setting[0]))

@@ -14,7 +14,7 @@ def list_inst():
     # open pyvisa resource manager
     try:
         rm = pyvisa.highlevel.ResourceManager()
-    except OSError:
+    except (OSError, ValueError):
         return [], 'Cannot open VISA library!'
     # get available instrument address list
     inst_list = list(rm.list_resources())

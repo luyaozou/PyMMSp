@@ -26,7 +26,7 @@ The following Python package and environments are required to run `PySpec`:
 `./api/validator.py` specifically contains validation functions for all user inputs.
 `./api/general.py` specifically contains functions associated with `PyVisa` and `pyniscope` instrument handles.
 
-* `./daq/` contains data acquisition dialog windows. Each DAQ window is a child class of `QtGui.QDialog`.
+* `./daq/` contains data acquisition dialog windows. Each DAQ window is a child class of `QtWidgets.QDialog`.
 
 * `./data/` contains data manipulation and saving routines.
 
@@ -138,13 +138,13 @@ We can notify the user error messages in varies scenarios.
 The color is defined in `msgcolor` function located in `./gui/SharedWidgets.py`
 
         import SharedWidgets as Shared
-        obj = QtGui.QLineEdit()
+        obj = QtWidgets.QLineEdit()
         obj.setStyleSheet('border:  1px solid {:s}'.format(Shared.msgcolor(msgcode)))
 
 * Change text color in 'QLabel' objects.
 
         import SharedWidgets as Shared
-        obj = QtGui.QLabel()
+        obj = QtWidgets.QLabel()
         obj.setStyleSheet('color: {:s}'.format(Shared.msgcolor(msgcode)))
 
 * Pop up message dialog. You may choose to pop up error message only at fatal scenarios, or you may construct more detailed pop-up windows.
@@ -154,7 +154,7 @@ The color is defined in `msgcolor` function located in `./gui/SharedWidgets.py`
             pass
         else:
             msg = Shared.MsgError(self.main, 'Invalid input!', 'Please fix invalid inputs before proceeding.')
-            msg.exec_()
+            msg.exec()
 
 ## Use built-in PyQt functionality
 

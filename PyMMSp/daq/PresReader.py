@@ -3,15 +3,16 @@
 ''' CENTER TWO pressure reader routine '''
 
 
-from PyQt6 import QtGui, QtCore
+from PyQt6 import QtWidgets, QtCore
 import numpy as np
 import pyqtgraph as pg
 import datetime
-from PyMMSp.PySpec import SharedWidgets as Shared
-from PyMMSp.PySpec import validator as api_val, pressure as api_pres
+from PyMMSp.ui import SharedWidgets as Shared
+from PyMMSp.inst import validator as api_val
+from PyMMSp.inst import pressure as api_pres
 
 
-class PresReaderWindow(QtGui.QDialog):
+class PresReaderWindow(QtWidgets.QDialog):
     '''
         Pressure reader window
     '''
@@ -21,7 +22,7 @@ class PresReaderWindow(QtGui.QDialog):
     _TIMEUNIT = {0: 1, 1:60, 2:3600}
 
     def __init__(self, main=None):
-        QtGui.QDialog.__init__(self, main)
+        QtWidgets.QDialog.__init__(self, main)
         self.main = main
         self.setWindowTitle('CENTER TWO pressure reader')
         self.setMinimumSize(900, 600)
@@ -32,17 +33,17 @@ class PresReaderWindow(QtGui.QDialog):
 
         # add left column widigets
         # this is a monitor panel for realtime readings
-        rtMonitor = QtGui.QGroupBox(self)
+        rtMonitor = QtWidgets.QGroupBox(self)
         rtMonitor.setTitle('Readtime Monitor')
-        self.currentP = QtGui.QLabel()
-        self.currentUnit = QtGui.QLabel()
-        self.currentChannel = QtGui.QLabel('1')
-        self.currentStatus = QtGui.QLabel()
-        monitorLayout = QtGui.QGridLayout()
-        monitorLayout.addWidget(QtGui.QLabel('Channel'), 0, 0)
-        monitorLayout.addWidget(QtGui.QLabel('Status'), 0, 1)
-        monitorLayout.addWidget(QtGui.QLabel('Pressure'), 2, 0)
-        monitorLayout.addWidget(QtGui.QLabel('Unit'), 2, 1)
+        self.currentP = QtWidgets.QLabel()
+        self.currentUnit = QtWidgets.QLabel()
+        self.currentChannel = QtWidgets.QLabel('1')
+        self.currentStatus = QtWidgets.QLabel()
+        monitorLayout = QtWidgets.QGridLayout()
+        monitorLayout.addWidget(QtWidgets.QLabel('Channel'), 0, 0)
+        monitorLayout.addWidget(QtWidgets.QLabel('Status'), 0, 1)
+        monitorLayout.addWidget(QtWidgets.QLabel('Pressure'), 2, 0)
+        monitorLayout.addWidget(QtWidgets.QLabel('Unit'), 2, 1)
         monitorLayout.addWidget(self.currentChannel, 1, 0)
         monitorLayout.addWidget(self.currentStatus, 1, 1)
         monitorLayout.addWidget(self.currentP, 3, 0)
@@ -50,60 +51,60 @@ class PresReaderWindow(QtGui.QDialog):
         rtMonitor.setLayout(monitorLayout)
 
         # this is a mini control panel for the readout
-        rdCtrl = QtGui.QGroupBox(self)
+        rdCtrl = QtWidgets.QGroupBox(self)
         rdCtrl.setTitle('Readout Control')
-        self.channelSel = QtGui.QComboBox()
+        self.channelSel = QtWidgets.QComboBox()
         self.channelSel.addItems(['1', '2'])
         self.current_chn_index = 0
-        self.pUnitSel = QtGui.QComboBox()
+        self.pUnitSel = QtWidgets.QComboBox()
         self.pUnitSel.addItems(['mBar', 'Torr', 'Pascal', 'μmHg'])
         self.pUnitSel.setCurrentIndex(1)    # default unit Torr
         self.currentUnit.setText('Torr')    # default unit Torr
         self.current_p_unit_index = 1       # store this for unit protection
-        rdCtrlLayout = QtGui.QFormLayout()
-        rdCtrlLayout.addRow(QtGui.QLabel('Select Channel'), self.channelSel)
-        rdCtrlLayout.addRow(QtGui.QLabel('Select Pressure Unit'), self.pUnitSel)
+        rdCtrlLayout = QtWidgets.QFormLayout()
+        rdCtrlLayout.addRow(QtWidgets.QLabel('Select Channel'), self.channelSel)
+        rdCtrlLayout.addRow(QtWidgets.QLabel('Select Pressure Unit'), self.pUnitSel)
         rdCtrl.setLayout(rdCtrlLayout)
 
         # this is to select the data update rate, cannot be quicker than /0.1 s
-        rateSelect = QtGui.QWidget()
-        self.updateRate = QtGui.QLineEdit()
+        rateSelect = QtWidgets.QWidget()
+        self.updateRate = QtWidgets.QLineEdit()
         self.updateRate.setText('1')
-        self.updateRateUnitSel = QtGui.QComboBox()
+        self.updateRateUnitSel = QtWidgets.QComboBox()
         self.updateRateUnitSel.addItems(['sec', 'min', 'h'])
         self.updateRateUnitSel.setCurrentIndex(0)
         self.current_update_unit_index = 0      # store this for unit protection
-        rateSelectLayout = QtGui.QHBoxLayout(self)
-        rateSelectLayout.addWidget(QtGui.QLabel('Update Rate'))
+        rateSelectLayout = QtWidgets.QHBoxLayout(self)
+        rateSelectLayout.addWidget(QtWidgets.QLabel('Update Rate'))
         rateSelectLayout.addWidget(self.updateRate)
-        rateSelectLayout.addWidget(QtGui.QLabel(' per '))
+        rateSelectLayout.addWidget(QtWidgets.QLabel(' per '))
         rateSelectLayout.addWidget(self.updateRateUnitSel)
         rateSelect.setLayout(rateSelectLayout)
 
         # putting stuff together in the left column
-        leftColumn = QtGui.QWidget()
-        leftColumnLayout = QtGui.QVBoxLayout(self)
-        leftColumnLayout.setAlignment(QtCore.Qt.AlignTop)
+        leftColumn = QtWidgets.QWidget()
+        leftColumnLayout = QtWidgets.QVBoxLayout(self)
+        leftColumnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         leftColumnLayout.addWidget(rtMonitor)
         leftColumnLayout.addWidget(rdCtrl)
         leftColumnLayout.addWidget(rateSelect)
         leftColumn.setLayout(leftColumnLayout)
 
         # add right colun widgets
-        settingPanel = QtGui.QWidget()
-        self.startButton = QtGui.QPushButton('(Re)Start')
-        self.stopButton = QtGui.QPushButton('Stop')
-        self.saveButton = QtGui.QPushButton('Save')
-        self.savepButton = QtGui.QPushButton('Save and Continue')
-        panelLayout = QtGui.QHBoxLayout()
+        settingPanel = QtWidgets.QWidget()
+        self.startButton = QtWidgets.QPushButton('(Re)Start')
+        self.stopButton = QtWidgets.QPushButton('Stop')
+        self.saveButton = QtWidgets.QPushButton('Save')
+        self.savepButton = QtWidgets.QPushButton('Save and Continue')
+        panelLayout = QtWidgets.QHBoxLayout()
         panelLayout.addWidget(self.startButton)
         panelLayout.addWidget(self.stopButton)
         panelLayout.addWidget(self.saveButton)
         panelLayout.addWidget(self.savepButton)
-        settingPanel = QtGui.QWidget()
+        settingPanel = QtWidgets.QWidget()
         settingPanel.setLayout(panelLayout)
 
-        rightColumn = QtGui.QWidget()
+        rightColumn = QtWidgets.QWidget()
         # initiate pyqtgraph widget
         self.pgPlot = pg.PlotWidget(title='Pressure Monitor')
         self.pgPlot.setLabel('left', text='Pressure', units='Torr')
@@ -111,14 +112,14 @@ class PresReaderWindow(QtGui.QDialog):
         self.pgPlot.setLogMode(x=None, y=True)
         self.pgPlot.showGrid(x=True, y=True, alpha=0.5)
         self.curve = self.pgPlot.plot()
-        rightColumnLayout = QtGui.QVBoxLayout()
-        rightColumnLayout.setAlignment(QtCore.Qt.AlignTop)
+        rightColumnLayout = QtWidgets.QVBoxLayout()
+        rightColumnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         rightColumnLayout.addWidget(self.pgPlot)
         rightColumnLayout.addWidget(settingPanel)
         rightColumn.setLayout(rightColumnLayout)
 
         # Set up main layout
-        mainLayout = QtGui.QHBoxLayout(self)
+        mainLayout = QtWidgets.QHBoxLayout(self)
         mainLayout.setSpacing(0)
         mainLayout.addWidget(leftColumn)
         mainLayout.addWidget(rightColumn)
@@ -197,10 +198,11 @@ class PresReaderWindow(QtGui.QDialog):
             pass
         else:
             if self.data_collecting:
-                q = QtGui.QMessageBox.question(self, 'Change Time Unit?',
+                q = QtWidgets.QMessageBox.question(self, 'Change Time Unit?',
                             'Data under collection. Change time unit will cause data lost!',
-                            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
-                if q == QtGui.QMessageBox.Yes:
+                            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+                                                   QtWidgets.QMessageBox.StandardButton.Yes)
+                if q == QtWidgets.QMessageBox.StandardButton.Yes:
                     # update index
                     self.current_update_unit_index = idx
                     self.set_update_period()
@@ -240,10 +242,11 @@ class PresReaderWindow(QtGui.QDialog):
             pass
         else:
             if self.data_collecting:
-                q = QtGui.QMessageBox.question(self, 'Change Pressure Unit?',
+                q = QtWidgets.QMessageBox.question(self, 'Change Pressure Unit?',
                             'Data under collection. Change pressure unit will cause data lost!',
-                            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
-                if q == QtGui.QMessageBox.Yes:
+                            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+                                                   QtWidgets.QMessageBox.StandardButton.Yes)
+                if q == QtWidgets.QMessageBox.StandardButton.Yes:
                     # update pressure unit index
                     self.current_p_unit_index = idx
                     self.set_p_unit()
@@ -281,10 +284,10 @@ class PresReaderWindow(QtGui.QDialog):
             pass
         else:
             if self.data_collecting:
-                q = QtGui.QMessageBox.question(self, 'Change Channel?',
+                q = QtWidgets.QMessageBox.question(self, 'Change Channel?',
                             'Data under collection. Change channel will cause data lost!',
-                            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
-                if q == QtGui.QMessageBox.Yes:
+                            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.Yes)
+                if q == QtWidgets.QMessageBox.Yes:
                     self.current_chn_index = idx
                     self.currentChannel.setText(self.channelSel.currentText())
                     # restart data collection
@@ -325,7 +328,7 @@ class PresReaderWindow(QtGui.QDialog):
 
     def save_data(self):
         try:
-            filename, _ = QtGui.QFileDialog.getSaveFileName(self, 'Save Data',
+            filename, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save Data',
                                     './test_pressure.txt', 'Data File (*.txt)')
             if filename:
                 np.savetxt(filename, self.data, comments='#', fmt=['%g', '%.3e'],
@@ -337,14 +340,14 @@ class PresReaderWindow(QtGui.QDialog):
         except AttributeError:
             msg = Shared.MsgError(self, Shared.btn_label('error'),
                                   'No data has been collected!')
-            msg.exec_()
+            msg.exec()
 
     # stop timer before close
     def closeEvent(self, event):
-        q = QtGui.QMessageBox.question(self, 'Exit Pressure Reader?',
+        q = QtWidgets.QMessageBox.question(self, 'Exit Pressure Reader?',
                     'Pressure query will pause. Make sure you save your pressure readings!',
-                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
-        if q == QtGui.QMessageBox.Yes:
+                    QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.Yes)
+        if q == QtWidgets.QMessageBox.Yes:
             self.timer.stop()
             self.close()
         else:

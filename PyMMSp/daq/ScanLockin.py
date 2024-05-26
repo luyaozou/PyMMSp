@@ -3,81 +3,83 @@
 ''' Lockin scanning routine in JPL style '''
 
 
-from PyQt6 import QtGui, QtCore
+from PyQt6 import QtGui, QtCore, QtWidgets
 import numpy as np
 from math import ceil
 import pyqtgraph as pg
-from PyMMSp.PySpec import SharedWidgets as Shared
-from PyMMSp.PySpec import lockin as api_lia, validator as api_val, synthesizer as api_syn
-from PyMMSp.PySpec import save
+from PyMMSp.ui import SharedWidgets as Shared
+from PyMMSp.inst import lockin as api_lia
+from PyMMSp.inst import validator as api_val
+from PyMMSp.inst import synthesizer as api_syn
+from PyMMSp.data import save
 
 
-class JPLScanConfig(QtGui.QDialog):
+class JPLScanConfig(QtWidgets.QDialog):
     '''
         Configuration window preparing for the scan
     '''
 
     def __init__(self, main=None):
-        QtGui.QDialog.__init__(self, main)
+        QtWidgets.QDialog.__init__(self, main)
         self.main = main
         self.setWindowTitle('Lockin scan configuration (JPL style)')
         self.setMinimumSize(1200, 600)
 
         # Add top buttons
-        addBatchButton = QtGui.QPushButton('Add batch')
-        removeBatchButton = QtGui.QPushButton('Remove last batch')
-        saveButton = QtGui.QPushButton('Set File Directory')
+        addBatchButton = QtWidgets.QPushButton('Add batch')
+        removeBatchButton = QtWidgets.QPushButton('Remove last batch')
+        saveButton = QtWidgets.QPushButton('Set File Directory')
         self.filename = 'default.lwa'
-        self.fileLabel = QtGui.QLabel('Save Data to: {:s}'.format(self.filename))
+        self.fileLabel = QtWidgets.QLabel('Save Data to: {:s}'.format(self.filename))
         self.fileLabel.setStyleSheet('QLabel {color: #003366}')
-        topButtonLayout = QtGui.QGridLayout()
+        topButtonLayout = QtWidgets.QGridLayout()
         topButtonLayout.addWidget(saveButton, 0, 0)
         topButtonLayout.addWidget(addBatchButton, 0, 1)
         topButtonLayout.addWidget(removeBatchButton, 0, 2)
         topButtonLayout.addWidget(self.fileLabel, 1, 0, 1, 3)
-        topButtons = QtGui.QWidget()
+        topButtons = QtWidgets.QWidget()
         topButtons.setLayout(topButtonLayout)
 
         # Add bottom buttons
-        cancelButton = QtGui.QPushButton(Shared.btn_label('reject'))
-        acceptButton = QtGui.QPushButton(Shared.btn_label('confirm'))
+        cancelButton = QtWidgets.QPushButton(Shared.btn_label('reject'))
+        acceptButton = QtWidgets.QPushButton(Shared.btn_label('confirm'))
         acceptButton.setDefault(True)
-        bottomButtonLayout = QtGui.QHBoxLayout()
+        bottomButtonLayout = QtWidgets.QHBoxLayout()
         bottomButtonLayout.addWidget(cancelButton)
         bottomButtonLayout.addWidget(acceptButton)
-        bottomButtons = QtGui.QWidget()
+        bottomButtons = QtWidgets.QWidget()
         bottomButtons.setLayout(bottomButtonLayout)
 
         # Add freq config entries
         self.entryWidgetList = []
-        self.entryLayout = QtGui.QGridLayout()
-        self.entryLayout.setAlignment(QtCore.Qt.AlignTop)
+        self.entryLayout = QtWidgets.QGridLayout()
+        self.entryLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         # add entries
-        self.entryLayout.addWidget(QtGui.QLabel('Comment'), 0, 0)
-        self.entryLayout.addWidget(QtGui.QLabel('Start Freq (MHz)'), 0, 1)
-        self.entryLayout.addWidget(QtGui.QLabel('Stop Freq (MHz)'), 0, 2)
-        self.entryLayout.addWidget(QtGui.QLabel('Step (MHz)'), 0, 3)
-        self.entryLayout.addWidget(QtGui.QLabel('Averages'), 0, 4)
-        self.entryLayout.addWidget(QtGui.QLabel('Sensitivity'), 0, 5)
-        self.entryLayout.addWidget(QtGui.QLabel('Time Const'), 0, 6)
-        self.entryLayout.addWidget(QtGui.QLabel('Wait time (ms)'), 0, 7)
-        self.entryLayout.addWidget(QtGui.QLabel('Modulation'), 0, 8)
-        self.entryLayout.addWidget(QtGui.QLabel('Mod Freq (Hz)'), 0, 9)
-        self.entryLayout.addWidget(QtGui.QLabel('Mod Depth/Dev'), 0, 10, 1, 2)
-        self.entryLayout.addWidget(QtGui.QLabel('Harmonics'), 0, 12)
-        self.entryLayout.addWidget(QtGui.QLabel('Phase'), 0, 13)
+        self.entryLayout.addWidget(QtWidgets.QLabel('Comment'), 0, 0)
+        self.entryLayout.addWidget(QtWidgets.QLabel('Start Freq (MHz)'), 0, 1)
+        self.entryLayout.addWidget(QtWidgets.QLabel('Stop Freq (MHz)'), 0, 2)
+        self.entryLayout.addWidget(QtWidgets.QLabel('Step (MHz)'), 0, 3)
+        self.entryLayout.addWidget(QtWidgets.QLabel('Averages'), 0, 4)
+        self.entryLayout.addWidget(QtWidgets.QLabel('Sensitivity'), 0, 5)
+        self.entryLayout.addWidget(QtWidgets.QLabel('Time Const'), 0, 6)
+        self.entryLayout.addWidget(QtWidgets.QLabel('Wait time (ms)'), 0, 7)
+        self.entryLayout.addWidget(QtWidgets.QLabel('Modulation'), 0, 8)
+        self.entryLayout.addWidget(QtWidgets.QLabel('Mod Freq (Hz)'), 0, 9)
+        self.entryLayout.addWidget(QtWidgets.QLabel('Mod Depth/Dev'), 0, 10, 1, 2)
+        self.entryLayout.addWidget(QtWidgets.QLabel('Harmonics'), 0, 12)
+        self.entryLayout.addWidget(QtWidgets.QLabel('Phase'), 0, 13)
 
         self.add_entry()
 
-        entryWidgets = QtGui.QWidget()
+        entryWidgets = QtWidgets.QWidget()
         entryWidgets.setLayout(self.entryLayout)
 
-        entryArea = QtGui.QScrollArea()
+        entryArea = QtWidgets.QScrollArea()
         entryArea.setWidgetResizable(True)
         entryArea.setWidget(entryWidgets)
 
         # Set up main layout
-        mainLayout = QtGui.QVBoxLayout(self)
+        mainLayout = QtWidgets.QVBoxLayout(self)
         mainLayout.setSpacing(0)
         mainLayout.addWidget(topButtons)
         mainLayout.addWidget(entryArea)
@@ -149,7 +151,7 @@ class JPLScanConfig(QtGui.QDialog):
         if len(self.entryWidgetList) == 1:
             msg = Shared.MsgWarning(self.main, 'Cannot remove batch!',
                              'At least one batch entry is required!')
-            msg.exec_()
+            msg.exec()
         else:
             # remove this entry
             entry = self.entryWidgetList.pop()
@@ -185,7 +187,7 @@ class JPLScanConfig(QtGui.QDialog):
 
     def set_file_directory(self):
 
-        self.filename, _ = QtGui.QFileDialog.getSaveFileName(self, 'Save Data', '', 'SMAP File (*.lwa)')
+        self.filename, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save Data', '', 'SMAP File (*.lwa)')
         self.fileLabel.setText('Data save to: {:s}'.format(self.filename))
 
     def get_settings(self):
@@ -225,18 +227,18 @@ class JPLScanConfig(QtGui.QDialog):
             return entry_settings, self.filename
         else:
             msg = Shared.MsgError(self.main, 'Invalid input!', 'Please fix invalid inputs before proceeding.')
-            msg.exec_()
+            msg.exec()
             return None, None
 
 
-class JPLScanWindow(QtGui.QDialog):
+class JPLScanWindow(QtWidgets.QDialog):
     ''' Scanning window '''
 
     # define a pyqt signal to control batch scans
     next_entry_signal = QtCore.pyqtSignal()
 
     def __init__(self, entry_settings, filename, main=None):
-        QtGui.QWidget.__init__(self, main)
+        QtWidgets.QWidget.__init__(self, main)
         self.main = main
         self.setWindowTitle('Lockin scan monitor')
         self.setMinimumSize(1200, 600)
@@ -244,13 +246,13 @@ class JPLScanWindow(QtGui.QDialog):
 
         # set up batch list display
         self.batchListWidget = JPLBatchListWidget(entry_settings)
-        batchArea = QtGui.QScrollArea()
+        batchArea = QtWidgets.QScrollArea()
         batchArea.setWidgetResizable(True)
         batchArea.setWidget(self.batchListWidget)
 
-        batchDisplay = QtGui.QGroupBox()
+        batchDisplay = QtWidgets.QGroupBox()
         batchDisplay.setTitle('Batch List')
-        batchLayout = QtGui.QVBoxLayout()
+        batchLayout = QtWidgets.QVBoxLayout()
         batchLayout.addWidget(batchArea)
         batchDisplay.setLayout(batchLayout)
 
@@ -258,18 +260,18 @@ class JPLScanWindow(QtGui.QDialog):
         self.singleScan = SingleScan(filename, parent=self, main=self.main)
 
         # set up progress bar
-        self.currentProgBar = QtGui.QProgressBar()
-        self.totalProgBar = QtGui.QProgressBar()
+        self.currentProgBar = QtWidgets.QProgressBar()
+        self.totalProgBar = QtWidgets.QProgressBar()
 
-        progressDisplay = QtGui.QWidget()
-        progressLayout = QtGui.QGridLayout()
-        progressLayout.addWidget(QtGui.QLabel('Current Progress'), 0, 0)
+        progressDisplay = QtWidgets.QWidget()
+        progressLayout = QtWidgets.QGridLayout()
+        progressLayout.addWidget(QtWidgets.QLabel('Current Progress'), 0, 0)
         progressLayout.addWidget(self.currentProgBar, 0, 1)
-        progressLayout.addWidget(QtGui.QLabel('Total progress'), 1, 0)
+        progressLayout.addWidget(QtWidgets.QLabel('Total progress'), 1, 0)
         progressLayout.addWidget(self.totalProgBar, 1, 1)
         progressDisplay.setLayout(progressLayout)
 
-        mainLayout = QtGui.QGridLayout()
+        mainLayout = QtWidgets.QGridLayout()
         mainLayout.addWidget(batchDisplay, 0, 0, 1, 2)
         mainLayout.addWidget(self.singleScan, 0, 2, 1, 3)
         mainLayout.addWidget(progressDisplay, 1, 0, 1, 5)
@@ -317,48 +319,48 @@ class JPLScanWindow(QtGui.QDialog):
 
         msg = Shared.MsgInfo(self, 'Job Finished!',
                              'Congratulations! Now it is time to grab some coffee.')
-        msg.exec_()
+        msg.exec()
         self.stop_timers()
         self.accept()
 
     def reject(self):
 
-        q = QtGui.QMessageBox.question(self, 'Scan In Progress!',
-                       'The batch scan is still in progress. Aborting the project will discard all unsaved data! \n Are you SURE to proceed?', QtGui.QMessageBox.Yes |
-                       QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+        q = QtWidgets.QMessageBox.question(self, 'Scan In Progress!',
+                       'The batch scan is still in progress. Aborting the project will discard all unsaved data! \n Are you SURE to proceed?', QtWidgets.QMessageBox.Yes |
+                       QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
 
-        if q == QtGui.QMessageBox.Yes:
+        if q == QtWidgets.QMessageBox.Yes:
             self.stop_timers()
             self.accept()
         else:
             pass
 
 
-class JPLBatchListWidget(QtGui.QWidget):
+class JPLBatchListWidget(QtWidgets.QWidget):
     ''' Batch list display '''
 
     def __init__(self, entry_settings):
 
-        QtGui.QWidget.__init__(self)
+        QtWidgets.QWidget.__init__(self)
 
-        self.batchLayout = QtGui.QGridLayout()
-        self.batchLayout.setAlignment(QtCore.Qt.AlignTop)
+        self.batchLayout = QtWidgets.QGridLayout()
+        self.batchLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         # set up batch list row header
         # put comment in the first column and make it editable
-        self.batchLayout.addWidget(QtGui.QLabel('#'), 0, 0)
-        self.batchLayout.addWidget(QtGui.QLabel('Comment'), 0, 1)
-        self.batchLayout.addWidget(QtGui.QLabel('Start'), 0, 2)
-        self.batchLayout.addWidget(QtGui.QLabel('Stop'), 0, 3)
-        self.batchLayout.addWidget(QtGui.QLabel('Step'), 0, 4)
-        self.batchLayout.addWidget(QtGui.QLabel('Avg'), 0, 5)
-        self.batchLayout.addWidget(QtGui.QLabel('Sens'), 0, 6)
-        self.batchLayout.addWidget(QtGui.QLabel('Time'), 0, 7)
-        self.batchLayout.addWidget(QtGui.QLabel('Const'), 1, 7)
-        self.batchLayout.addWidget(QtGui.QLabel('Modulation'), 0, 8)
-        self.batchLayout.addWidget(QtGui.QLabel('Harmonics'), 0, 9)
-        self.batchLayout.addWidget(QtGui.QLabel('(MHz)'), 1, 2)
-        self.batchLayout.addWidget(QtGui.QLabel('(MHz)'), 1, 3)
-        self.batchLayout.addWidget(QtGui.QLabel('(MHz)'), 1, 4)
+        self.batchLayout.addWidget(QtWidgets.QLabel('#'), 0, 0)
+        self.batchLayout.addWidget(QtWidgets.QLabel('Comment'), 0, 1)
+        self.batchLayout.addWidget(QtWidgets.QLabel('Start'), 0, 2)
+        self.batchLayout.addWidget(QtWidgets.QLabel('Stop'), 0, 3)
+        self.batchLayout.addWidget(QtWidgets.QLabel('Step'), 0, 4)
+        self.batchLayout.addWidget(QtWidgets.QLabel('Avg'), 0, 5)
+        self.batchLayout.addWidget(QtWidgets.QLabel('Sens'), 0, 6)
+        self.batchLayout.addWidget(QtWidgets.QLabel('Time'), 0, 7)
+        self.batchLayout.addWidget(QtWidgets.QLabel('Const'), 1, 7)
+        self.batchLayout.addWidget(QtWidgets.QLabel('Modulation'), 0, 8)
+        self.batchLayout.addWidget(QtWidgets.QLabel('Harmonics'), 0, 9)
+        self.batchLayout.addWidget(QtWidgets.QLabel('(MHz)'), 1, 2)
+        self.batchLayout.addWidget(QtWidgets.QLabel('(MHz)'), 1, 3)
+        self.batchLayout.addWidget(QtWidgets.QLabel('(MHz)'), 1, 4)
 
         # add batch list entry
         self.entryList = []
@@ -384,14 +386,14 @@ class JPLBatchListWidget(QtGui.QWidget):
         self.setLayout(self.batchLayout)
 
 
-class SingleScan(QtGui.QWidget):
+class SingleScan(QtWidgets.QWidget):
     ''' Take a scan in a single freq window '''
 
     def __init__(self, filename, parent=None, main=None):
         ''' parent is the JPL scan dialog window. It contains shared settings.
             main is the main GUI window. It containts instrument handles
         '''
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
         self.main = main
         self.parent = parent
         self.filename = filename
@@ -414,15 +416,15 @@ class SingleScan(QtGui.QWidget):
         self.waitTimer.timeout.connect(self.query_lockin)
 
         # set up main layout
-        buttons = QtGui.QWidget()
-        jumpButton = QtGui.QPushButton('Jump to Next Batch')
-        abortAllButton = QtGui.QPushButton('Abort Batch Project')
-        self.pauseButton = QtGui.QPushButton('Pause')
+        buttons = QtWidgets.QWidget()
+        jumpButton = QtWidgets.QPushButton('Jump to Next Batch')
+        abortAllButton = QtWidgets.QPushButton('Abort Batch Project')
+        self.pauseButton = QtWidgets.QPushButton('Pause')
         self.pauseButton.setCheckable(True)
-        redoButton = QtGui.QPushButton('Redo Current Sweep')
-        restartWinButton = QtGui.QPushButton('Restart Current Batch')
-        saveButton = QtGui.QPushButton('Save and Continue')
-        buttonLayout = QtGui.QGridLayout()
+        redoButton = QtWidgets.QPushButton('Redo Current Sweep')
+        restartWinButton = QtWidgets.QPushButton('Restart Current Batch')
+        saveButton = QtWidgets.QPushButton('Save and Continue')
+        buttonLayout = QtWidgets.QGridLayout()
         buttonLayout.addWidget(self.pauseButton, 0, 0)
         buttonLayout.addWidget(redoButton, 0, 1)
         buttonLayout.addWidget(restartWinButton, 0, 2)
@@ -444,7 +446,7 @@ class SingleScan(QtGui.QWidget):
         self.ySumCurve.setDownsampling(auto=True, method='peak')
         self.ySumCurve.setPen(pg.mkPen(219, 112, 147))
         self.ySumPlot.setXLink(self.yPlot)
-        mainLayout = QtGui.QVBoxLayout()
+        mainLayout = QtWidgets.QVBoxLayout()
         mainLayout.addWidget(pgWin)
         mainLayout.addWidget(buttons)
         self.setLayout(mainLayout)
@@ -670,11 +672,11 @@ class SingleScan(QtGui.QWidget):
     def restart_avg(self):
         ''' Erase all current averages and start over '''
 
-        q = QtGui.QMessageBox.question(self, 'Scan In Progress!',
-                       'Restart will erase all cached averages.\n Are you sure to proceed?', QtGui.QMessageBox.Yes |
-                       QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+        q = QtWidgets.QMessageBox.question(self, 'Scan In Progress!',
+                       'Restart will erase all cached averages.\n Are you sure to proceed?', QtWidgets.QMessageBox.Yes |
+                       QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
 
-        if q == QtGui.QMessageBox.Yes:
+        if q == QtWidgets.QMessageBox.Yes:
             #print('restart average')
             self.waitTimer.stop()
             self.acquired_avg = 0
@@ -696,17 +698,17 @@ class SingleScan(QtGui.QWidget):
     def jump(self):
         ''' Jump to next batch item '''
 
-        q = QtGui.QMessageBox.question(self, 'Jump To Next',
-                       'Save aquired data for the current scan window?', QtGui.QMessageBox.Yes |
-                       QtGui.QMessageBox.No | QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Yes)
+        q = QtWidgets.QMessageBox.question(self, 'Jump To Next',
+                       'Save aquired data for the current scan window?', QtWidgets.QMessageBox.Yes |
+                       QtWidgets.QMessageBox.No | QtWidgets.QMessageBox.Cancel, QtWidgets.QMessageBox.Yes)
 
-        if q == QtGui.QMessageBox.Yes:
+        if q == QtWidgets.QMessageBox.Yes:
             #print('abort current')
             self.waitTimer.stop()
             self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.waittime * 1e-3)
             self.save_data()
             self.parent.next_entry_signal.emit()
-        elif q == QtGui.QMessageBox.No:
+        elif q == QtWidgets.QMessageBox.No:
             #print('abort current')
             self.waitTimer.stop()
             self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.waittime * 1e-3)
