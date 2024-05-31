@@ -1,12 +1,12 @@
 #! encoding = utf-8
 
-''' LWA file parser '''
+""" LWA file parser """
 
 import re
 import numpy as np
 
 def _file_filter(file_list, pattern):
-    ''' Filter out file names with a given pattern '''
+    """ Filter out file names with a given pattern """
     extract = []
     prog = re.compile(pattern)
     for file_name in file_list:
@@ -17,7 +17,7 @@ def _file_filter(file_list, pattern):
 
 
 def _flatten(nested_list):
-    ''' flatten nested list '''
+    """ flatten nested list """
     flat = []
     for x in nested_list:
          if isinstance(x, list):
@@ -30,11 +30,11 @@ def _flatten(nested_list):
 
 
 def scan_header(filename):
-    ''' Scan headers in the lwa file.
+    """ Scan headers in the lwa file.
     Returns
         entry_settings: list of entry setting tuples. Scan # starts at 1.
         hd_line_num: start line number of each header in the file
-    '''
+    """
 
     if filename:
         re_header = re.compile('DATE')
@@ -106,8 +106,8 @@ def scan_header(filename):
 
 
 def export_lwa(id_list, hd_line_num, src='src.lwa', output='output.lwa'):
-    ''' Export partial LWA file to new LWA file,
-        based on scan id (id starts at 0) '''
+    """ Export partial LWA file to new LWA file,
+        based on scan id (id starts at 0) """
 
     srcfile = open(src, 'r')
     outputfile = open(output, 'w')
@@ -142,8 +142,8 @@ def export_lwa(id_list, hd_line_num, src='src.lwa', output='output.lwa'):
 
 
 def export_xy(id_list, hd_line_num, src='src.lwa', output_dir='export/'):
-    ''' Export partial LWA file to new xy files,
-        based on scan id (id starts at 0) '''
+    """ Export partial LWA file to new xy files,
+        based on scan id (id starts at 0) """
 
     global ylist, sens, x, out_name
     ylist = []
@@ -209,11 +209,11 @@ def export_xy(id_list, hd_line_num, src='src.lwa', output_dir='export/'):
 
 
 def preview(id_, hd_line_num, src='src.lwa'):
-    ''' Preview the scan #id.
+    """ Preview the scan #id.
         Returns np.array (x, y)
             x, frequency vector, unit in Hz
             y, intensity vector
-    '''
+    """
 
     srcfile = open(src, 'r')
     ylist = []

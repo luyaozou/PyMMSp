@@ -19,7 +19,7 @@ _P_UNIT_CODE = {0: 'mBar',
 
 
 def query_p(pressureHandle, chn):
-    ''' Query pressure reading.
+    """ Query pressure reading.
         Arguments
             chn: channel number. Text. '1' or '2'
         Returns
@@ -31,7 +31,7 @@ def query_p(pressureHandle, chn):
             receiver: <ACK><CR><LF>  \x06: positive; \x15 negative
             sender:   \x05
             receiver: a,+b.bbbbE+bb<CR><LF>  a: status; b: value
-    '''
+    """
 
     try:
         text = pressureHandle.query('PR{:s}'.format(chn))
@@ -52,7 +52,7 @@ def query_p(pressureHandle, chn):
 
 
 def set_query_p_unit(pressureHandle, unit_idx=-1):
-    ''' set/query current pressure unit.
+    """ set/query current pressure unit.
         Arguments
             unit_idx: unit code, int
                       If specified, set the unit; if -1, query the current unit
@@ -64,7 +64,7 @@ def set_query_p_unit(pressureHandle, unit_idx=-1):
             receiver: <ACK><CR><LF>  \x06: positive; \x15 negative
             sender:   \x05
             receiver: a<CR><LF>   a: unit code in _UNIT_CODE
-    '''
+    """
 
     if unit_idx == -1:
         query_str = 'UNI'

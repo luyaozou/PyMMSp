@@ -4,12 +4,12 @@ import pyvisa
 import os.path
 
 def list_inst():
-    '''
+    """
         List current available instruments.
         Returns
             inst_list: a sorted list of available instrument addresses, list
             inst_str: formated text for GUI display, str
-    '''
+    """
 
     # open pyvisa resource manager
     try:
@@ -46,12 +46,12 @@ def list_inst():
 
 
 def open_inst(inst_address):
-    '''
+    """
         Open single instrument by its address.
         Returns
             inst_handle: pyvisa object for the instrument
             None:        if cannot open the instrument
-    '''
+    """
 
     if inst_address == 'N.A.':
         return None
@@ -65,9 +65,9 @@ def open_inst(inst_address):
 
 
 def close_inst(*inst_handle):
-    '''
+    """
         Close all connecting instruments
-    '''
+    """
 
     status = False
 

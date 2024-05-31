@@ -2,9 +2,9 @@
 
 
 def query_inst_name(motorHandle):
-    ''' Query instrument name
+    """ Query instrument name
         Returns instrument name, str
-    '''
+    """
 
     try:
         text = motorHandle.query('*IDN?')
@@ -14,8 +14,8 @@ def query_inst_name(motorHandle):
 
 
 def move(motorHandle, step):
-    '''
+    """
         Move motor by step
-    '''
+    """
 
     motorHandle.write('1PA+{:d}\n'.format(step))

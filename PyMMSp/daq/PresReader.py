@@ -1,21 +1,21 @@
 #! encoding = utf-8
 
-''' CENTER TWO pressure reader routine '''
+""" CENTER TWO pressure reader routine """
 
 
 from PyQt6 import QtWidgets, QtCore
 import numpy as np
 import pyqtgraph as pg
 import datetime
-from PyMMSp.ui import SharedWidgets as Shared
+from PyMMSp.ui import ui_shared as Shared
 from PyMMSp.inst import validator as api_val
 from PyMMSp.inst import pressure as api_pres
 
 
 class PresReaderWindow(QtWidgets.QDialog):
-    '''
+    """
         Pressure reader window
-    '''
+    """
 
     # multiplication factor for time unit conversion.
     # 0: unity, seconds; 1: 60, minite; 2: 3600, hour.
@@ -191,7 +191,7 @@ class PresReaderWindow(QtWidgets.QDialog):
         self.save_data()
 
     def protect_update_period(self, idx):
-        ''' Protect update period unit change if data is under collection '''
+        """ Protect update period unit change if data is under collection """
 
         if idx == self.current_update_unit_index:
             # ignore if unit index is not changed
@@ -215,7 +215,7 @@ class PresReaderWindow(QtWidgets.QDialog):
                 self.set_update_period()
 
     def set_update_period(self):
-        ''' Set wait time according to self.updateRate '''
+        """ Set wait time according to self.updateRate """
 
         # stop data collection and re-enable update rate QLineEdit
         self.stop()
@@ -235,7 +235,7 @@ class PresReaderWindow(QtWidgets.QDialog):
             pass
 
     def protect_p_unit(self, idx):
-        ''' Protect pressure unit change if data is under collection '''
+        """ Protect pressure unit change if data is under collection """
 
         if idx == self.current_p_unit_index:
             # ignore if unit index is not changed
@@ -259,12 +259,12 @@ class PresReaderWindow(QtWidgets.QDialog):
                 self.set_p_unit()
 
     def set_p_unit(self):
-        ''' Set pressure unit '''
+        """ Set pressure unit """
 
         if self.main.testModeAction.isChecked():
             unit_txt = self.pUnitSel.currentText()
         else:
-            _, unit_txt = api_pres.set_query_p_unit(self.main.pressureHandle,
+            _, unit_txt = api_pres.set_query_p_unit(self.main.gauge_handle,
                                                     self.pUnitSel.currentIndex())
         # update real time monitor panel
         self.currentUnit.setText(unit_txt)
@@ -277,7 +277,7 @@ class PresReaderWindow(QtWidgets.QDialog):
             pass
 
     def set_channel(self, idx):
-        ''' Set channel '''
+        """ Set channel """
 
         if idx == self.current_chn_index:
             # ignore if channel is not changed
@@ -308,8 +308,8 @@ class PresReaderWindow(QtWidgets.QDialog):
             msgcode = 2
             status_txt = 'Okay'
         else:
-            msgcode, status_txt, self.current_p = api_pres.query_p(self.main.pressureHandle,
-                                                    self.channelSel.currentText())
+            msgcode, status_txt, self.current_p = api_pres.query_p(self.main.gauge_handle,
+                                                                   self.channelSel.currentText())
 
         self.currentP.setText('{:.3e}'.format(self.current_p))
         self.currentStatus.setText(status_txt)

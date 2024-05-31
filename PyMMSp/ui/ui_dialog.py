@@ -1,19 +1,17 @@
 #! encoding = utf-8
-''' Dialog windows for system menues '''
+""" Dialog windows for system menus """
 
 
 from PyQt6 import QtGui, QtCore, QtWidgets
 from PyMMSp.inst import general as api_gen
 from PyMMSp.data import lwaparser
-from PyMMSp.ui import SharedWidgets as Shared
+from PyMMSp.ui import ui_shared
 from pyqtgraph import siFormat
 import pyqtgraph as pg
 
 
 class SelInstDialog(QtWidgets.QDialog):
-    '''
-        Dialog window for instrument selection.
-    '''
+    """ Dialog window for instrument selection. """
 
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
@@ -23,8 +21,8 @@ class SelInstDialog(QtWidgets.QDialog):
         self.setWindowTitle('Select Instrument')
 
         refreshButton = QtWidgets.QPushButton('Refresh Available Instrument List')
-        acceptButton = QtWidgets.QPushButton(Shared.btn_label('confirm'))
-        cancelButton = QtWidgets.QPushButton(Shared.btn_label('reject'))
+        acceptButton = QtWidgets.QPushButton(ui_shared.btn_label('confirm'))
+        cancelButton = QtWidgets.QPushButton(ui_shared.btn_label('reject'))
 
         self.availableInst = QtWidgets.QLabel()
         instList, instStr = api_gen.list_inst()
@@ -69,7 +67,7 @@ class SelInstDialog(QtWidgets.QDialog):
         acceptButton.clicked.connect(self.accept)
 
     def refresh(self):
-        ''' Refresh instrument list '''
+        """ Refresh instrument list """
 
         # refresh avaiable instrument list
         instList, instStr = api_gen.list_inst()
@@ -112,9 +110,7 @@ class SelInstDialog(QtWidgets.QDialog):
 
 
 class ViewInstDialog(QtWidgets.QDialog):
-    '''
-        Dialog window for instrument status view
-    '''
+    """ Dialog window for instrument status view """
 
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
@@ -133,9 +129,7 @@ class ViewPG(QtWidgets.QDialog):
 
 
 class CloseSelInstDialog(QtWidgets.QDialog):
-    '''
-        Dialog window for closing selected instrument.
-    '''
+    """ Dialog window for closing selected instrument. """
 
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
@@ -186,7 +180,7 @@ class CloseSelInstDialog(QtWidgets.QDialog):
 
         inst.setLayout(instLayout)
 
-        okButton = QtWidgets.QPushButton(Shared.btn_label('complete'))
+        okButton = QtWidgets.QPushButton(ui_shared.btn_label('complete'))
         mainLayout = QtWidgets.QVBoxLayout()
         mainLayout.addWidget(inst)
         mainLayout.addWidget(QtWidgets.QLabel('No command will be sent before you hit the accept button'))
@@ -219,9 +213,7 @@ class CloseSelInstDialog(QtWidgets.QDialog):
 
 
 class SynInfoDialog(QtWidgets.QDialog):
-    '''
-        Dialog window for displaying full synthesizer settings.
-    '''
+    """ Dialog window for displaying full synthesizer settings. """
 
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
@@ -344,7 +336,7 @@ class SynInfoDialog(QtWidgets.QDialog):
         self.modGroup.setLayout(modGroupLayout)
 
         self.refreshButton = QtWidgets.QPushButton('Manual Refresh')
-        self.acceptButton = QtWidgets.QPushButton(Shared.btn_label('accept'))
+        self.acceptButton = QtWidgets.QPushButton(ui_shared.btn_label('accept'))
 
         mainLayout = QtWidgets.QGridLayout()
         mainLayout.addWidget(self.instGroup, 0, 0, 1, 5)
@@ -358,7 +350,7 @@ class SynInfoDialog(QtWidgets.QDialog):
 
     def display(self):
 
-        self.acceptButton.setText(Shared.btn_label('accept'))
+        self.acceptButton.setText(ui_shared.btn_label('accept'))
 
         if self.parent.synHandle:
             self.print_info()
@@ -433,9 +425,7 @@ class SynInfoDialog(QtWidgets.QDialog):
 
 
 class LockinInfoDialog(QtWidgets.QDialog):
-    '''
-        Dialog window for displaying full lockin settings.
-    '''
+    """ Dialog window for displaying full lockin settings. """
 
     def __init__(self, parent):
         QtWidgets.QDialog.__init__(self, parent)
@@ -516,7 +506,7 @@ class LockinInfoDialog(QtWidgets.QDialog):
         self.outputGroup.setLayout(outputGroupLayout)
 
         self.refreshButton = QtWidgets.QPushButton('Manual Refresh')
-        self.acceptButton = QtWidgets.QPushButton(Shared.btn_label('accept'))
+        self.acceptButton = QtWidgets.QPushButton(ui_shared.btn_label('accept'))
 
         mainLayout = QtWidgets.QGridLayout()
         mainLayout.addWidget(self.instGroup, 0, 0, 1, 6)
@@ -532,7 +522,7 @@ class LockinInfoDialog(QtWidgets.QDialog):
 
     def display(self):
 
-        self.acceptButton.setText(Shared.btn_label('accept'))
+        self.acceptButton.setText(ui_shared.btn_label('accept'))
 
         if self.parent.liaHandle:
             self.print_info()
@@ -589,9 +579,7 @@ class LockinInfoDialog(QtWidgets.QDialog):
 
 
 class LWAParserDialog(QtWidgets.QDialog):
-    '''
-        Dialog window for the LWA file previewer & parser.
-    '''
+    """ Dialog window for the LWA file previewer & parser. """
 
     def __init__(self, parent, filename):
         QtWidgets.QDialog.__init__(self, parent)
@@ -662,7 +650,7 @@ class LWAParserDialog(QtWidgets.QDialog):
 
             for row in range(len(self.entry_settings)):
                 current_setting = self.entry_settings[row]
-                entry = Shared.LWAScanHdEntry(self, entry_setting=current_setting)
+                entry = ui_shared.LWAScanHdEntry(self, entry_setting=current_setting)
                 # add entry number checkbox to the button group
                 self.previewButtonGroup.addButton(entry.previewCheck, row)
                 self.exportLWAButtonGroup.addButton(entry.exportCheck, row)
@@ -697,7 +685,7 @@ class LWAParserDialog(QtWidgets.QDialog):
         self.setLayout(self.mainLayout)
 
     def preview_entry(self):
-        ''' Preview single scan '''
+        """ Preview single scan """
 
         id_ = self.previewButtonGroup.checkedId()
         preview_data = lwaparser.preview(id_, self.hd_line_num, src=self.filename)
@@ -705,7 +693,7 @@ class LWAParserDialog(QtWidgets.QDialog):
         self.preview_win.show()
 
     def add_to_export_list(self, id_):
-        ''' Add checked buttons to export list. id_ starts at 0 '''
+        """ Add checked buttons to export list. id_ starts at 0 """
 
         # if the button is checked, add to export list
         if self.exportLWAButtonGroup.button(id_).isChecked():
@@ -723,19 +711,19 @@ class LWAParserDialog(QtWidgets.QDialog):
                 pass
 
     def export_lwa(self):
-        ''' Export to new lwa file '''
+        """ Export to new lwa file """
 
         # check if entry_id_to_export list is not empty
         if self.entry_id_to_export:
             output_file, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save lwa file', '', 'SMAP File (*.lwa)')
         else:
-            d = Shared.MsgError(self, 'Empty List!', 'No scan is selected!')
+            d = ui_shared.MsgError(self, 'Empty List!', 'No scan is selected!')
             d.exec()
             output_file = None
 
         # prevent from overwriting
         if output_file == self.filename:
-            msg = Shared.MsgError(self, 'Cannot save!',
+            msg = ui_shared.MsgError(self, 'Cannot save!',
                              'Output file shall not overwrite source file')
             msg.exec()
         elif output_file:
@@ -744,19 +732,19 @@ class LWAParserDialog(QtWidgets.QDialog):
             pass
 
     def export_xy(self):
-        ''' Export to xy text file. User can select delimiter '''
+        """ Export to xy text file. User can select delimiter """
 
         # check if entry_id_to_export list is not empty
         if self.entry_id_to_export:
             output_dir = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select directory to save xy files')
         else:
-            d = Shared.MsgError(self, 'Empty List!', 'No scan is selected!')
+            d = ui_shared.MsgError(self, 'Empty List!', 'No scan is selected!')
             d.exec()
             output_dir = None
 
         # prevent from overwriting
         if output_dir == self.filename:
-            msg = Shared.MsgError(self, 'Cannot save!',
+            msg = ui_shared.MsgError(self, 'Cannot save!',
                              'Output file shall not overwrite source file')
             msg.exec()
         elif output_dir:
@@ -780,9 +768,7 @@ class LWAParserDialog(QtWidgets.QDialog):
 
 
 class PrevSpectrumDialog(QtWidgets.QDialog):
-    '''
-        Preview dialog window for spectrum
-    '''
+    """ Preview dialog window for spectrum """
 
     def __init__(self, parent, data=None):
         QtWidgets.QDialog.__init__(self, parent)

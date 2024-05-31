@@ -1,13 +1,13 @@
 #! encoding = utf-8
 
-''' Lockin scanning routine in JPL style '''
+""" Lockin scanning routine in JPL style """
 
 
 from PyQt6 import QtGui, QtCore, QtWidgets
 import numpy as np
 from math import ceil
 import pyqtgraph as pg
-from PyMMSp.ui import SharedWidgets as Shared
+from PyMMSp.ui import ui_shared as Shared
 from PyMMSp.inst import lockin as api_lia
 from PyMMSp.inst import validator as api_val
 from PyMMSp.inst import synthesizer as api_syn
@@ -15,9 +15,9 @@ from PyMMSp.data import save
 
 
 class JPLScanConfig(QtWidgets.QDialog):
-    '''
+    """
         Configuration window preparing for the scan
-    '''
+    """
 
     def __init__(self, main=None):
         QtWidgets.QDialog.__init__(self, main)
@@ -93,7 +93,7 @@ class JPLScanConfig(QtWidgets.QDialog):
         removeBatchButton.clicked.connect(self.remove_entry)
 
     def add_entry(self):
-        ''' Add batch entry to this dialog window '''
+        """ Add batch entry to this dialog window """
 
         # generate a new batch entry
         default_setting = ('default', self.main.synInfo.probFreq*1e-6,
@@ -145,7 +145,7 @@ class JPLScanConfig(QtWidgets.QDialog):
         self.entryLayout.addWidget(entry.refPhaseFill, row, 13)
 
     def remove_entry(self):
-        ''' Remove last batch entry in this dialog window '''
+        """ Remove last batch entry in this dialog window """
 
         # if there is only one entry, skip and pop up warning
         if len(self.entryWidgetList) == 1:
@@ -191,14 +191,14 @@ class JPLScanConfig(QtWidgets.QDialog):
         self.fileLabel.setText('Data save to: {:s}'.format(self.filename))
 
     def get_settings(self):
-        ''' Read batch settings from entries and proceed.
+        """ Read batch settings from entries and proceed.
             Returns a list of seting tuples in the format of
             (comment, start_freq <MHz>, stop_freq <MHz>, step <MHz>,
              averages [int], sens_index [int], timeConst [int],
              waittime <ms>, mod Mode index [int], mod freq <Hz>, mod Amp [float], harmonics [int], phase [float])
-        '''
+        """
 
-        vdi_index = self.main.synCtrl.bandSel.currentIndex()
+        vdi_index = self.main.synPanel.bandSel.currentIndex()
 
         entry_settings = []
         no_error = True
@@ -232,7 +232,7 @@ class JPLScanConfig(QtWidgets.QDialog):
 
 
 class JPLScanWindow(QtWidgets.QDialog):
-    ''' Scanning window '''
+    """ Scanning window """
 
     # define a pyqt signal to control batch scans
     next_entry_signal = QtCore.pyqtSignal()
@@ -337,7 +337,7 @@ class JPLScanWindow(QtWidgets.QDialog):
 
 
 class JPLBatchListWidget(QtWidgets.QWidget):
-    ''' Batch list display '''
+    """ Batch list display """
 
     def __init__(self, entry_settings):
 
@@ -387,12 +387,12 @@ class JPLBatchListWidget(QtWidgets.QWidget):
 
 
 class SingleScan(QtWidgets.QWidget):
-    ''' Take a scan in a single freq window '''
+    """ Take a scan in a single freq window """
 
     def __init__(self, filename, parent=None, main=None):
-        ''' parent is the JPL scan dialog window. It contains shared settings.
+        """ parent is the JPL scan dialog window. It contains shared settings.
             main is the main GUI window. It containts instrument handles
-        '''
+        """
         QtWidgets.QWidget.__init__(self, parent)
         self.main = main
         self.parent = parent
@@ -460,11 +460,11 @@ class SingleScan(QtWidgets.QWidget):
 
 
     def update_setting(self, entry_setting):
-        ''' Update scan entry setting. Starts a scan after setting update.
+        """ Update scan entry setting. Starts a scan after setting update.
             entry = (comment, start_freq <MHz>, stop_freq <MHz>, step <MHz>,
              averages [int], sens_index [int], timeConst [int],
              waittime <ms>, mod Mode index [int], mod freq <Hz>, mod Amp [float], harmonics [int], phase [float])
-        '''
+        """
 
         self.x = Shared.gen_x_array(*entry_setting[1:4])
         self.x_min = min(entry_setting[1], entry_setting[2])
@@ -496,7 +496,7 @@ class SingleScan(QtWidgets.QWidget):
         self.waitTimer.start()
 
     def tune_inst(self, entry_setting):
-        ''' Tune instrument '''
+        """ Tune instrument """
 
         self.main.synInfo.modModeIndex = entry_setting[8]
         self.main.synInfo.modModeText = api_syn.MOD_MODE_LIST[entry_setting[8]]
@@ -524,24 +524,24 @@ class SingleScan(QtWidgets.QWidget):
             self.main.liaInfo.refHarmText = str(entry_setting[11])
             self.main.liaInfo.refPhase = entry_setting[12]
         else:
-            api_syn.set_syn_freq(self.main.synHandle, self.x[self.current_x_index]/self.multiplier)
-            api_syn.set_mod_mode(self.main.synHandle, entry_setting[8])
+            api_syn.set_syn_freq(self.main.syn_handle, self.x[self.current_x_index] / self.multiplier)
+            api_syn.set_mod_mode(self.main.syn_handle, entry_setting[8])
             if self.main.synInfo.modModeIndex == 1:
-                api_syn.set_am(self.main.synHandle, entry_setting[9], entry_setting[10], True)
+                api_syn.set_am(self.main.syn_handle, entry_setting[9], entry_setting[10], True)
             elif self.main.synInfo.modModeIndex == 2:
-                api_syn.set_fm(self.main.synHandle, entry_setting[9], entry_setting[10], True)
+                api_syn.set_fm(self.main.syn_handle, entry_setting[9], entry_setting[10], True)
             else:
                 pass
-            api_lia.set_sens(self.main.liaHandle, self.sens_index)
-            api_lia.set_tc(self.main.liaHandle, self.tc_index)
-            api_lia.set_harm(self.main.liaHandle, entry_setting[11])
-            api_lia.set_phase(self.main.liaHandle, entry_setting[12])
+            api_lia.set_sens(self.main.lockin_handle, self.sens_index)
+            api_lia.set_tc(self.main.lockin_handle, self.tc_index)
+            api_lia.set_harm(self.main.lockin_handle, entry_setting[11])
+            api_lia.set_phase(self.main.lockin_handle, entry_setting[12])
 
-            self.main.synInfo.full_info_query(self.main.synHandle)
-            self.main.liaInfo.full_info_query(self.main.liaHandle)
+            self.main.synInfo.full_info_query(self.main.syn_handle)
+            self.main.liaInfo.full_info_query(self.main.lockin_handle)
 
     def tune_syn_freq(self):
-            ''' Simply tune synthesizer frequency '''
+            """ Simply tune synthesizer frequency """
 
             self.main.synInfo.probFreq = self.x[self.current_x_index] * 1e6
             self.main.synInfo.synFreq = self.main.synInfo.probFreq / self.multiplier
@@ -550,18 +550,18 @@ class SingleScan(QtWidgets.QWidget):
             if self.main.testModeAction.isChecked():
                 pass
             else:
-                api_syn.set_syn_freq(self.main.synHandle, self.main.synInfo.synFreq)
+                api_syn.set_syn_freq(self.main.syn_handle, self.main.synInfo.synFreq)
 
             self.waitTimer.start()
 
     def query_lockin(self):
-        ''' Query lockin data. Triggered by waitTimer.timeout() '''
+        """ Query lockin data. Triggered by waitTimer.timeout() """
 
         # append data to data list
         if self.main.testModeAction.isChecked():
             self.y[self.current_x_index] = np.random.random_sample()
         else:
-            self.y[self.current_x_index] = api_lia.query_single_x(self.main.liaHandle)
+            self.y[self.current_x_index] = api_lia.query_single_x(self.main.lockin_handle)
         # update plot
         self.yCurve.setData(self.x, self.y)
         # move to the next frequency, update freq index and average counter
@@ -576,7 +576,7 @@ class SingleScan(QtWidgets.QWidget):
             self.tune_syn_freq()
 
     def next_freq(self):
-        ''' move to the next frequency point '''
+        """ move to the next frequency point """
 
         # current sweep is even average, decrease index (sweep backward)
         if self.acquired_avg % 2:
@@ -603,7 +603,7 @@ class SingleScan(QtWidgets.QWidget):
                                           ceil(self.pts_taken * self.waittime * 1e-3))
 
     def update_ysum(self):
-        ''' Update sum plot '''
+        """ Update sum plot """
 
         # add current y array to y_sum
         self.y_sum += self.y
@@ -611,7 +611,7 @@ class SingleScan(QtWidgets.QWidget):
         self.ySumCurve.setData(self.x, self.y_sum)
 
     def save_data(self):
-        ''' Save data array '''
+        """ Save data array """
 
         # Grab current comment (in case edited during the scan) before saving data
         entry = self.parent.batchListWidget.entryList[self.parent.current_entry_index]
@@ -640,7 +640,7 @@ class SingleScan(QtWidgets.QWidget):
             save.save_lwa(self.filename, self.y, h_info)
 
     def pause_current(self, btn_pressed):
-        ''' Pause/resume data acquisition '''
+        """ Pause/resume data acquisition """
 
         if btn_pressed:
             self.pauseButton.setText('Resume')
@@ -652,7 +652,7 @@ class SingleScan(QtWidgets.QWidget):
             self.waitTimer.start()
 
     def redo_current(self):
-        ''' Erase current y array and restart a scan '''
+        """ Erase current y array and restart a scan """
 
         #print('redo current')
         self.waitTimer.stop()
@@ -670,7 +670,7 @@ class SingleScan(QtWidgets.QWidget):
         self.tune_syn_freq()
 
     def restart_avg(self):
-        ''' Erase all current averages and start over '''
+        """ Erase all current averages and start over """
 
         q = QtWidgets.QMessageBox.question(self, 'Scan In Progress!',
                        'Restart will erase all cached averages.\n Are you sure to proceed?', QtWidgets.QMessageBox.Yes |
@@ -689,14 +689,14 @@ class SingleScan(QtWidgets.QWidget):
             pass
 
     def save_current(self):
-        ''' Save what's got so far and continue '''
+        """ Save what's got so far and continue """
 
         self.waitTimer.stop()
         self.save_data()
         self.waitTimer.start()
 
     def jump(self):
-        ''' Jump to next batch item '''
+        """ Jump to next batch item """
 
         q = QtWidgets.QMessageBox.question(self, 'Jump To Next',
                        'Save aquired data for the current scan window?', QtWidgets.QMessageBox.Yes |

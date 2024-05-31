@@ -1,5 +1,5 @@
 # encoding = utf-8
-''' This script aims to automatically remove baseline and fit spectroscopic
+""" This script aims to automatically remove baseline and fit spectroscopic
 data. It uses the curve_fit function from scipy.optimize module, and
 provides fits for Gaussian and Lorentzian spectra lineshapes.
 
@@ -12,7 +12,7 @@ calculation. Fit up to 4-th derivative.
 The script supports comma, tab and space delimited xy files with any
 number of lines of header information.
 Requires numpy1.8+ and scipy0.16+
-'''
+"""
 
 import os
 import re
@@ -28,13 +28,13 @@ from scipy import interpolate
 # ----------------------------------------
 
 class Function:
-    ''' Function class stores all sorts of function form. In spectroscopic
+    """ Function class stores all sorts of function form. In spectroscopic
     context, gaussian/lorentzian function families are supported. Also,
     up to second derivative of these functions are defined to descibe the
     common spectra lineshape obtained by spectroscopic experiments.
     Coefficients are defined so as 0-derivative functions are normalized.
     The user may add more customized funtion form to it.
-    '''
+    """
 
     # Class variable: function family name list. User may add their own.
     def __init__(self, ftype, der, peak):
@@ -181,7 +181,7 @@ class Function:
 
 
 def base(xdata, popt, f):
-    ''' Data outside 4 sigma/gamma are considered as baseline.
+    """ Data outside 4 sigma/gamma are considered as baseline.
     Returns the baseline index.
 
     Arguments:
@@ -191,7 +191,7 @@ def base(xdata, popt, f):
     peak -- number of peaks
 
     Returns: index of xdata considered as baseline
-    '''
+    """
     baseline_idx = np.ones_like(xdata, dtype=bool)
     if not f.ftype:
         win = 4
@@ -211,12 +211,12 @@ def base(xdata, popt, f):
 
 
 def box_smooth(y, box_win):
-    ''' Boxcar smooth routine. Accepts only vector '''
+    """ Boxcar smooth routine. Accepts only vector """
     return np.convolve(y, np.ones(box_win), 'valid')/box_win
 
 
 def noise_db(x, residual, baseline_idx):
-    ''' Calculate noise after baseline removal.
+    """ Calculate noise after baseline removal.
     The idea is to smooth out the residual.
     Firstly, a boxcar smooth is applied to get the overal wavy trend of the
     residual. Then the part falls into baseline_idx will be removed.
@@ -224,7 +224,7 @@ def noise_db(x, residual, baseline_idx):
     be quite flat, only including random noise, and can be used to calculate
     the noise level of the spectrum. However, this baseline removal does
     not have scientific justification, so it should NOT be used to 'clean'
-    the original spectrum!!! '''
+    the original spectrum!!! """
 
     # 25 is a decent smooth window
     res_smooth = np.convolve(residual, np.ones(25), 'valid')/25
@@ -240,7 +240,7 @@ def noise_db(x, residual, baseline_idx):
 
 
 def fit_baseline(xdata, ydata, deg):
-    ''' Simply fit polynomial baseline '''
+    """ Simply fit polynomial baseline """
 
     xshift = xdata - np.median(xdata)
     try:
@@ -255,14 +255,14 @@ def fit_baseline(xdata, ydata, deg):
 
 
 def get_delm(testline):
-    ''' Analyse delimiter in a line '''
+    """ Analyse delimiter in a line """
     try:
         return re.search('\d+( |\t|,)+-?\d+', testline).group(1)
     except AttributeError:
         return False
 
 def separate_dir(filelist):
-    ''' separate file name and directory name '''
+    """ separate file name and directory name """
     dir_list = []
     clean_file_list = []
     for filename in filelist:
@@ -272,7 +272,7 @@ def separate_dir(filelist):
     return dir_list, clean_file_list
 
 def out_name_gen(in_name, replace=False):
-    ''' Generate output file name from input file name '''
+    """ Generate output file name from input file name """
     # Pick out the file name before extension
     if replace:
         return re.match('([^^]*).\D{3}$', in_name).group(1)
@@ -281,7 +281,7 @@ def out_name_gen(in_name, replace=False):
 
 
 def read_file(file_name, boxwin=1, rescale=1):
-    ''' Load spectrum data '''
+    """ Load spectrum data """
     hd = 0
     try:        # Try to open the file
         with open(file_name, 'r') as testfile:
@@ -325,7 +325,7 @@ def read_file(file_name, boxwin=1, rescale=1):
 
 
 def save_fit(out_name, out_tbl, popt, ftype, der, peak):
-    ''' Save spectrum to csv file. If more than one peak is fitted,
+    """ Save spectrum to csv file. If more than one peak is fitted,
     each component of these peaks are also saved.
 
     Arguments:
@@ -336,7 +336,7 @@ def save_fit(out_name, out_tbl, popt, ftype, der, peak):
     popt -- optimized parameter vector
     fit -- fitted function data array
     baseline -- polynomial baseline vector
-    '''
+    """
     out_header = 'freq,inten,fit,baseline'     # Put header information
 
     if peak > 1:
@@ -359,7 +359,7 @@ def save_fit(out_name, out_tbl, popt, ftype, der, peak):
 
 
 def save_log(out_name, popt, uncertainty, ppoly, ftype, der, peak, parname):
-    ''' Save fitted parameters to log file.
+    """ Save fitted parameters to log file.
 
     Arguments:
     out_name -- log file name to be saved. Automatically add .log extension
@@ -367,7 +367,7 @@ def save_log(out_name, popt, uncertainty, ppoly, ftype, der, peak, parname):
     popt -- optimized parameter vector
     uncertainty -- parameter uncertainty
     snr_max -- maximum SnR of the data
-    '''
+    """
     # Prepare parameter names
     if not ftype:
         ftype_str = 'Gaussian'
@@ -403,7 +403,7 @@ def save_log(out_name, popt, uncertainty, ppoly, ftype, der, peak, parname):
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 def fit_spectrum(f, xdata, ydata, init, deg, smooth_edge=False, THRESHOLD=1e-2):
-    ''' spectral fitting routine.
+    """ spectral fitting routine.
 
     Arguments:
     f -- fitted function
@@ -422,7 +422,7 @@ def fit_spectrum(f, xdata, ydata, init, deg, smooth_edge=False, THRESHOLD=1e-2):
     noise -- noise level
     ppoly -- coefficient vector of baseline polynomial
     fit_stat -- tracker of fit status
-    '''
+    """
 
     # This routine applies an idea slightly different that its previous
     # AutoSpectraFit.py version

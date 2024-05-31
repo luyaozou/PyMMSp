@@ -6,9 +6,6 @@
 *.lwa
 *.idea/*
 
-# Internal config files
-*inst.cfg
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

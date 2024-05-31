@@ -8,24 +8,19 @@ from pyqtgraph import siFormat
 from PyMMSp.inst import lockin as api_lia
 from PyMMSp.inst import validator as api_val
 from PyMMSp.inst import synthesizer as api_syn
+from PyMMSp.libs.consts import BUTTONLABEL
+
 
 # QPushButton label dictionary
-BUTTONLABEL = {'confirm': ['Lets do it', 'Go forth and conquer', 'Ready to go',
-                           'Looks good', 'Sounds about right'],
-               'complete': ['Nice job', 'Sweet', 'Well done', 'Mission complete'],
-               'accept': ['I see', 'Gotcha', 'Okay', 'Yes master'],
-               'reject': ['Never mind', 'I changed my mind', 'Cancel', 'I refuse'],
-               'error': ['Oopsy!', 'Something got messed up', 'Bad']
-               }
 
 
 def btn_label(btn_type):
-    ''' Randomly generate a QPushButton label.
+    """ Randomly generate a QPushButton label.
         Arguments
             btn_type: str
         Returns
             label: str
-    '''
+    """
 
     try:
         a_list = BUTTONLABEL[btn_type]
@@ -35,9 +30,9 @@ def btn_label(btn_type):
 
 
 class InstStatus(QtWidgets.QMessageBox):
-    ''' Message box of instrument communication status. Silent if communication
+    """ Message box of instrument communication status. Silent if communication
         is successful. Pop up error message in pyvisa.constants.StatusCode
-    '''
+    """
 
     def __init__(self, parent, code):
         QtWidgets.QWidget.__init__(self, parent)
@@ -49,7 +44,7 @@ class InstStatus(QtWidgets.QMessageBox):
 
 
 class MsgError(QtWidgets.QMessageBox):
-    ''' Error message box '''
+    """ Error message box """
 
     def __init__(self, parent, title_text, moretext=''):
         QtWidgets.QWidget.__init__(self, parent)
@@ -61,7 +56,7 @@ class MsgError(QtWidgets.QMessageBox):
 
 
 class MsgWarning(QtWidgets.QMessageBox):
-    ''' Warning message box '''
+    """ Warning message box """
 
     def __init__(self, parent, title_text, moretext=''):
         QtWidgets.QWidget.__init__(self, parent)
@@ -73,20 +68,19 @@ class MsgWarning(QtWidgets.QMessageBox):
 
 
 class MsgInfo(QtWidgets.QMessageBox):
-    ''' Information message box '''
+    """ Information message box """
 
     def __init__(self, parent, title_text, moretext=''):
         QtWidgets.QWidget.__init__(self, parent)
 
-        self.setIcon(QtWidgets.QMessageBox.Information)
-        self.addButton(QtWidgets.QMessageBox.Ok)
+        self.setIcon(QtWidgets.QMessageBox.Icon.Information)
+        self.addButton(QtWidgets.QMessageBox.StandardButton.Ok)
         self.setWindowTitle(title_text)
         self.setText(moretext)
-        self.setWindowModality(0)
 
 
 class VDIBandComboBox(QtWidgets.QComboBox):
-    ''' Selection box for VDI multiplier chain '''
+    """ Selection box for VDI multiplier chain """
 
     def __init__(self):
         QtWidgets.QWidget.__init__(self)
@@ -104,7 +98,7 @@ class VDIBandComboBox(QtWidgets.QComboBox):
 
 
 class LIASensBox(QtWidgets.QComboBox):
-    ''' Lockin sensitivity selection box '''
+    """ Lockin sensitivity selection box """
 
     def __init__(self):
         QtWidgets.QWidget.__init__(self)
@@ -114,7 +108,7 @@ class LIASensBox(QtWidgets.QComboBox):
 
 
 class LIATCBox(QtWidgets.QComboBox):
-    ''' Lockin time constant selection box '''
+    """ Lockin time constant selection box """
 
     def __init__(self):
         QtWidgets.QWidget.__init__(self)
@@ -124,7 +118,7 @@ class LIATCBox(QtWidgets.QComboBox):
 
 
 class SynInfo():
-    ''' Synthesizer info '''
+    """ Synthesizer info """
 
     def __init__(self):
 
@@ -181,7 +175,7 @@ class SynInfo():
         self.errMsg = ''
 
     def full_info_query(self, synHandle):
-        ''' Query all information '''
+        """ Query all information """
 
         if synHandle:
             self.instName = synHandle.resource_name
@@ -232,7 +226,7 @@ class SynInfo():
 
 
 class LiaInfo():
-    ''' Lockin amplifier info '''
+    """ Lockin amplifier info """
 
     def __init__(self):
 
@@ -270,7 +264,7 @@ class LiaInfo():
         self.sampleRateText = api_lia.SAMPLE_RATE_LIST[self.sampleRateIndex]
 
     def full_info_query(self, liaHandle):
-        ''' Query all information '''
+        """ Query all information """
 
         if liaHandle:
             self.instName = liaHandle.resource_name
@@ -308,7 +302,7 @@ class LiaInfo():
 
 
 class ScopeInfo():
-    ''' PCI card Oscilloscope info '''
+    """ PCI card Oscilloscope info """
 
     def __init__(self):
 
@@ -316,7 +310,7 @@ class ScopeInfo():
 
 
 class MotorInfo():
-    ''' Step motor info '''
+    """ Step motor info """
 
     def __init__(self):
 
@@ -324,7 +318,7 @@ class MotorInfo():
 
 
 class JPLLIAScanEntry(QtWidgets.QWidget):
-    ''' Frequency window entry for scanning job configuration with captions '''
+    """ Frequency window entry for scanning job configuration with captions """
 
     def __init__(self, main, default=()):
         QtWidgets.QWidget.__init__(self)
@@ -430,7 +424,7 @@ class JPLLIAScanEntry(QtWidgets.QWidget):
 
     def val_start_freq(self, text):
 
-        vdi_index = self.main.synCtrl.bandSel.currentIndex()
+        vdi_index = self.main.synPanel.bandSel.currentIndex()
         status, _temp = api_val.val_prob_freq(text, vdi_index)
         self.startFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
         self.status['startFreq'] = bool(status)
@@ -438,7 +432,7 @@ class JPLLIAScanEntry(QtWidgets.QWidget):
 
     def val_stop_freq(self, text):
 
-        vdi_index = self.main.synCtrl.bandSel.currentIndex()
+        vdi_index = self.main.synPanel.bandSel.currentIndex()
         status, _temp = api_val.val_prob_freq(text, vdi_index)
         self.stopFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
         self.status['stopFreq'] = bool(status)
@@ -455,7 +449,7 @@ class JPLLIAScanEntry(QtWidgets.QWidget):
 
     def val_avg(self, text):
 
-        vdi_index = self.main.synCtrl.bandSel.currentIndex()
+        vdi_index = self.main.synPanel.bandSel.currentIndex()
         status, self.avg = api_val.val_int(text, safe=[('>', 0)])
         self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
         self.status['avg'] = bool(status)
@@ -497,9 +491,9 @@ class JPLLIAScanEntry(QtWidgets.QWidget):
     def val_syn_amp(self, text):
 
         if self.modModeSel.currentIndex() == 1:     # AM
-            status, self.modAmp = api_val.val_syn_am_depth(text, '%')
+            status, self.modAmp = api_val.val_syn_am_amp(text, '%')
         elif self.modModeSel.currentIndex() == 2:   # FM
-            status, self.modAmp = api_val.val_syn_fm_depth(text, 'Hz')
+            status, self.modAmp = api_val.val_syn_fm_amp(text, 'Hz')
         else:
             status = 2
 
@@ -517,10 +511,10 @@ class JPLLIAScanEntry(QtWidgets.QWidget):
         self.refHarm = int(text)
 
 class JPLLIABatchListEntry(QtWidgets.QWidget):
-    ''' Single batch list entry in display mode.
+    """ Single batch list entry in display mode.
     entry = (comment [str], start [float, MHz], stop [float, MHz],
              step [float, MHz], avg [int], sens_idx [int], tc_idx [int],
-             mod mode index [int], harmonics [int]) '''
+             mod mode index [int], harmonics [int]) """
 
     def __init__(self, parent, entry_setting=()):
         QtWidgets.QWidget.__init__(self, parent=None)
@@ -553,7 +547,7 @@ class JPLLIABatchListEntry(QtWidgets.QWidget):
         self.set_color_grey()
 
     def set_color_grey(self):
-        ''' set text color to grey '''
+        """ set text color to grey """
         self.numberLabel.setStyleSheet('color: grey')
         self.startFreqLabel.setStyleSheet('color: grey')
         self.stopFreqLabel.setStyleSheet('color: grey')
@@ -565,7 +559,7 @@ class JPLLIABatchListEntry(QtWidgets.QWidget):
         self.refHarmLabel.setStyleSheet('color: grey')
 
     def set_color_black(self):
-        ''' Set text color to black '''
+        """ Set text color to black """
 
         # set texts to grey
         self.numberLabel.setStyleSheet('color: black')
@@ -580,7 +574,7 @@ class JPLLIABatchListEntry(QtWidgets.QWidget):
 
 
 class LWAScanHdEntry(QtWidgets.QWidget):
-    ''' Display lwa scan header settings.
+    """ Display lwa scan header settings.
     entry = (SCAN# [int],
              COMMENT [str],
              DATE [str],
@@ -598,7 +592,7 @@ class LWAScanHdEntry(QtWidgets.QWidget):
              AVG [int],
              HARM [int],
              PHASE [float, degree]
-             ) '''
+             ) """
 
     def __init__(self, parent, entry_setting=()):
         QtWidgets.QWidget.__init__(self, parent=None)
@@ -646,12 +640,12 @@ class LWAScanHdEntry(QtWidgets.QWidget):
 
 
 def msgcolor(status_code):
-    ''' Return message color based on status_code.
+    """ Return message color based on status_code.
         0: fatal, red
         1: warning, gold
         2: safe, green
         else: black
-    '''
+    """
 
     if not status_code:
         return '#D63333'
@@ -664,14 +658,14 @@ def msgcolor(status_code):
 
 
 def gen_x_array(start, stop, step):
-    ''' Generate an mm freq array for DAQ.
+    """ Generate an mm freq array for DAQ.
         Arguments
             start: start mm frequency (MHz), float
             stop: stop mm frequency (MHz), float
             step: step size (MHz), float
         Returns
             x: synthesizer RF frequency array, np.array
-    '''
+    """
 
     # if start freq > stop freq, switch
     if start > stop:
@@ -691,7 +685,7 @@ def gen_x_array(start, stop, step):
 
 
 def jpl_scan_time(jpl_entry_settings):
-    ''' Estimate the time expense of batch scan JPL style '''
+    """ Estimate the time expense of batch scan JPL style """
 
     if isinstance(jpl_entry_settings, list):
         pass

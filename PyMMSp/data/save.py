@@ -1,6 +1,6 @@
 #! encoding = utf-8
 
-''' Save data '''
+""" Save data """
 
 
 import numpy as np
@@ -8,7 +8,7 @@ import datetime
 
 
 def save_lwa(filename, y, h_info):
-    ''' Save lockin scan in the JPL .lwa format
+    """ Save lockin scan in the JPL .lwa format
         Arguments
             filename: str
             y: y data, np.array
@@ -19,7 +19,7 @@ def save_lwa(filename, y, h_info):
             DATE mm-dd-year TIME hh:mm:ss SH %d IT %g SENS %g TAU %g MF %.3f MA %.3f MOD [NONE|AM|FM] HARM %d PHA %.2f
             [COMMENT]
             [START FREQ MHZ %.3f] [STEP MHZ %.6f] [PTS %d] [AVG %d] 1 1 1.887 0.000 0 0 START
-    '''
+    """
 
     d = datetime.datetime.today()
     synmulti, itgtime, sens, tc, mod_freq, mod_depth, mod_mode, lia_harm, lia_phase, start_freq, step, avg, comment = h_info

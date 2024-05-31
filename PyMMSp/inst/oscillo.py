@@ -1,10 +1,17 @@
 #! encoding = utf-8
+from dataclasses import dataclass
+
+
+@dataclass
+class Oscilloscope_Info:
+
+    inst_name: str = ''
 
 
 def query_inst_name(pciHandle):
-    ''' Query instrument name
+    """ Query instrument name
         Returns instrument name, str
-    '''
+    """
 
     try:
         text = pciHandle.query('*IDN?')
@@ -14,14 +21,14 @@ def query_inst_name(pciHandle):
 
 
 def set_sampling_len(len_text):
-    ''' Set the oscilloscope sampling length to len_text
+    """ Set the oscilloscope sampling length to len_text
         Arguments
             len_text: str (user input)
         Returns communication status
             0: safe
             1: fatal
             2: warning
-    '''
+    """
 
     try:
         length = int(len_text)
@@ -37,14 +44,14 @@ def set_sampling_len(len_text):
 
 
 def set_sampling_rate(rate_text):
-    ''' Set the oscilloscope sampling rate to rate_text
+    """ Set the oscilloscope sampling rate to rate_text
         Arguments
             rate_text: str (user input, unit in MHz)
         Returns communication status
             0: safe
             1: fatal
             2: warning
-    '''
+    """
 
     try:
         rate = int(rate_text)
@@ -60,14 +67,14 @@ def set_sampling_rate(rate_text):
 
 
 def set_osc_avg(avg_text):
-    ''' Set the oscilloscope average to avg_text
+    """ Set the oscilloscope average to avg_text
         Arguments
             avg_text: str (user input)
         Returns communication status
             0: safe
             1: fatal
             2: warning
-    '''
+    """
 
     try:
         avg_text = int(avg_text)
@@ -76,13 +83,13 @@ def set_osc_avg(avg_text):
 
 
 def set_sensitivity(sens_index):
-    ''' Set the oscilloscope sensitivity to sens_index
+    """ Set the oscilloscope sensitivity to sens_index
         Arguments
             sens_index: int (user input)
         Returns communication status
             0: safe
             1: fatal
-    '''
+    """
 
     sens_list = [20, 5, 1, 0.5, 0.2]
 
