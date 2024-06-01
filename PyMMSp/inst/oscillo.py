@@ -1,26 +1,31 @@
 #! encoding = utf-8
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
+SENS = (20, 5, 1, 0.5, 0.2)
+SENS_STR = ('20 V', '5 V', '1 V', '0.5 V', '0.2 V')
 
 @dataclass
 class Oscilloscope_Info:
-
     inst_name: str = ''
 
+    def reset(self):
+        for field in fields(self):
+            setattr(self, field.name, field.default)
 
-def query_inst_name(pciHandle):
+
+def query_inst_name(handle):
     """ Query instrument name
         Returns instrument name, str
     """
 
     try:
-        text = pciHandle.query('*IDN?')
+        text = handle.query('*IDN?')
         return text.strip()
     except:
         return 'N.A.'
 
 
-def set_sampling_len(len_text):
+def set_sampling_len(len_txt):
     """ Set the oscilloscope sampling length to len_text
         Arguments
             len_text: str (user input)
@@ -31,7 +36,7 @@ def set_sampling_len(len_text):
     """
 
     try:
-        length = int(len_text)
+        length = int(len_txt)
     except ValueError:
         return 1
 
@@ -43,7 +48,7 @@ def set_sampling_len(len_text):
         return 1
 
 
-def set_sampling_rate(rate_text):
+def set_sampling_rate(rate_txt):
     """ Set the oscilloscope sampling rate to rate_text
         Arguments
             rate_text: str (user input, unit in MHz)
@@ -54,7 +59,7 @@ def set_sampling_rate(rate_text):
     """
 
     try:
-        rate = int(rate_text)
+        rate = int(rate_txt)
     except ValueError:
         return 1
 
@@ -66,7 +71,7 @@ def set_sampling_rate(rate_text):
         return 2
 
 
-def set_osc_avg(avg_text):
+def set_osc_avg(avg_txt):
     """ Set the oscilloscope average to avg_text
         Arguments
             avg_text: str (user input)
@@ -77,12 +82,12 @@ def set_osc_avg(avg_text):
     """
 
     try:
-        avg_text = int(avg_text)
+        avg_txt = int(avg_txt)
     except ValueError:
         return 1
 
 
-def set_sensitivity(sens_index):
+def set_sensitivity(sens_idx):
     """ Set the oscilloscope sensitivity to sens_index
         Arguments
             sens_index: int (user input)
@@ -91,6 +96,4 @@ def set_sensitivity(sens_index):
             1: fatal
     """
 
-    sens_list = [20, 5, 1, 0.5, 0.2]
-
-    sens_list[sens_index]
+    return SENS[sens_idx]

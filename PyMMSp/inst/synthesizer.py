@@ -14,6 +14,7 @@ _VDI_BAND_NAME = {0: '1',
                   7: '8a',
                   8: '8b',
                   9: '9'}
+VDI_BAND_NAME = tuple(_VDI_BAND_NAME.values())
 
 _VDI_BAND_MULTI = {0: 1,
                    1: 2,
@@ -25,6 +26,7 @@ _VDI_BAND_MULTI = {0: 1,
                    7: 18,
                    8: 27,
                    9: 27}
+VDI_BAND_MULTI = tuple(_VDI_BAND_MULTI.values())
 
 _VDI_BAND_RANGE = {0: (20, 50),  # !!! in the unit of GHz !!!
                    1: (50, 75),
@@ -36,8 +38,18 @@ _VDI_BAND_RANGE = {0: (20, 50),  # !!! in the unit of GHz !!!
                    7: (430, 700),
                    8: (650, 800),
                    9: (700, 1000)}
+VDI_BAND_RANGE = tuple(_VDI_BAND_RANGE.values())
 
 MODU_MODE = ('NONE', 'AM', 'FM')
+
+
+def yield_band_str():
+    """ Yield band information string """
+
+    for key in _VDI_BAND_NAME:
+        txt = 'Band {:s} (x{:d}): {:d}-{:d} GHz'.format(
+            _VDI_BAND_NAME[key], _VDI_BAND_MULTI[key], *_VDI_BAND_RANGE[key])
+        yield txt
 
 
 @dataclass
@@ -107,7 +119,6 @@ class Syn_Info:
         return MODU_MODE[self.modu_mode_idx]
 
 
-
 def ramp_up(start, stop):
     """ A integer list generator. start < stop """
 
@@ -132,7 +143,8 @@ def init_syn(handle):
     """
 
     try:
-        num, vcode = handle.write(':AM1:SOUR INT1; :AM1:STAT 0; :FM1:SOUR INT1; :FM1:STAT 0; :OUTP:MOD 0; :LFO:SOUR INT1; :LFO:AMPL 0VP; :POW:MODE FIX; :FREQ:MODE CW; :DISP:REM 0')
+        num, vcode = handle.write(':AM1:SOUR INT1; :AM1:STAT 0; :FM1:SOUR INT1; :FM1:STAT 0; :OUTP:MOD 0; '
+                                  ':LFO:SOUR INT1; :LFO:AMPL 0VP; :POW:MODE FIX; :FREQ:MODE CW; :DISP:REM 0')
         return vcode
     except:
         return 'Synthesizer initialization: IOError'
@@ -169,9 +181,9 @@ def set_power_toggle(handle, toggle_state):
     """
 
     try:
-        if toggle_state:     # user want to turn on RF
+        if toggle_state:  # user want to turn on RF
             num, vcode = handle.write(':OUTP 1')
-        else:               # user want to turn off RF
+        else:  # user want to turn off RF
             num, vcode = handle.write(':OUTP 0')
         return vcode
     except:
@@ -620,6 +632,7 @@ def read_lf_voltage(handle):
         return vol
     except:
         return 0
+
 
 def read_lf_source(handle):
     """ Read synthesizer LF source

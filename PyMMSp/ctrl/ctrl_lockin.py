@@ -1,6 +1,6 @@
 #! encoding = utf-8
 
-from PyQt6 import QtWidgets
+from PyQt6 import QtWidgets, QtCore
 import numpy as np
 import pyvisa
 from PyMMSp.ui import ui_shared
@@ -18,10 +18,16 @@ class CtrlLockin(QtWidgets.QWidget):
         self.info = info
         self.handle = handle
 
-        ## -- Trigger setting status and communication
+        self._data = np.zeros(0)
+        self._monitor_counter = 0
+        # set up timer
+        self.timer = QtCore.QTimer()
+        self.monitor_set_wait_time()
+
+        # -- Trigger setting status and communication
         self.ui.lockinPanel.phaseFill.textChanged.connect(self.tune_phase)
         self.ui.lockinPanel.harmSel.currentTextChanged[str].connect(self.tune_harmonics)
-        self.ui.lockinPanel.tcSel.currentIndexChanged[int].connect(self.tune_time_const)
+        self.ui.lockinPanel.tauSel.currentIndexChanged[int].connect(self.tune_time_const)
         self.ui.lockinPanel.sensSel.currentIndexChanged[int].connect(self.tune_sensitivity)
         self.ui.lockinPanel.coupleSel.currentIndexChanged[int].connect(self.tune_couple)
         self.ui.lockinPanel.reserveSel.currentIndexChanged[int].connect(self.tune_reserve)
@@ -35,6 +41,12 @@ class CtrlLockin(QtWidgets.QWidget):
         self.ui.liaStatus.refreshButton.clicked.connect(self.manual_refresh)
         self.ui.liaStatus.moreInfoButton.clicked.connect(self.ui.liaInfoDialog.show)
         self.ui.liaInfoDialog.refreshButton.clicked.connect(self.dialog_manual_refresh)
+        self.timer.timeout.connect(self.monitor_daq)
+        self.ui.liaMonitor.startButton.clicked.connect(self.monitor_start)
+        self.ui.liaMonitor.restartButton.clicked.connect(self.monitor_restart)
+        self.ui.liaMonitor.stopButton.clicked.connect(self.monitor_stop)
+        self.ui.liaMonitor.updateRate.currentIndexChanged.connect(self.monitor_set_wait_time)
+        self.ui.liaMonitor.slenFill.textChanged.connect(self.monitor_set_len)
 
     def check(self):
         """ Enable/disable this groupbox """
@@ -57,7 +69,7 @@ class CtrlLockin(QtWidgets.QWidget):
         """
 
         status, phase = api_val.val_lia_phase(phase_text)
-        self.ui.lockinPanel.phaseFill.setStyleSheet(f'border: 1px solid {ui_shared.msgcolor(status)}')
+        self.ui.lockinPanel.phaseFill.setStyleSheet(f'border: 1px solid {ui_shared.msg_color(status)}')
 
         if status:
             if self.prefs.is_test:
@@ -138,7 +150,7 @@ class CtrlLockin(QtWidgets.QWidget):
                 msg.exec()
 
         self.ui.liaStatus.print_info(self.info)  # auto refresh status panel
-        self.ui.liaMonitor.set_waittime()
+        self.ui.liaMonitor.set_wait_time()
 
     def tune_couple(self, idx):
         """
@@ -256,10 +268,10 @@ class CtrlLockin(QtWidgets.QWidget):
             self.ui.lockinPanel.harmSel.setCurrentIndex(self.info.ref_harm_idx)
             self.ui.lockinPanel.phaseFill.setText('{:.2f}'.format(self.info.ref_phase))
             self.ui.lockinPanel.sensSel.setCurrentIndex(self.info.sens_idx)
-            self.ui.lockinPanel.tcSel.setCurrentIndex(self.info.tau_idx)
+            self.ui.lockinPanel.tauSel.setCurrentIndex(self.info.tau_idx)
             self.ui.lockinPanel.coupleSel.setCurrentIndex(self.info.couple_idx)
             self.ui.lockinPanel.reserveSel.setCurrentIndex(self.info.reserve_idx)
-            self.ui.liaMonitor.set_waittime()
+            self.ui.liaMonitor.set_wait_time()
 
     def pop_err_msg(self):
         """ Pop error message """
@@ -272,3 +284,66 @@ class CtrlLockin(QtWidgets.QWidget):
 
         api_lia.full_info_query_(self.info, self.handle)
         self.ui.liaInfoDialog.print_info(self.info)
+
+    def monitor_start(self, btn_pressed):
+
+        if btn_pressed:
+            self.ui.liaMonitor.startButton.setText('Pause')
+            self.timer.start()
+        else:
+            self.ui.liaMonitor.startButton.setText('Continue')
+            self.timer.stop()
+
+    def monitor_restart(self):
+
+        self._monitor_counter = 0  # reset counter
+        self.ui.liaMonitor.startButton.setChecked(True)  # retrigger start button
+        self.ui.liaMonitor.startButton.setText('Pause')
+        self.timer.start()
+
+    def monitor_stop(self):
+
+        self.timer.stop()
+        self._monitor_counter = 0
+        self.ui.liaMonitor.startButton.setChecked(False)  # reset start button
+        self.ui.liaMonitor.startButton.setText('Start')
+
+    def monitor_set_wait_time(self):
+        """ Set wait time according to self.updateRate """
+
+        status, wait_time = api_val.val_lia_monitor_srate(
+            self.ui.liaMonitor.updateRate.currentIndex(), self.info.tau_idx)
+        self.timer.setInterval(int(wait_time))
+        self.ui.liaMonitor.updateRate.setStyleSheet(f'border: 1px solid {ui_shared.msg_color(status)}')
+        if status:
+            pass
+        else:
+            msg = ui_shared.MsgWarning(self, 'Update speed warning!',
+                                       """The picked update speed is faster than the lockin time constant.
+                                    Automatically reset the update speed to 3pi * time_constant """)
+            msg.exec()
+            self.ui.liaMonitor.updateRate.setCurrentIndex(7)
+
+    def monitor_set_len(self, text):
+        status, slen = api_val.val_monitor_sample_len(text)
+        self.ui.liaMonitor.slenFill.setStyleSheet(f'border: 1px solid {ui_shared.msg_color(status)}')
+        if status:
+            self._data = np.zeros(slen)
+            self.monitor_restart()
+        else:
+            self.monitor_stop()
+
+    def monitor_daq(self):
+        """ If sampled points are less than the set length, fill up the array
+            If sampled points are more than the set length, roll the array
+            forward and fill the last array element with new data
+        """
+
+        if self._monitor_counter < len(self._data):
+            self._data[self._monitor_counter] = api_lia.query_single_x(self.handle)
+            self.ui.liaMonitor.update_plot(self._data[:self._monitor_counter])
+            self._monitor_counter += 1
+        else:
+            self._data = np.roll(self._data, len(self._data) - 1)
+            self._data[-1] = api_lia.query_single_x(self.handle)
+            self.ui.liaMonitor.update_plot(self._data)

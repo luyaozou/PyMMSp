@@ -1,5 +1,5 @@
 #! encoding = utf-8
-import pyvisa
+from dataclasses import dataclass, fields
 
 
 # internal code dictionaries
@@ -18,7 +18,17 @@ _P_UNIT_CODE = {0: 'mBar',
                 3: 'μmHg'}
 
 
-def query_p(pressureHandle, chn):
+@dataclass
+class Gauge_Info:
+    """ Pressure Gauge information """
+    inst_name: str = ''
+
+    def reset(self):
+        for field in fields(self):
+            setattr(self, field.name, field.default)
+
+
+def query_p(handle, chn):
     """ Query pressure reading.
         Arguments
             chn: channel number. Text. '1' or '2'
@@ -34,9 +44,9 @@ def query_p(pressureHandle, chn):
     """
 
     try:
-        text = pressureHandle.query('PR{:s}'.format(chn))
+        text = handle.query('PR{:s}'.format(chn))
         if text.strip() == '\x06':     # if positive acknowledgement
-            text = pressureHandle.query('\x05') # query for values
+            text = handle.query('\x05') # query for values
             status, p = text.strip().split(',')
             if status == '0':
                 msgcode = 2
@@ -51,7 +61,7 @@ def query_p(pressureHandle, chn):
         return 0, 'System Error', 0
 
 
-def set_query_p_unit(pressureHandle, unit_idx=-1):
+def set_query_p_unit(handle, unit_idx=-1):
     """ set/query current pressure unit.
         Arguments
             unit_idx: unit code, int
@@ -72,9 +82,9 @@ def set_query_p_unit(pressureHandle, unit_idx=-1):
         query_str = 'UNI,{:d}'.format(unit_idx)
 
     try:
-        text = pressureHandle.query(query_str)
+        text = handle.query(query_str)
         if text.strip() == '\x06':     # if positive acknowledgement
-            text = pressureHandle.query('\x05')
+            text = handle.query('\x05')
             return 2, _P_UNIT_CODE[int(text.strip())]
         else:
             return 0, 'Negative acknowledgement'

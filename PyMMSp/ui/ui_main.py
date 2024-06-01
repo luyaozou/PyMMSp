@@ -9,7 +9,7 @@ from PyQt6.QtCore import Qt
 
 # import instrument inst
 from PyMMSp.inst import lockin as api_lia
-from PyMMSp.inst import oscillo as api_pci
+from PyMMSp.inst import oscillo as api_oscillo
 from PyMMSp.inst import synthesizer as api_syn
 from PyMMSp.inst import validator as api_val
 # import shared ui widgets
@@ -57,6 +57,9 @@ class MainUI(QtWidgets.QWidget):
         self.viewInstDialog = ui_dialog.ViewInstDialog(self)
         self.synInfoDialog = ui_dialog.SynInfoDialog(self)
         self.liaInfoDialog = ui_dialog.LockinInfoDialog(self)
+        self.oscilloDialog = ui_dialog.OscilloscopeDialog(self)
+        self.closeSelInstDialog = ui_dialog.CloseSelInstDialog(self)
+        self.gaugeDialog = ui_dialog.GaugeDialog(self)
 
 
 class SynStatus(QtWidgets.QGroupBox):
@@ -64,7 +67,7 @@ class SynStatus(QtWidgets.QGroupBox):
         Synthesizer status display
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         super().__init__(parent)
 
         self.setTitle('Synthesizer Status')
@@ -164,9 +167,8 @@ class LiaStatus(QtWidgets.QGroupBox):
         Lockin status display
     """
 
-    def __init__(self, parent):
-        QtWidgets.QWidget.__init__(self, parent)
-        self.parent = parent
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         self.setTitle('Lockin Status')
         self.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
@@ -244,9 +246,8 @@ class ScopeStatus(QtWidgets.QGroupBox):
         Oscilloscope (PCI card) status display
     """
 
-    def __init__(self, parent):
-        QtWidgets.QWidget.__init__(self, parent)
-        self.parent = parent
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         self.setTitle('Oscilloscope Status')
         self.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
@@ -267,34 +268,8 @@ class ScopeStatus(QtWidgets.QGroupBox):
         mainLayout.addWidget(self.addressText, 1, 1)
         self.setLayout(mainLayout)
 
-        ## -- Trigger status updates
-        self.refreshButton.clicked.connect(self.manual_refresh)
-        # initial status
-        self.print_info()
-
-        # Trigger groupbox check_state
-        self.clicked.connect(self.check)
-
-    def check(self):
-        """ Enable/disable this groupbox """
-
-        if self.parent.testModeAction.isChecked() or self.parent.oscillo_handle:
-            self.setChecked(True)
-        else:
-            msg = ui_shared.MsgError(self, 'No Instrument!', 'No PCI card is connected!')
-            msg.exec()
-            self.setChecked(False)
-
-    def print_info(self):
-        self.addressText.setText(self.parent.scopeInfo.instName)
-
-    def manual_refresh(self):
-        """ refresh instrument information """
-
-        if self.parent.oscillo_handle:
-            self.addressText.setText(self.parent.oscillo_handle.resource_name)
-        else:
-            self.addressText.setText('N.A.')
+    def print_info(self, info):
+        self.addressText.setText(info.inst_name)
 
 
 class SynPanel(QtWidgets.QGroupBox):
@@ -302,9 +277,8 @@ class SynPanel(QtWidgets.QGroupBox):
         Synthesizer control panel
     """
 
-    def __init__(self, parent):
-        QtWidgets.QWidget.__init__(self, parent)
-        self.parent = parent
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         self.setTitle('Synthesizer Control')
         self.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)  # align left
@@ -315,7 +289,8 @@ class SynPanel(QtWidgets.QGroupBox):
         self.synFreqLabel = QtWidgets.QLabel('{:.9f}'.format(30000))
         self.probFreqFill = QtWidgets.QLineEdit()
         self.probFreqFill.setText('180000')
-        self.bandSel = ui_shared.VDIBandComboBox()
+        self.bandSel = QtWidgets.QComboBox()
+        self.bandSel.addItems(list(txt for txt in api_syn.yield_band_str()))
 
         ## -- Set up synthesizer control layout --
         synLayout = QtWidgets.QGridLayout()
@@ -427,8 +402,10 @@ class LockinPanel(QtWidgets.QGroupBox):
         self.harmSel.addItems(['1', '2', '3', '4'])
         self.harmSel.setCurrentIndex(0)
         self.phaseFill = QtWidgets.QLineEdit('0')
-        self.sensSel = ui_shared.LIASensBox()
-        self.tcSel = ui_shared.LIATCBox()
+        self.sensSel = QtWidgets.QComboBox()
+        self.sensSel.addItems(api_lia.SENS_STR)
+        self.tauSel = QtWidgets.QComboBox()
+        self.tauSel.addItems(api_lia.TAU_STR)
         self.coupleSel = QtWidgets.QComboBox()
         self.coupleSel.addItems(list(api_lia.COUPLE))
         self.coupleSel.setCurrentIndex(1)
@@ -454,7 +431,7 @@ class LockinPanel(QtWidgets.QGroupBox):
         mainLayout.addWidget(QtWidgets.QLabel('Sensitivity'), 2, 0)
         mainLayout.addWidget(self.sensSel, 2, 1)
         mainLayout.addWidget(QtWidgets.QLabel('Time Const'), 3, 0)
-        mainLayout.addWidget(self.tcSel, 3, 1)
+        mainLayout.addWidget(self.tauSel, 3, 1)
         mainLayout.addWidget(QtWidgets.QLabel('Couple'), 0, 2)
         mainLayout.addWidget(self.coupleSel, 0, 3)
         mainLayout.addWidget(QtWidgets.QLabel('Reserve'), 1, 2)
@@ -470,9 +447,8 @@ class LockinPanel(QtWidgets.QGroupBox):
 
 class OscilloPanel(QtWidgets.QGroupBox):
 
-    def __init__(self, parent):
-        QtWidgets.QWidget.__init__(self, parent)
-        self.parent = parent
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         self.setTitle('Oscilloscope Control')
         self.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
@@ -482,9 +458,8 @@ class OscilloPanel(QtWidgets.QGroupBox):
         ## -- Define layout elements --
         self.srateFill = QtWidgets.QLineEdit()
         self.slenFill = QtWidgets.QLineEdit()
-        sensSel = QtWidgets.QComboBox()
-        sensList = ['20 V', '5 V', '1 V', '0.5 V', '0.2 V']
-        sensSel.addItems(sensList)
+        self.sensSel = QtWidgets.QComboBox()
+        self.sensSel.addItems(list(api_oscillo.SENS_STR))
         self.avgFill = QtWidgets.QLineEdit()
 
         ## -- Set up main layout --
@@ -492,85 +467,34 @@ class OscilloPanel(QtWidgets.QGroupBox):
         mainLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         mainLayout.addRow(QtWidgets.QLabel('Sample Rate (MHz)'), self.srateFill)
         mainLayout.addRow(QtWidgets.QLabel('Sample Length'), self.slenFill)
-        mainLayout.addRow(QtWidgets.QLabel('Sensitivity'), sensSel)
+        mainLayout.addRow(QtWidgets.QLabel('Sensitivity'), self.sensSel)
         mainLayout.addRow(QtWidgets.QLabel('Oscilloscope Average'), self.avgFill)
         self.setLayout(mainLayout)
 
-        ## -- Trigger setting status and communication
-        self.srateFill.textChanged.connect(self.rateComm)
-        self.slenFill.textChanged.connect(self.lenComm)
-        sensSel.currentIndexChanged.connect(self.tune_sensitivity)
-        self.avgFill.textChanged.connect(self.avgComm)
-        self.clicked.connect(self.check)
-
-    def check(self):
-        """ Enable/disable this groupbox """
-        if (self.parent.testModeAction.isChecked() or self.parent.oscillo_handle):
-            self.setChecked(True)
-        else:
-            msg = ui_shared.MsgError(self, 'No Instrument!', 'No oscilloscope is connected!')
-            msg.exec()
-            self.setChecked(False)
-
-    def rateComm(self, rate_text):
-
-        status = api_pci.set_sampling_rate(rate_text)
-        self.srateFill.setStyleSheet('border: 1px solid {:s}'.format(ui_shared.msgcolor(status)))
-
-    def lenComm(self, len_text):
-
-        status = api_pci.set_sampling_len(len_text)
-        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(ui_shared.msgcolor(status)))
-
-    def tune_sensitivity(self, sens_index):
-
-        status = api_pci.set_sens(sens_index)
-
-    def avgComm(self, avg_text):
-
-        status = api_pci.set_osc_avg(avg_text)
-        self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(ui_shared.msgcolor(status)))
+    def print_info(self, info):
+        pass
 
 
 class MotorPanel(QtWidgets.QGroupBox):
 
-    def __init__(self, parent):
-        QtWidgets.QWidget.__init__(self, parent)
-        self.parent = parent
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         self.setTitle('Cavity Control')
         self.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
         self.setCheckable(True)
         self.setChecked(False)
 
-        tuneButton = QtWidgets.QPushButton('Tune Cavity')
+        self.tuneButton = QtWidgets.QPushButton('Tune Cavity')
         mainLayout = QtWidgets.QHBoxLayout()
-        mainLayout.addWidget(tuneButton)
+        mainLayout.addWidget(self.tuneButton)
         self.setLayout(mainLayout)
-
-        ## -- Trigger settings and motor communication
-        tuneButton.clicked.connect(self.tune_cavity)
-        self.clicked.connect(self.check)
-
-    def check(self):
-        """ Enable/disable this groupbox """
-        if (self.parent.testModeAction.isChecked() or self.parent.motor_handle):
-            self.setChecked(True)
-        else:
-            msg = ui_shared.MsgError(self, 'No Instrument!', 'No oscilloscope is connected!')
-            msg.exec()
-            self.setChecked(False)
-
-    def tune_cavity(self):
-
-        status = api_motor.move(self.parent.motor_handle, 1)
 
 
 class ScopeMonitor(QtWidgets.QWidget):
 
-    def __init__(self, parent):
-        QtWidgets.QWidget.__init__(self, parent)
-        self.parent = parent
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         self.pgPlot = pg.PlotWidget(title='Oscilloscope Monitor')
         mainLayout = QtWidgets.QGridLayout()
@@ -584,15 +508,13 @@ class ScopeMonitor(QtWidgets.QWidget):
 
 class LockinMonitor(QtWidgets.QWidget):
 
-    def __init__(self, parent):
-        QtWidgets.QWidget.__init__(self, parent)
-        self.parent = parent
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self.counter = 0  # data points counter
 
         self.slenFill = QtWidgets.QLineEdit()
         self.slenFill.setText('100')
-        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(ui_shared.msgcolor(2)))
-        self.data = np.zeros(100)
+        self.slenFill.setStyleSheet(f'border: 1px solid {ui_shared.msg_color(2)}')
         self.yMaxSel = QtWidgets.QComboBox()
         self.yMaxSel.addItems(['1 V', '100 mV', '10 mV', '1 mV', '100 uV', '10 uV', '1 uV', '100 nV', '10 nV'])
         self.updateRate = QtWidgets.QComboBox()
@@ -619,96 +541,23 @@ class LockinMonitor(QtWidgets.QWidget):
         self.pgPlot = pg.PlotWidget(title='Lockin Monitor')
         self.pgPlot.setLabel('left', text='Lockin Signal', units='V')
         self.pgPlot.setYRange(0, 1)
-        self.curve = self.pgPlot.plot(self.data)
+        self.curve = pg.PlotCurveItem()
+        self.pgPlot.addItem(self.curve)
         mainLayout = QtWidgets.QVBoxLayout()
         mainLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         mainLayout.addWidget(self.pgPlot)
         mainLayout.addWidget(settingPanel)
         self.setLayout(mainLayout)
 
-        # set up timer
-        self.timer = QtCore.QTimer()
-        self.set_waittime()
-
         # trigger settings
         self.yMaxSel.currentIndexChanged.connect(self.rescale)
-        self.slenFill.textChanged.connect(self.set_len)
-        self.startButton.clicked.connect(self.start)
-        self.restartButton.clicked.connect(self.restart)
-        self.stopButton.clicked.connect(self.stop)
-        self.updateRate.currentIndexChanged.connect(self.set_waittime)
-        self.timer.timeout.connect(self.update_plot)
 
     def rescale(self, idx):
 
         self.pgPlot.setYRange(0, 10 ** (-idx))
 
-    def start(self, btn_pressed):
-
-        if btn_pressed:
-            self.startButton.setText('Pause')
-            self.timer.start()
-        else:
-            self.startButton.setText('Continue')
-            self.timer.stop()
-
-    def restart(self):
-
-        self.counter = 0  # reset counter
-        self.startButton.setChecked(True)  # retrigger start button
-        self.startButton.setText('Pause')
-        self.timer.start()
-
-    def stop(self):
-
-        self.timer.stop()
-        self.counter = 0
-        self.startButton.setChecked(False)  # reset start button
-        self.startButton.setText('Start')
-
-    def set_len(self, text):
-        status, slen = api_val.val_monitor_sample_len(text)
-        self.slenFill.setStyleSheet('border: 1px solid {:s}'.format(ui_shared.msgcolor(status)))
-        if status:
-            self.data = np.zeros(slen)
-            self.restart()
-        else:
-            self.stop()
-
-    def set_waittime(self):
-        """ Set wait time according to self.updateRate """
-
-        status, waittime = api_val.val_lia_monitor_srate(self.updateRate.currentIndex(), info.tcIndex)
-        self.timer.setInterval(int(waittime))
-        self.updateRate.setStyleSheet('border: 1px solid {:s}'.format(ui_shared.msgcolor(status)))
-        if status:
-            pass
-        else:
-            msg = ui_shared.MsgWarning(self, 'Update speed warning!',
-                                       """The picked update speed is faster than the lockin time constant.
-                                    Automatically reset the update speed to 3pi * time_constant """)
-            msg.exec()
-            self.updateRate.setCurrentIndex(7)
-
-    def daq(self):
-        """ If sampled points are less than the set length, fill up the array
-            If sampled points are more than the set length, roll the array
-            forward and fill the last array element with new data
-        """
-
-        if self.counter < len(self.data):
-            self.data[self.counter] = api_lia.query_single_x(self.parent.liaHandle)
-            self.counter += 1
-        else:
-            self.data = np.roll(self.data, len(self.data) - 1)
-            self.data[-1] = api_lia.query_single_x(self.parent.liaHandle)
-
-    def update_plot(self):
-        self.daq()
-        if self.counter < len(self.data):
-            self.curve.setData(self.data[0:self.counter])
-        else:
-            self.curve.setData(self.data)
+    def update_plot(self, data):
+        self.curve.setData(data)
 
 
 class SpectrumMonitor(QtWidgets.QWidget):

@@ -1,15 +1,14 @@
 #! encoding = utf-8
 from dataclasses import dataclass, fields
 
-
 _WAVE_STR = ('SINE', 'SQU', 'TRI', 'RAMP')
 
 # LOCKIN AMPLIFIER SENSTIVITY LIST
-_SENS_STR = ('2 nV', '5 nV', '10 nV', '20 nV', '50 nV', '100 nV',
-                   '200 nV', '500 nV', '1 μV', '2 μV', '5 μV', '10 μV',
-                   '20 μV', '50 μV', '100 μV', '200 μV', '500 μV', '1 mV',
-                   '2 mV', '5 mV', '10 mV', '20 mV', '50 mV', '100 mV',
-                   '200 mV', '500 mV', '1 V')
+SENS_STR = ('2 nV', '5 nV', '10 nV', '20 nV', '50 nV', '100 nV',
+            '200 nV', '500 nV', '1 μV', '2 μV', '5 μV', '10 μV',
+            '20 μV', '50 μV', '100 μV', '200 μV', '500 μV', '1 mV',
+            '2 mV', '5 mV', '10 mV', '20 mV', '50 mV', '100 mV',
+            '200 mV', '500 mV', '1 V')
 
 # LOCKIN AMPLIFIER SENSTIVITY LIST (IN VOLTS)
 _SENS_VAL = (2e-9, 5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7,
@@ -18,11 +17,11 @@ _SENS_VAL = (2e-9, 5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7,
              )
 
 # LOCKIN AMPLIFIER TIME CONSTANT LIST
-_TAU_STR = ('10 μs', '30 μs', '100 μs', '300 μs', '1 ms', '3 ms', '10 ms',
-            '30 ms', '100 ms', '300 ms', '1 s', '3 s', '10 s', '30 s')
+TAU_STR = ('10 μs', '30 μs', '100 μs', '300 μs', '1 ms', '3 ms', '10 ms',
+           '30 ms', '100 ms', '300 ms', '1 s', '3 s', '10 s', '30 s')
 
 # LOCKIN AMPLIFIER TIME CONSTANT LIST (IN MILLISECONDS)
-_TAU_VAL = (1e-2, 3e-2, 1e-1, 3e-1, 1, 3, 10, 30, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4)
+TAU_VAL = (1e-2, 3e-2, 1e-1, 3e-1, 1, 3, 10, 30, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4)
 
 # LOCKIN COUPLE LIST
 COUPLE = ('AC', 'DC')
@@ -47,8 +46,8 @@ OCTAVE = ('6 dB/oct', '12 dB/oct', '18 dB/oct', '24 dB/oct')
 
 # LOCKIN SAMPLE RATE LIST
 SAMPLE_RATE = ('1/16 Hz', '1/8 Hz', '1/4 Hz', '1/2 Hz', '1 Hz',
-                '2 Hz', '4 Hz', '8 Hz', '16 Hz', '32 Hz', '64 Hz',
-                '128 Hz', '256 Hz', '512 Hz', 'Trigger')
+               '2 Hz', '4 Hz', '8 Hz', '16 Hz', '32 Hz', '64 Hz',
+               '128 Hz', '256 Hz', '512 Hz', 'Trigger')
 
 MODU_MODE = ('NONE', 'AM', 'FM')
 
@@ -91,7 +90,7 @@ class Lockin_Info:
 
     @property
     def sens_txt(self):
-        return _SENS_STR[self.sens_idx]
+        return SENS_STR[self.sens_idx]
 
     @property
     def sens_val(self):
@@ -99,11 +98,11 @@ class Lockin_Info:
 
     @property
     def tau_val(self):
-        return _TAU_VAL[self.tau_idx]
+        return TAU_VAL[self.tau_idx]
 
     @property
     def tau_txt(self):
-        return _TAU_STR[self.tau_idx]
+        return TAU_STR[self.tau_idx]
 
     @property
     def reserve_txt(self):
@@ -139,7 +138,7 @@ def init_lia(handle):
         Returns visaCode
     """
 
-    num, vcode = handle.write('OUTX1')      # GPIB output
+    num, vcode = handle.write('OUTX1')  # GPIB output
     num, vcode = handle.write('FMOD0;ISRC0;ICPL1;IGND1;HARM1;DDEF1,0,0;DDEF2,1,0;FPOP1,1')
 
     return vcode
@@ -171,8 +170,6 @@ def query_inst_name(handle):
 
 
 def query_err_msg(handle):
-
-
     try:
         text = handle.query('ERRS?')
     except:
@@ -366,7 +363,7 @@ def read_reserve(handle):
         text = handle.query('RMOD?')
         return int(text.strip())
     except:
-        return 1    # default is normal
+        return 1  # default is normal
 
 
 def set_reserve(handle, reserve_index):
@@ -428,7 +425,7 @@ def read_input_grounding(handle):
         text = handle.query('IGND?')
         return int(text.strip())
     except:
-        return 1    # default is gound
+        return 1  # default is gound
 
 
 def set_input_grounding(handle, gnd_index):
@@ -487,8 +484,8 @@ def read_disp(handle):
             text1, text2: str, for CH1 & CH2
     """
 
-    a_dict = {0:'X', 1:'R', 2:'X Noise', 3:'Aux In 1', 4:'Aux In 2'}
-    b_dict = {0:'Y', 1:'θ', 2:'Y Noise', 3:'Aux In 3', 4:'Aux In 4'}
+    a_dict = {0: 'X', 1: 'R', 2: 'X Noise', 3: 'Aux In 1', 4: 'Aux In 2'}
+    b_dict = {0: 'Y', 1: 'θ', 2: 'Y Noise', 3: 'Aux In 3', 4: 'Aux In 4'}
 
     try:
         text = handle.query('DDEF?1')
@@ -521,8 +518,8 @@ def read_front_panel(handle):
             text1, text2: str
     """
 
-    a_dict = {(1, 0):'CH1 Display', (1, 1):'X',
-              (2, 0):'CH2 Display', (2, 1):'Y'}
+    a_dict = {(1, 0): 'CH1 Display', (1, 1): 'X',
+              (2, 0): 'CH2 Display', (2, 1): 'Y'}
     try:
         text = handle.query('FPOP?1')
         code = (1, int(text.strip()))
@@ -546,7 +543,7 @@ def read_output_interface(handle):
             text: str
     """
 
-    a_dict = {0:'RS232', '1':'GPIB'}
+    a_dict = {0: 'RS232', '1': 'GPIB'}
 
     try:
         text = handle.query('OUTX?')
@@ -593,11 +590,11 @@ def full_info_query_(info, handle):
         info.input_filter_idx = read_input_filter(handle)
         info.input_filter_txt = _FILTER[info.input_filter_idx]
         info.sens_idx = read_sens(handle)
-        info.sens_txt = _SENS_STR[info.sens_idx]
+        info.sens_txt = SENS_STR[info.sens_idx]
         info.sens_val = _SENS_VAL[info.sens_idx]
         info.tau_idx = read_tc(handle)
-        info.tau_txt = _TAU_STR[info.tau_idx]
-        info.tau_val = _TAU_VAL[info.tau_idx]
+        info.tau_txt = TAU_STR[info.tau_idx]
+        info.tau_val = TAU_VAL[info.tau_idx]
         info.reserve_idx = read_reserve(handle)
         info.reserve_txt = _RESERVE[info.reserve_idx]
         info.octave_idx = read_lp_slope(handle)

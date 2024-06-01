@@ -7,6 +7,8 @@
 from math import pi
 import operator
 from pyqtgraph import siEval
+from PyMMSp.inst import synthesizer as api_syn
+from PyMMSp.inst import lockin as api_lia
 
 
 def _compare(num1, op, num2):
@@ -182,8 +184,8 @@ def val_prob_freq(probf_text, band_index):
     try:
         probf = float(probf_text)
         syn_freq = calc_syn_freq(probf, band_index)
-        safe_range = VDIBANDRANGE[band_index]
-        if syn_freq > 20000 and syn_freq < 50000:
+        safe_range = api_syn.VDI_BAND_RANGE[band_index]
+        if 20000 < syn_freq < 50000:
             # prob freq in safe_range
             if (probf > safe_range[0]*1e3) and (probf < safe_range[1]*1e3):
                 return 2, syn_freq * 1e6
@@ -290,20 +292,20 @@ def val_lia_monitor_srate(srate_index, tc_index):
         Warning range: > 2pi*tc + 10
     """
 
-    tc = LIATCLIST[tc_index]
+    tc = api_lia.TAU_VAL[tc_index]
     if srate_index < 7: # the last index is auto
-        waittime_list = [100, 200, 500, 1000, 2000, 5000, 10000]    # milliseconds
-        waittime = waittime_list[srate_index]
-        code, waittime = val_float(waittime, safe=[('>', tc*3*pi + 10)],
-                                   warning=[('>', tc*2*pi + 10)])
+        wait_time_list = [100, 200, 500, 1000, 2000, 5000, 10000]    # milliseconds
+        wait_time = wait_time_list[srate_index]
+        code, wait_time = val_float(wait_time, safe=[('>', tc*3*pi + 10)],
+                                    warning=[('>', tc*2*pi + 10)])
     else:
         code = 2
-        waittime = tc*3*pi if tc*3*pi>20 else 20
+        wait_time = tc*3*pi if tc*3*pi > 20 else 20
 
-    return code, waittime
+    return code, wait_time
 
 
-def val_lia_waittime(text, tc_index):
+def val_lia_wait_time(text, tau_idx):
     """ Validate the wait time setting for lockin scans. The wait
         time must be longer than 2pi*time_const. Best > 3pi*time_const
         Arguments
@@ -313,7 +315,7 @@ def val_lia_waittime(text, tc_index):
         Warning range: > 2pi*tc + 10
     """
 
-    time_const = LIATCLIST[tc_index]
-    code, waittime = val_float(text, safe=[('>', time_const*3*pi + 10)],
-                                 warning=[('>', time_const*2*pi + 10)])
-    return code, waittime
+    time_const = api_lia.TAU_VAL[tau_idx]
+    code, wait_time = val_float(text, safe=[('>', time_const*3*pi + 10)],
+                                warning=[('>', time_const*2*pi + 10)])
+    return code, wait_time

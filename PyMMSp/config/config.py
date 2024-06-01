@@ -4,7 +4,6 @@
 
 import json
 from dataclasses import dataclass
-from os.path import join as path_join
 from PyMMSp.libs.consts import VERSION
 
 
@@ -65,7 +64,7 @@ class Prefs:
 
     debug: bool = False
     version: str = VERSION
-    geometry: tuple = (0, 0, 1600, 900)
+    geometry: tuple = (100, 100, 1600, 900)
     is_test: bool = False
 
 

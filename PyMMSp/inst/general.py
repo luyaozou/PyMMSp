@@ -3,6 +3,7 @@
 import pyvisa
 import os.path
 
+
 def list_inst():
     """
         List current available instruments.

@@ -116,7 +116,7 @@ class CtrlSyn(QtWidgets.QWidget):
         status, synfreq = api_val.val_prob_freq(self.ui.synPanel.probFreqFill.text(),
                                                 self.ui.synPanel.bandSel.currentIndex())
         # set sheet border color by syn_stat
-        self.ui.synPanel.probFreqFill.setStyleSheet(f'border: 1px solid {ui_shared.msgcolor(status)}')
+        self.ui.synPanel.probFreqFill.setStyleSheet(f'border: 1px solid {ui_shared.msg_color(status)}')
 
         if status:  # if status is not fatal
             if self.prefs.is_test:
@@ -207,7 +207,7 @@ class CtrlSyn(QtWidgets.QWidget):
         # convert input and set sheet border color by status
         freq_status, modu_freq = api_val.val_syn_mod_freq(self.ui.synPanel.modFreqFill.text(),
                                                          self.ui.synPanel.modFreqUnitSel.currentText())
-        self.ui.synPanel.modFreqFill.setStyleSheet(f'border: 1px solid {ui_shared.msgcolor(freq_status)}')
+        self.ui.synPanel.modFreqFill.setStyleSheet(f'border: 1px solid {ui_shared.msg_color(freq_status)}')
 
         if modu_idx == 1:  # AM
             depth_status, modu_amp = api_val.val_syn_am_amp(self.ui.synPanel.modAmpFill.text(),
@@ -218,7 +218,7 @@ class CtrlSyn(QtWidgets.QWidget):
         else:
             depth_status = 2
             modu_amp = 0
-        self.ui.synPanel.modAmpFill.setStyleSheet(f'border: 1px solid {ui_shared.msgcolor(depth_status)}')
+        self.ui.synPanel.modAmpFill.setStyleSheet(f'border: 1px solid {ui_shared.msg_color(depth_status)}')
 
         if freq_status and depth_status and (not self.prefs.is_test):
             if modu_idx == 1:  # AM
@@ -300,7 +300,7 @@ class CtrlSyn(QtWidgets.QWidget):
         """
 
         status, lf_vol = api_val.val_syn_lf_vol(vol_txt)
-        self.ui.synPanel.lfVolFill.setStyleSheet(f'border: 1px solid {ui_shared.msgcolor(status)}')
+        self.ui.synPanel.lfVolFill.setStyleSheet(f'border: 1px solid {ui_shared.msg_color(status)}')
 
         if status:
             if self.prefs.is_test:
@@ -340,7 +340,7 @@ class CtrlSynPower(QtWidgets.QWidget):
 
         self.ui.synPanel.synPowerManualInput.clicked.connect(self.syn_rf_power_manual)
         self.ui.synPanel.synPowerSwitchBtn.clicked.connect(self.syn_rf_power_auto)
-        self.ui.synPanel.powerSwitchTimer.timeout.connect(self.syn_rf_power_manual)
+        self.powerSwitchTimer.timeout.connect(self.syn_rf_power_manual)
 
     def ramp_syn_rf_power(self):
         """

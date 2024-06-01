@@ -4,7 +4,7 @@
 
 from PyQt6 import QtGui, QtCore, QtWidgets
 from PyMMSp.inst import general as api_gen
-from PyMMSp.data import lwaparser
+from PyMMSp.libs import lwa
 from PyMMSp.ui import ui_shared
 from pyqtgraph import siFormat
 import pyqtgraph as pg
@@ -119,12 +119,12 @@ class ViewInstDialog(QtWidgets.QDialog):
         self.setWindowTitle('View Instrument Status')
 
 
-class ViewPG(QtWidgets.QDialog):
+class OscilloscopeDialog(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setWindowTitle('ViewPG PCI')
+        self.setWindowTitle('View Oscilloscope')
 
 
 class CloseSelInstDialog(QtWidgets.QDialog):
@@ -145,37 +145,11 @@ class CloseSelInstDialog(QtWidgets.QDialog):
 
         instLayout = QtWidgets.QFormLayout()
         instLayout.addRow(QtWidgets.QLabel('Instrument'), QtWidgets.QLabel('Status'))
-        # only list currently connected instruments
-        if self.parent.synHandle:
-            self.synToggle.setCheckState(QtCore.Qt.CheckState.Checked)
-            instLayout.addRow(QtWidgets.QLabel('Synthesizer'), self.synToggle)
-        else:
-            self.synToggle.setCheckState(QtCore.Qt.CheckState.Unchecked)
-
-        if self.parent.liaHandle:
-            self.liaToggle.setCheckState(QtCore.Qt.CheckState.Checked)
-            instLayout.addRow(QtWidgets.QLabel('Lockin'), self.liaToggle)
-        else:
-            self.liaToggle.setCheckState(QtCore.Qt.CheckState.Unchecked)
-
-        if self.parent.pciHandle:
-            self.pciToggle.setCheckState(QtCore.Qt.CheckState.Checked)
-            instLayout.addRow(QtWidgets.QLabel('Oscilloscope'), self.pciToggle)
-        else:
-            self.pciToggle.setCheckState(QtCore.Qt.CheckState.Unchecked)
-
-        if self.parent.motorHandle:
-            self.motorToggle.setCheckState(QtCore.Qt.CheckState.Checked)
-            instLayout.addRow(QtWidgets.QLabel('Motor'), self.motorToggle)
-        else:
-            self.motorToggle.setCheckState(QtCore.Qt.CheckState.Unchecked)
-
-        if self.parent.pressureHandle:
-            self.pressureToggle.setCheckState(QtCore.Qt.CheckState.Checked)
-            instLayout.addRow(QtWidgets.QLabel('Pressure Readout'), self.pressureToggle)
-        else:
-            self.pressureToggle.setCheckState(QtCore.Qt.CheckState.Unchecked)
-
+        instLayout.addRow(QtWidgets.QLabel('Synthesizer'), self.synToggle)
+        instLayout.addRow(QtWidgets.QLabel('Lockin'), self.liaToggle)
+        instLayout.addRow(QtWidgets.QLabel('Oscilloscope'), self.pciToggle)
+        instLayout.addRow(QtWidgets.QLabel('Motor'), self.motorToggle)
+        instLayout.addRow(QtWidgets.QLabel('Pressure Gauge'), self.pressureToggle)
         inst.setLayout(instLayout)
 
         okButton = QtWidgets.QPushButton(ui_shared.btn_label('complete'))
@@ -186,28 +160,6 @@ class CloseSelInstDialog(QtWidgets.QDialog):
         self.setLayout(mainLayout)
 
         okButton.clicked.connect(self.accept)
-
-    def close_inst_handle(self, inst_handle, check_state):
-
-        if check_state and inst_handle:
-            api_gen.close_inst(inst_handle)
-            return None
-        else:
-            return inst_handle
-
-    def accept(self):
-
-        self.parent.synHandle = self.close_inst_handle(self.parent.synHandle,
-                                                       self.synToggle.isChecked())
-        self.parent.liaHandle = self.close_inst_handle(self.parent.liaHandle,
-                                                       self.liaToggle.isChecked())
-        self.parent.pciHandle = self.close_inst_handle(self.parent.pciHandle,
-                                                       self.pciToggle.isChecked())
-        self.parent.motorHandle = self.close_inst_handle(self.parent.motorHandle,
-                                                         self.motorToggle.isChecked())
-        self.parent.pressureHandle = self.close_inst_handle(self.parent.pressureHandle,
-                                                            self.pressureToggle.isChecked())
-        self.close()
 
 
 class SynInfoDialog(QtWidgets.QDialog):
@@ -567,7 +519,7 @@ class LWAParserDialog(QtWidgets.QDialog):
         self.mainLayout.addWidget(QtWidgets.QLabel('Source file: {:s}'.format(filename)))
 
         # read lwa batch scan entry from file
-        self.entry_settings, self.hd_line_num = lwaparser.scan_header(filename)
+        self.entry_settings, self.hd_line_num = lwa.scan_header(filename)
 
         if self.entry_settings:
             # set top buttons
@@ -762,3 +714,110 @@ class PrevSpectrumDialog(QtWidgets.QDialog):
     def setData(self, data):
         self._data = data
         self.curve.setData(self._data[:,0], self._data[:,1])
+
+
+class GaugeDialog(QtWidgets.QDialog):
+    """
+        Pressure reader window
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle('CENTER TWO pressure reader')
+        self.setMinimumSize(900, 600)
+        self.setModal(False)
+
+        # add left column widigets
+        # this is a monitor panel for realtime readings
+        rtMonitor = QtWidgets.QGroupBox(self)
+        rtMonitor.setTitle('Readtime Monitor')
+        self.currentP = QtWidgets.QLabel()
+        self.currentUnit = QtWidgets.QLabel()
+        self.currentChannel = QtWidgets.QLabel('1')
+        self.currentStatus = QtWidgets.QLabel()
+        monitorLayout = QtWidgets.QGridLayout()
+        monitorLayout.addWidget(QtWidgets.QLabel('Channel'), 0, 0)
+        monitorLayout.addWidget(QtWidgets.QLabel('Status'), 0, 1)
+        monitorLayout.addWidget(QtWidgets.QLabel('Pressure'), 2, 0)
+        monitorLayout.addWidget(QtWidgets.QLabel('Unit'), 2, 1)
+        monitorLayout.addWidget(self.currentChannel, 1, 0)
+        monitorLayout.addWidget(self.currentStatus, 1, 1)
+        monitorLayout.addWidget(self.currentP, 3, 0)
+        monitorLayout.addWidget(self.currentUnit, 3, 1)
+        rtMonitor.setLayout(monitorLayout)
+
+        # this is a mini control panel for the readout
+        rdCtrl = QtWidgets.QGroupBox(self)
+        rdCtrl.setTitle('Readout Control')
+        self.channelSel = QtWidgets.QComboBox()
+        self.channelSel.addItems(['1', '2'])
+        self.current_chn_index = 0
+        self.pUnitSel = QtWidgets.QComboBox()
+        self.pUnitSel.addItems(['mBar', 'Torr', 'Pascal', 'μmHg'])
+        self.pUnitSel.setCurrentIndex(1)    # default unit Torr
+        self.currentUnit.setText('Torr')    # default unit Torr
+        self.current_p_unit_index = 1       # store this for unit protection
+        rdCtrlLayout = QtWidgets.QFormLayout()
+        rdCtrlLayout.addRow(QtWidgets.QLabel('Select Channel'), self.channelSel)
+        rdCtrlLayout.addRow(QtWidgets.QLabel('Select Pressure Unit'), self.pUnitSel)
+        rdCtrl.setLayout(rdCtrlLayout)
+
+        # this is to select the data update rate, cannot be quicker than /0.1 s
+        rateSelect = QtWidgets.QWidget()
+        self.updateRate = QtWidgets.QLineEdit()
+        self.updateRate.setText('1')
+        self.updateRateUnitSel = QtWidgets.QComboBox()
+        self.updateRateUnitSel.addItems(['sec', 'min', 'h'])
+        self.updateRateUnitSel.setCurrentIndex(0)
+        self.current_update_unit_index = 0      # store this for unit protection
+        rateSelectLayout = QtWidgets.QHBoxLayout(self)
+        rateSelectLayout.addWidget(QtWidgets.QLabel('Update Rate'))
+        rateSelectLayout.addWidget(self.updateRate)
+        rateSelectLayout.addWidget(QtWidgets.QLabel(' per '))
+        rateSelectLayout.addWidget(self.updateRateUnitSel)
+        rateSelect.setLayout(rateSelectLayout)
+
+        # putting stuff together in the left column
+        leftColumnLayout = QtWidgets.QVBoxLayout(self)
+        leftColumnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        leftColumnLayout.addWidget(rtMonitor)
+        leftColumnLayout.addWidget(rdCtrl)
+        leftColumnLayout.addWidget(rateSelect)
+
+        # add right colun widgets
+        self.startButton = QtWidgets.QPushButton('(Re)Start')
+        self.stopButton = QtWidgets.QPushButton('Stop')
+        self.saveButton = QtWidgets.QPushButton('Save')
+        self.savepButton = QtWidgets.QPushButton('Save and Continue')
+        panelLayout = QtWidgets.QHBoxLayout()
+        panelLayout.addWidget(self.startButton)
+        panelLayout.addWidget(self.stopButton)
+        panelLayout.addWidget(self.saveButton)
+        panelLayout.addWidget(self.savepButton)
+
+        # initiate pyqtgraph widget
+        self.pgPlot = pg.PlotWidget(title='Pressure Monitor')
+        self.pgPlot.setLabel('left', text='Pressure', units='Torr')
+        self.pgPlot.setLabel('bottom', text='Time', units='sec')
+        self.pgPlot.setLogMode(x=None, y=True)
+        self.pgPlot.showGrid(x=True, y=True, alpha=0.5)
+        self.curve = pg.PlotCurveItem()
+        self.pgPlot.addItem(self.curve)
+        rightColumnLayout = QtWidgets.QVBoxLayout()
+        rightColumnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        rightColumnLayout.addWidget(self.pgPlot)
+        rightColumnLayout.addLayout(panelLayout)
+
+        # Set up main layout
+        mainLayout = QtWidgets.QHBoxLayout(self)
+        mainLayout.setSpacing(0)
+        mainLayout.addLayout(leftColumnLayout)
+        mainLayout.addLayout(rightColumnLayout)
+        self.setLayout(mainLayout)
+
+    def set_label(self, axis, name, unit):
+        self.pgPlot.setLabel(axis, text=name, units=unit)
+
+    def plot(self, data):
+        self.curve.setData(data)

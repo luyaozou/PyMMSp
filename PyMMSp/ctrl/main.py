@@ -4,19 +4,25 @@
 import datetime
 from os.path import isfile
 
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt
 from PyMMSp.ui import ui_main
 from PyMMSp.ui import ui_dialog
 from PyMMSp.ui import ui_menu
 from PyMMSp.ui import ui_shared
-from PyMMSp.daq import ScanLockin, PresReader
+from PyMMSp.daq import JPLScan
 from PyMMSp.inst import lockin as api_lia
 from PyMMSp.inst import general as api_gen
 from PyMMSp.inst import synthesizer as api_syn
 from PyMMSp.inst import oscillo as api_oscillo
-from PyMMSp.ctrl import ctrl_syn
-from PyMMSp.ctrl import ctrl_lockin
+from PyMMSp.inst import motor as api_motor
+from PyMMSp.inst import gauge as api_gauge
+from PyMMSp.ctrl import (ctrl_syn,
+                         ctrl_lockin,
+                         ctrl_oscillo,
+                         ctrl_motor,
+                         ctrl_gauge,
+                         )
 from PyMMSp.config import config
 from PyMMSp.libs.util import abs_path
 
@@ -32,13 +38,29 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setMinimumWidth(1500)
         self.setMinimumHeight(840)
         self.prefs = config.Prefs()
+        # set default geometry
+        screen = QtWidgets.QApplication.primaryScreen()
+        screen_geometry = screen.geometry()
+        # Check screen resolution
+        if screen_geometry.width() > 1600 and screen_geometry.height() > 900:
+            # Set window size to 1600x900
+            self.setGeometry(0, 0, 1600, 900)
+        else:
+            # Set window to full screen size
+            self.setGeometry(screen_geometry)
+        # Center the window
+        qr = self.frameGeometry()
+        cp = screen_geometry.center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
+
         f = abs_path('PyMMSp.config', 'prefs.json')
         if isfile(f):
             config.from_json_(self.prefs, f)
         self.setGeometry(QtCore.QRect(*self.prefs.geometry))
 
         self.testModeSignLabel = QtWidgets.QLabel('[TEST MODE ACTIVE -- NOTHING IS REAL]!')
-        self.testModeSignLabel.setStyleSheet('color: {:s}'.format(ui_shared.msgcolor(0)))
+        self.testModeSignLabel.setStyleSheet('color: {:s}'.format(ui_shared.msg_color(0)))
         self.testModeSignLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
         # Initiate pyvisa instrument objects
@@ -55,27 +77,36 @@ class MainWindow(QtWidgets.QMainWindow):
         self.syn_info = api_syn.Syn_Info()
         self.lockin_info = api_lia.Lockin_Info()
         self.oscillo_info = api_oscillo.Oscilloscope_Info()
-
+        self.motor_info = api_motor.Motor_Info()
+        self.gauge_info = api_gauge.Gauge_Info()
 
         # Set main window widgets
         self.ui = ui_main.MainUI(self)
         self.setCentralWidget(self.ui)
 
-        self.ctrl_syn = ctrl_syn.CtrlSyn(self.prefs, self.ui, self.syn_info, self.syn_handle, parent=self)
-        self.ctrl_syn_pow = ctrl_syn.CtrlSynPower(self.prefs, self.ui, self.syn_info, self.syn_handle, parent=self)
-        self.ctrl_lockin = ctrl_lockin.CtrlLockin(self.prefs, self.ui, self.lockin_info, self.lockin_handle, parent=self)
-
+        self.ctrl_syn = ctrl_syn.CtrlSyn(
+            self.prefs, self.ui, self.syn_info, self.syn_handle, parent=self)
+        self.ctrl_syn_pow = ctrl_syn.CtrlSynPower(
+            self.prefs, self.ui, self.syn_info, self.syn_handle, parent=self)
+        self.ctrl_lockin = ctrl_lockin.CtrlLockin(
+            self.prefs, self.ui, self.lockin_info, self.lockin_handle, parent=self)
+        self.ctrl_oscillo = ctrl_oscillo.CtrlOscillo(
+            self.prefs, self.ui, self.oscillo_info, self.oscillo_handle, parent=self)
+        self.ctrl_motor = ctrl_motor.CtrlMotor(
+            self.prefs, self.ui, self.motor_info, self.motor_handle, parent=self)
+        self.ctrl_gauge = ctrl_gauge.CtrlGauge(
+            self.prefs, self.ui, self.gauge_info, self.gauge_handle, parent=self)
         self.refresh_inst()
 
         # connect menubar signals
         self.menuBar.exitAction.triggered.connect(self.on_exit)
         self.menuBar.instSelAction.triggered.connect(self.on_sel_inst)
-        self.menuBar.instStatViewAction.triggered.connect(self.on_view_inst_stat)
+        self.menuBar.instStatViewAction.triggered.connect(self.ui.viewInstDialog.show)
         self.menuBar.instCloseAction.triggered.connect(self.on_close_sel_inst)
         self.menuBar.scanJPLAction.triggered.connect(self.on_scan_jpl)
-        self.menuBar.scanPCIAction.triggered.connect(self.on_scan_pci)
+        self.menuBar.viewOscilloAction.triggered.connect(self.ui.oscilloDialog.exec)
         self.menuBar.scanCavityAction.triggered.connect(self.on_scan_cavity)
-        self.menuBar.presReaderAction.triggered.connect(self.on_pres_reader)
+        self.menuBar.gaugeAction.triggered.connect(self.ui.gaugeDialog.show)
         self.menuBar.lwaParserAction.triggered.connect(self.on_lwa_parser)
         self.menuBar.testModeAction.toggled.connect(self.refresh_inst)
 
@@ -102,16 +133,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.liaStatus.setChecked(not (self.lockin_handle is None))
             self.ui.scopeStatus.setChecked(not (self.oscillo_handle is None))
 
-        self.ui.synStatus.manual_refresh()
-        self.ui.liaStatus.manual_refresh()
-        self.ui.scopeStatus.manual_refresh()
-
-    def on_exit(self):
-        self.close()
+        self.ctrl_syn.manual_refresh()
+        self.ctrl_lockin.manual_refresh()
+        self.ctrl_oscillo.manual_refresh()
 
     def on_sel_inst(self):
-        result = self.selInstDialog.exec()
-
+        result = self.ui.selInstDialog.exec()
         if result:
             # simply uncheck main to prevent the warning dialog
             if self.syn_handle:
@@ -129,15 +156,9 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             pass
 
-    def on_view_inst_stat(self):
-
-        self.viewInstDialog.show()
-
     def on_close_sel_inst(self):
 
-        d = ui_dialog.CloseSelInstDialog(self)
-        d.exec()
-
+        self.ui.closeSelInstDialog.exec()
         # simply uncheck main to prevent the warning dialog
         self.refresh_inst()
 
@@ -148,7 +169,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # if it is test mode, or real-run mode with instrument correctly connected
         if self.menuBar.testModeAction.isChecked() or (self.syn_handle and self.lockin_handle):
-            dconfig = ScanLockin.JPLScanConfig(main=self)
+            dconfig = JPLScan.JPLScanConfig(main=self)
             entry_settings = None
             dconfig_result = dconfig.exec()
         else:
@@ -180,25 +201,17 @@ class MainWindow(QtWidgets.QMainWindow):
                 dconfig_result = dconfig.exec()
 
         if entry_settings and dconfig_result:
-            dscan = ScanLockin.JPLScanWindow(entry_settings, filename, main=self)
+            dscan = JPLScan.JPLScanWindow(entry_settings, filename, main=self)
             dscan.exec()
         else:
             pass
 
     def on_scan_pci(self):
-        d = ui_dialog.ViewPG(self)
+        d = ui_dialog.OscilloscopeDialog(self)
         d.exec()
 
     def on_scan_cavity(self):
         pass
-
-    def on_pres_reader(self):
-        # this is a modaless window, save this attribute to the main class for reuse
-        if hasattr(self, 'p_reader_win'):  # if window already activated
-            self.p_reader_win.timer.start()  # restart reading
-        else:  # initiate window instance
-            self.p_reader_win = PresReader.PresReaderWindow(main=self)
-        self.p_reader_win.show()
 
     def on_lwa_parser(self):
         """ Launch lwa parser dialog window """
@@ -234,3 +247,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     event.ignore()
         else:
             event.ignore()
+
+    def on_exit(self):
+        self.close()
+

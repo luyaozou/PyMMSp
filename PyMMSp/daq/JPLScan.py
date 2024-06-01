@@ -3,15 +3,16 @@
 """ Lockin scanning routine in JPL style """
 
 
-from PyQt6 import QtGui, QtCore, QtWidgets
+from PyQt6 import QtCore, QtWidgets
 import numpy as np
 from math import ceil
 import pyqtgraph as pg
-from PyMMSp.ui import ui_shared as Shared
+
+from PyMMSp.ui import ui_shared
 from PyMMSp.inst import lockin as api_lia
 from PyMMSp.inst import validator as api_val
 from PyMMSp.inst import synthesizer as api_syn
-from PyMMSp.data import save
+from PyMMSp.libs import lwa
 
 
 class JPLScanConfig(QtWidgets.QDialog):
@@ -19,9 +20,8 @@ class JPLScanConfig(QtWidgets.QDialog):
         Configuration window preparing for the scan
     """
 
-    def __init__(self, main=None):
-        QtWidgets.QDialog.__init__(self, main)
-        self.main = main
+    def __init__(self, parent=None):
+        super().__init__(self, parent)
         self.setWindowTitle('Lockin scan configuration (JPL style)')
         self.setMinimumSize(1200, 600)
 
@@ -41,8 +41,8 @@ class JPLScanConfig(QtWidgets.QDialog):
         topButtons.setLayout(topButtonLayout)
 
         # Add bottom buttons
-        cancelButton = QtWidgets.QPushButton(Shared.btn_label('reject'))
-        acceptButton = QtWidgets.QPushButton(Shared.btn_label('confirm'))
+        cancelButton = QtWidgets.QPushButton(ui_shared.btn_label('reject'))
+        acceptButton = QtWidgets.QPushButton(ui_shared.btn_label('confirm'))
         acceptButton.setDefault(True)
         bottomButtonLayout = QtWidgets.QHBoxLayout()
         bottomButtonLayout.addWidget(cancelButton)
@@ -105,7 +105,7 @@ class JPLScanConfig(QtWidgets.QDialog):
                             self.main.synInfo.modAmp,
                             self.main.liaInfo.refHarm,
                             self.main.liaInfo.refPhase)
-        entry = Shared.JPLLIAScanEntry(self.main, default=default_setting)
+        entry = ui_shared.JPLLIAScanEntry(self.main, default=default_setting)
 
         # get the current last entry
         if self.entryWidgetList:
@@ -117,7 +117,7 @@ class JPLScanConfig(QtWidgets.QDialog):
             entry.stepFill.setText(last_entry.stepFill.text())
             entry.avgFill.setText(last_entry.avgFill.text())
             entry.sensSel.setCurrentIndex(last_entry.sensSel.currentIndex())
-            entry.tcSel.setCurrentIndex(last_entry.tcSel.currentIndex())
+            entry.tauSel.setCurrentIndex(last_entry.tauSel.currentIndex())
             entry.waitTimeFill.setText(last_entry.waitTimeFill.text())
             entry.modModeSel.setCurrentIndex(last_entry.modModeSel.currentIndex())
             entry.modFreqFill.setText(last_entry.modFreqFill.text())
@@ -135,7 +135,7 @@ class JPLScanConfig(QtWidgets.QDialog):
         self.entryLayout.addWidget(entry.stepFill, row, 3)
         self.entryLayout.addWidget(entry.avgFill, row, 4)
         self.entryLayout.addWidget(entry.sensSel, row, 5)
-        self.entryLayout.addWidget(entry.tcSel, row, 6)
+        self.entryLayout.addWidget(entry.tauSel, row, 6)
         self.entryLayout.addWidget(entry.waitTimeFill, row, 7)
         self.entryLayout.addWidget(entry.modModeSel, row, 8)
         self.entryLayout.addWidget(entry.modFreqFill, row, 9)
@@ -149,7 +149,7 @@ class JPLScanConfig(QtWidgets.QDialog):
 
         # if there is only one entry, skip and pop up warning
         if len(self.entryWidgetList) == 1:
-            msg = Shared.MsgWarning(self.main, 'Cannot remove batch!',
+            msg = ui_shared.MsgWarning(self.main, 'Cannot remove batch!',
                              'At least one batch entry is required!')
             msg.exec()
         else:
@@ -167,8 +167,8 @@ class JPLScanConfig(QtWidgets.QDialog):
             entry.avgFill.deleteLater()
             self.entryLayout.removeWidget(entry.sensSel)
             entry.sensSel.deleteLater()
-            self.entryLayout.removeWidget(entry.tcSel)
-            entry.tcSel.deleteLater()
+            self.entryLayout.removeWidget(entry.tauSel)
+            entry.tauSel.deleteLater()
             self.entryLayout.removeWidget(entry.waitTimeFill)
             entry.waitTimeFill.deleteLater()
             self.entryLayout.removeWidget(entry.modModeSel)
@@ -195,7 +195,7 @@ class JPLScanConfig(QtWidgets.QDialog):
             Returns a list of seting tuples in the format of
             (comment, start_freq <MHz>, stop_freq <MHz>, step <MHz>,
              averages [int], sens_index [int], timeConst [int],
-             waittime <ms>, mod Mode index [int], mod freq <Hz>, mod Amp [float], harmonics [int], phase [float])
+             wait_time <ms>, mod Mode index [int], mod freq <Hz>, mod Amp [float], harmonics [int], phase [float])
         """
 
         vdi_index = self.main.synPanel.bandSel.currentIndex()
@@ -215,7 +215,7 @@ class JPLScanConfig(QtWidgets.QDialog):
                     entry_setting = (entry.commentFill.text(),
                                      entry.startFreq, entry.stopFreq, entry.step,
                                      entry.avg, entry.sensSel.currentIndex(),
-                                     entry.tcSel.currentIndex(), entry.waittime,
+                                     entry.tauSel.currentIndex(), entry.wait_time,
                                      entry.modModeSel.currentIndex(),
                                      entry.modFreq, entry.modAmp, entry.refHarm,
                                      entry.refPhase)
@@ -226,7 +226,7 @@ class JPLScanConfig(QtWidgets.QDialog):
         if no_error:
             return entry_settings, self.filename
         else:
-            msg = Shared.MsgError(self.main, 'Invalid input!', 'Please fix invalid inputs before proceeding.')
+            msg = ui_shared.MsgError(self.main, 'Invalid input!', 'Please fix invalid inputs before proceeding.')
             msg.exec()
             return None, None
 
@@ -278,7 +278,7 @@ class JPLScanWindow(QtWidgets.QDialog):
         self.setLayout(mainLayout)
 
         # Initiate progress bar
-        total_time = ceil(Shared.jpl_scan_time(entry_settings))
+        total_time = ceil(ui_shared.jpl_scan_time(entry_settings))
         self.totalProgBar.setRange(0, total_time)
         self.totalProgBar.setValue(0)
         self.batch_time_taken = 0
@@ -317,7 +317,7 @@ class JPLScanWindow(QtWidgets.QDialog):
         self.currentProgBar.setValue(self.currentProgBar.maximum())
         self.totalProgBar.setValue(self.totalProgBar.maximum())
 
-        msg = Shared.MsgInfo(self, 'Job Finished!',
+        msg = ui_shared.MsgInfo(self, 'Job Finished!',
                              'Congratulations! Now it is time to grab some coffee.')
         msg.exec()
         self.stop_timers()
@@ -365,9 +365,9 @@ class JPLBatchListWidget(QtWidgets.QWidget):
         # add batch list entry
         self.entryList = []
         for row in range(len(entry_settings)):
-            # entry = (start, stop, step, avg, sens_idx, tc_idx, waittime, comment)
+            # entry = (start, stop, step, avg, sens_idx, tc_idx, wait_time, comment)
             current_setting = entry_settings[row]
-            entry = Shared.JPLLIABatchListEntry(self, entry_setting=current_setting)
+            entry = ui_shared.JPLLIABatchListEntry(self, entry_setting=current_setting)
             # set up the batch number (row + 1)
             entry.numberLabel.setText(str(row+1))
             # add widgets to the dispaly panel layout
@@ -390,7 +390,7 @@ class SingleScan(QtWidgets.QWidget):
     """ Take a scan in a single freq window """
 
     def __init__(self, filename, parent=None, main=None):
-        """ parent is the JPL scan dialog window. It contains shared settings.
+        """ parent is the JPL scan dialog window. It contains ui_shared settings.
             main is the main GUI window. It containts instrument handles
         """
         QtWidgets.QWidget.__init__(self, parent)
@@ -398,7 +398,7 @@ class SingleScan(QtWidgets.QWidget):
         self.parent = parent
         self.filename = filename
 
-        # Initialize shared settings
+        # Initialize ui_shared settings
         self.multiplier = self.main.synInfo.vdiBandMultiplication
 
         # Initialize scan entry settings
@@ -408,10 +408,10 @@ class SingleScan(QtWidgets.QWidget):
         self.acquired_avg = 0
         self.step = 0
         self.sens_index = 0
-        self.waittime = 60
+        self.wait_time = 60
 
         self.waitTimer = QtCore.QTimer()
-        self.waitTimer.setInterval(self.waittime)
+        self.waitTimer.setInterval(self.wait_time)
         self.waitTimer.setSingleShot(True)
         self.waitTimer.timeout.connect(self.query_lockin)
 
@@ -463,10 +463,10 @@ class SingleScan(QtWidgets.QWidget):
         """ Update scan entry setting. Starts a scan after setting update.
             entry = (comment, start_freq <MHz>, stop_freq <MHz>, step <MHz>,
              averages [int], sens_index [int], timeConst [int],
-             waittime <ms>, mod Mode index [int], mod freq <Hz>, mod Amp [float], harmonics [int], phase [float])
+             wait_time <ms>, mod Mode index [int], mod freq <Hz>, mod Amp [float], harmonics [int], phase [float])
         """
 
-        self.x = Shared.gen_x_array(*entry_setting[1:4])
+        self.x = ui_shared.gen_x_array(*entry_setting[1:4])
         self.x_min = min(entry_setting[1], entry_setting[2])
         self.step = entry_setting[3]
         self.current_x_index = 0
@@ -474,16 +474,16 @@ class SingleScan(QtWidgets.QWidget):
         self.acquired_avg = 0
         self.sens_index = entry_setting[5]
         self.tc_index = entry_setting[6]
-        self.waittime = entry_setting[7]
-        self.waitTimer.setInterval(self.waittime)
+        self.wait_time = entry_setting[7]
+        self.waitTimer.setInterval(self.wait_time)
         self.current_comment = entry_setting[0]
         self.y = np.zeros_like(self.x)
         self.y_sum = np.zeros_like(self.x)
         self.ySumCurve.setData(self.x, self.y_sum)
         total_pts =  len(self.x) * self.target_avg
         self.pts_taken = 0
-        self.parent.currentProgBar.setRange(0, ceil(total_pts * self.waittime * 1e-3))
-        self.parent.currentProgBar.setValue(ceil(self.pts_taken * self.waittime * 1e-3))
+        self.parent.currentProgBar.setRange(0, ceil(total_pts * self.wait_time * 1e-3))
+        self.parent.currentProgBar.setValue(ceil(self.pts_taken * self.wait_time * 1e-3))
 
         # tune instrument
         self.tune_inst(entry_setting)
@@ -569,7 +569,7 @@ class SingleScan(QtWidgets.QWidget):
         # if done
         if self.acquired_avg == self.target_avg:
             self.save_data()
-            self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.waittime * 1e-3)
+            self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.wait_time * 1e-3)
             self.parent.next_entry_signal.emit()
         else:
             # tune syn to the next freq
@@ -598,9 +598,9 @@ class SingleScan(QtWidgets.QWidget):
                 self.y = np.zeros_like(self.x)
 
         # update progress bar
-        self.parent.currentProgBar.setValue(ceil(self.pts_taken * self.waittime * 1e-3))
+        self.parent.currentProgBar.setValue(ceil(self.pts_taken * self.wait_time * 1e-3))
         self.parent.totalProgBar.setValue(self.parent.batch_time_taken +
-                                          ceil(self.pts_taken * self.waittime * 1e-3))
+                                          ceil(self.pts_taken * self.wait_time * 1e-3))
 
     def update_ysum(self):
         """ Update sum plot """
@@ -624,7 +624,7 @@ class SingleScan(QtWidgets.QWidget):
             mod_amp = 0
 
         # prepare header
-        h_info = (self.multiplier, self.waittime,
+        h_info = (self.multiplier, self.wait_time,
                   api_val.LIASENSLIST[self.sens_index],
                   api_val.LIATCLIST[self.tc_index]*1e-3,
                   self.main.synInfo.modFreq * 1e-3, mod_amp,
@@ -635,9 +635,9 @@ class SingleScan(QtWidgets.QWidget):
 
         # if already finishes at least one sweep
         if self.acquired_avg > 0:
-            save.save_lwa(self.filename, self.y_sum / self.acquired_avg, h_info)
+            PyMMSp.libs.lwa.save_lwa(self.filename, self.y_sum / self.acquired_avg, h_info)
         else:
-            save.save_lwa(self.filename, self.y, h_info)
+            PyMMSp.libs.lwa.save_lwa(self.filename, self.y, h_info)
 
     def pause_current(self, btn_pressed):
         """ Pause/resume data acquisition """
@@ -705,13 +705,13 @@ class SingleScan(QtWidgets.QWidget):
         if q == QtWidgets.QMessageBox.Yes:
             #print('abort current')
             self.waitTimer.stop()
-            self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.waittime * 1e-3)
+            self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.wait_time * 1e-3)
             self.save_data()
             self.parent.next_entry_signal.emit()
         elif q == QtWidgets.QMessageBox.No:
             #print('abort current')
             self.waitTimer.stop()
-            self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.waittime * 1e-3)
+            self.parent.batch_time_taken += ceil(len(self.x) * self.target_avg * self.wait_time * 1e-3)
             self.parent.next_entry_signal.emit()
         else:
             pass

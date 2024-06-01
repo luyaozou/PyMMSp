@@ -35,17 +35,17 @@ class MenuBar(QMenuBar):
         self.scanJPLAction.setShortcut('Ctrl+Shift+J')
         self.scanJPLAction.setStatusTip('Use the scanning style of the JPL scanning routine')
 
-        self.scanPCIAction = QAction('PCI Oscilloscope', self)
-        self.scanPCIAction.setShortcut('Ctrl+Shift+S')
-        self.scanPCIAction.setStatusTip("Use the scanning style of Brian's NIPCI card routine")
+        self.viewOscilloAction = QAction('View Oscilloscope', self)
+        self.viewOscilloAction.setShortcut('Ctrl+Shift+S')
+        self.viewOscilloAction.setStatusTip("View the oscilloscope")
 
         self.scanCavityAction = QAction('Cavity Enhanced', self)
         self.scanCavityAction.setShortcut('Ctrl+Shift+C')
         self.scanCavityAction.setStatusTip('Use cavity enhanced spectroscopy')
 
-        self.presReaderAction = QAction('Pressure Reader', self)
-        self.presReaderAction.setShortcut('Ctrl+Shift+P')
-        self.presReaderAction.setStatusTip('Record pressure measurements using the CENTER TWO pressure readout')
+        self.gaugeAction = QAction('Pressure Gauge', self)
+        self.gaugeAction.setShortcut('Ctrl+Shift+P')
+        self.gaugeAction.setStatusTip('Open pressure gauge controller')
 
         # data process actions
         self.lwaParserAction = QAction('.lwa preview and export', self)
@@ -65,9 +65,9 @@ class MenuBar(QMenuBar):
         menuInst.addAction(self.instCloseAction)
         menuScan = self.addMenu('&Scan')
         menuScan.addAction(self.scanJPLAction)
-        menuScan.addAction(self.scanPCIAction)
+        menuScan.addAction(self.viewOscilloAction)
         menuScan.addAction(self.scanCavityAction)
-        menuScan.addAction(self.presReaderAction)
+        menuScan.addAction(self.gaugeAction)
         menuData = self.addMenu('&Data')
         menuData.addAction(self.lwaParserAction)
         menuTest = self.addMenu('&Test')

@@ -79,244 +79,6 @@ class MsgInfo(QtWidgets.QMessageBox):
         self.setText(moretext)
 
 
-class VDIBandComboBox(QtWidgets.QComboBox):
-    """ Selection box for VDI multiplier chain """
-
-    def __init__(self):
-        QtWidgets.QWidget.__init__(self)
-
-        bandList = []
-
-        for key in api_val.VDIBANDNAME:
-            msg = 'Band {:s} (x{:d}): {:d}-{:d} GHz'.format(
-                  api_val.VDIBANDNAME[key], api_val.VDIBANDMULTI[key],
-                  *api_val.VDIBANDRANGE[key])
-            bandList.append(msg)
-
-        self.addItems(bandList)
-        self.setCurrentIndex(4)
-
-
-class LIASensBox(QtWidgets.QComboBox):
-    """ Lockin sensitivity selection box """
-
-    def __init__(self):
-        QtWidgets.QWidget.__init__(self)
-
-        self.addItems(api_lia.SENS_LIST)
-        self.setCurrentIndex(26)
-
-
-class LIATCBox(QtWidgets.QComboBox):
-    """ Lockin time constant selection box """
-
-    def __init__(self):
-        QtWidgets.QWidget.__init__(self)
-
-        self.addItems(api_lia.TC_LIST)
-        self.setCurrentIndex(5)
-
-
-class SynInfo():
-    """ Synthesizer info """
-
-    def __init__(self):
-
-        self.instName = ''
-        self.instInterface = ''
-        self.instInterfaceNum = 0
-        self.instRemoteDisp = False
-        self.rfToggle = False
-        self.synPower = -20
-        self.synFreq = 3*1e10      # Hz
-        self.vdiBandIndex = 4
-        self.vdiBandMultiplication = api_val.VDIBANDMULTI[self.vdiBandIndex]
-        self.probFreq = self.synFreq * self.vdiBandMultiplication
-        self.modToggle = False
-        self.modModeIndex = 0
-        self.modModeText = ''     # ['NONE', 'AM', 'FM']
-        self.modFreq = 0          # update according to modMode
-        self.modAmp = 0           # update according to modMode
-        self.AM1Toggle = False
-        self.AM1Freq = 0          # Hz
-        self.AM1DepthPercent = 0  # float, percent
-        self.AM1DepthDbm = -20    # dbm
-        self.AM1Src = ''
-        self.AM1Wave = ''
-        self.AM2Toggle = False
-        self.AM2Freq = 0          # Hz
-        self.AM2DepthPercent = 0  # float, percent
-        self.AM2DepthDbm = -20    # dbm
-        self.AM2Src = ''
-        self.AM2Wave = ''
-        self.FM1Toggle = False
-        self.FM1Freq = 0          # Hz
-        self.FM1Dev = 0           # Hz
-        self.FM1Src = ''
-        self.FM1Wave = ''
-        self.FM2Toggle = False
-        self.FM2Freq = 0          # Hz
-        self.FM2Dev = 0           # Hz
-        self.FM2Src = ''
-        self.FM2Wave = ''
-        self.PM1Toggle = False
-        self.PM1Freq = 0          # Hz
-        self.PM1Dev = 0           # Hz
-        self.PM1Src = ''
-        self.PM1Wave = ''
-        self.PM2Toggle = False
-        self.PM2Freq = 0          # Hz
-        self.PM2Dev = 0           # Hz
-        self.PM2Src = ''
-        self.PM2Wave = ''
-        self.LFToggle = False
-        self.LFVoltage = 0
-        self.LFSrc = ''
-        self.errMsg = ''
-
-    def full_info_query(self, synHandle):
-        """ Query all information """
-
-        if synHandle:
-            self.instName = synHandle.resource_name
-            self.instInterface = str(synHandle.interface_type)
-            self.instInterfaceNum = synHandle.interface_number
-            self.instRemoteDisp = api_syn.read_remote_disp(synHandle)
-            self.rfToggle = api_syn.read_power_toggle(synHandle)
-            self.synPower = api_syn.read_syn_power(synHandle)
-            self.synFreq = api_syn.read_syn_freq(synHandle)
-            self.probFreq = self.synFreq * self.vdiBandMultiplication
-            self.modToggle = api_syn.read_mod_toggle(synHandle)
-            self.AM1Toggle = api_syn.read_am_state(synHandle, 1)
-            self.AM1Freq = api_syn.read_am_freq(synHandle, 1)
-            self.AM1DepthPercent, self.AM1DepthDbm = api_syn.read_am_depth(synHandle, 1)
-            self.AM1Src = api_syn.read_am_source(synHandle, 1)
-            self.AM1Wave = api_syn.read_am_waveform(synHandle, 1)
-            self.AM2Toggle = api_syn.read_am_state(synHandle, 2)
-            self.AM2Freq = api_syn.read_am_freq(synHandle, 2)
-            self.AM2DepthPercent, self.AM2DepthDbm = api_syn.read_am_depth(synHandle, 2)
-            self.AM2Src = api_syn.read_am_source(synHandle, 2)
-            self.AM2Wave = api_syn.read_am_waveform(synHandle, 2)
-            self.FM1Toggle = api_syn.read_fm_state(synHandle, 1)
-            self.FM1Freq = api_syn.read_fm_freq(synHandle, 1)
-            self.FM1Dev = api_syn.read_fm_dev(synHandle, 1)
-            self.FM1Src = api_syn.read_fm_source(synHandle, 1)
-            self.FM1Wave = api_syn.read_fm_waveform(synHandle, 1)
-            self.FM2Toggle = api_syn.read_fm_state(synHandle, 2)
-            self.FM2Freq = api_syn.read_fm_freq(synHandle, 2)
-            self.FM2Dev = api_syn.read_fm_dev(synHandle, 2)
-            self.FM2Src = api_syn.read_fm_source(synHandle, 2)
-            self.FM2Wave = api_syn.read_fm_waveform(synHandle, 2)
-            self.PM1Toggle = api_syn.read_pm_state(synHandle, 1)
-            self.PM1Freq = api_syn.read_pm_freq(synHandle, 1)
-            self.PM1Dev = api_syn.read_pm_dev(synHandle, 1)
-            self.PM1Src = api_syn.read_pm_source(synHandle, 1)
-            self.PM1Wave = api_syn.read_pm_waveform(synHandle, 1)
-            self.PM2Toggle = api_syn.read_pm_state(synHandle, 2)
-            self.PM2Freq = api_syn.read_pm_freq(synHandle, 2)
-            self.PM2Dev = api_syn.read_pm_dev(synHandle, 2)
-            self.PM2Src = api_syn.read_pm_source(synHandle, 2)
-            self.PM2Wave = api_syn.read_pm_waveform(synHandle, 2)
-            self.LFToggle = api_syn.read_lf_toggle(synHandle)
-            self.LFVoltage = api_syn.read_lf_voltage(synHandle)
-            self.LFSrc = api_syn.read_lf_source(synHandle)
-            self.errMsg = ''
-        else:
-            self.instName = 'No Instrument'
-
-
-class LiaInfo():
-    """ Lockin amplifier info """
-
-    def __init__(self):
-
-        self.instName = ''
-        self.instInterface = ''
-        self.instInterfaceNum = 0
-        self.refSrcIndex = 0
-        self.refSrcText = ''
-        self.refFreq = 1
-        self.refPhase = 0
-        self.refHarm = 1
-        self.refHarmText = str(self.refHarm)
-        self.refHarmIndex = self.refHarm - 1
-        self.configIndex = 1
-        self.configText = api_lia.INPUT_CONFIG_LIST[self.configIndex]
-        self.groundingIndex = 1
-        self.groundingText = api_lia.INPUT_GND_LIST[self.groundingIndex]
-        self.coupleIndex = 1
-        self.coupleText = api_lia.COUPLE_LIST[self.coupleIndex]
-        self.inputFilterIndex = 1
-        self.inputFilterText = api_lia.INPUT_FILTER_LIST[self.inputFilterIndex]
-        self.sensIndex = 26
-        self.sensText = api_lia.SENS_LIST[self.sensIndex]
-        self.tcIndex = 5
-        self.tcText = api_lia.TC_LIST[self.tcIndex]
-        self.reserveIndex = 1
-        self.reserveText = api_lia.RESERVE_LIST[self.reserveIndex]
-        self.lpSlopeIndex = 0
-        self.lpSlopeText = api_lia.LPSLOPE_LIST[self.lpSlopeIndex]
-        self.disp1Text = ''
-        self.disp2Text = ''
-        self.front1Text = ''
-        self.front2Text = ''
-        self.sampleRateIndex = 0
-        self.sampleRateText = api_lia.SAMPLE_RATE_LIST[self.sampleRateIndex]
-
-    def full_info_query(self, liaHandle):
-        """ Query all information """
-
-        if liaHandle:
-            self.instName = liaHandle.resource_name
-            self.instInterface = str(liaHandle.interface_type)
-            self.instInterfaceNum = liaHandle.interface_number
-            self.refSrcIndex = api_lia.read_ref_source(liaHandle)
-            self.refSrcText = api_lia.REF_SRC_LIST[self.refSrcIndex]
-            self.refFreq = api_lia.read_freq(liaHandle)
-            self.refPhase = api_lia.read_phase(liaHandle)
-            self.refHarm = api_lia.read_harm(liaHandle)
-            self.refHarmText = str(self.refHarm)
-            self.refHarmIndex = self.refHarm - 1
-            self.configIndex = api_lia.read_input_config(liaHandle)
-            self.configText = api_lia.INPUT_CONFIG_LIST[self.configIndex]
-            self.groundingIndex = api_lia.read_input_grounding(liaHandle)
-            self.groundingText = api_lia.INPUT_GND_LIST[self.groundingIndex]
-            self.coupleIndex = api_lia.read_couple(liaHandle)
-            self.coupleText = api_lia.COUPLE_LIST[self.coupleIndex]
-            self.inputFilterIndex = api_lia.read_input_filter(liaHandle)
-            self.inputFilterText = api_lia.INPUT_FILTER_LIST[self.inputFilterIndex]
-            self.sensIndex = api_lia.read_sens(liaHandle)
-            self.sensText = api_lia.SENS_LIST[self.sensIndex]
-            self.tcIndex = api_lia.read_tc(liaHandle)
-            self.tcText = api_lia.TC_LIST[self.tcIndex]
-            self.reserveIndex = api_lia.read_reserve(liaHandle)
-            self.reserveText = api_lia.RESERVE_LIST[self.reserveIndex]
-            self.lpSlopeIndex = api_lia.read_lp_slope(liaHandle)
-            self.lpSlopeText = api_lia.LPSLOPE_LIST[self.lpSlopeIndex]
-            self.disp1Text, self.disp2Text = api_lia.read_disp(liaHandle)
-            self.front1Text, self.front2Text = api_lia.read_front_panel(liaHandle)
-            self.sampleRateIndex = api_lia.read_sample_rate(liaHandle)
-            self.sampleRateText = api_lia.SAMPLE_RATE_LIST[self.sampleRateIndex]
-        else:
-            self.instName = 'No Instrument'
-
-
-class ScopeInfo():
-    """ PCI card Oscilloscope info """
-
-    def __init__(self):
-
-        self.instName = ''
-
-
-class MotorInfo():
-    """ Step motor info """
-
-    def __init__(self):
-
-        self.instName = ''
-
-
 class JPLLIAScanEntry(QtWidgets.QWidget):
     """ Frequency window entry for scanning job configuration with captions """
 
@@ -327,7 +89,7 @@ class JPLLIAScanEntry(QtWidgets.QWidget):
                        'stopFreq': True,
                        'step': True,
                        'avg': True,
-                       'waittime': True,
+                       'wait_time': True,
                        'modFreq': True,
                        'modAmp': True,
                        'refHarm': True,
@@ -338,11 +100,13 @@ class JPLLIAScanEntry(QtWidgets.QWidget):
         self.stopFreqFill = QtWidgets.QLineEdit()
         self.stepFill = QtWidgets.QLineEdit()
         self.avgFill = QtWidgets.QLineEdit()
-        self.sensSel = LIASensBox()
-        self.tcSel = LIATCBox()
+        self.sensSel = QtWidgets.QComboBox()
+        self.sensSel.addItems(api_lia.SENS_STR)
+        self.tauSel = QtWidgets.QComboBox()
+        self.tauSel.addItems(api_lia.TAU_STR)
         self.waitTimeFill = QtWidgets.QLineEdit()
         self.modModeSel = QtWidgets.QComboBox()
-        self.modModeSel.addItems(api_syn.MOD_MODE_LIST)
+        self.modModeSel.addItems(api_syn.MODU_MODE)
         self.modFreqFill = QtWidgets.QLineEdit()
         self.modAmpFill = QtWidgets.QLineEdit()
         self.modAmpUnitLabel = QtWidgets.QLabel()
@@ -357,8 +121,8 @@ class JPLLIAScanEntry(QtWidgets.QWidget):
         self.stopFreqFill.textChanged.connect(self.val_step)
         self.stepFill.textChanged.connect(self.val_step)
         self.avgFill.textChanged.connect(self.val_avg)
-        self.tcSel.currentIndexChanged.connect(self.val_waittime)
-        self.waitTimeFill.textChanged.connect(self.val_waittime)
+        self.tauSel.currentIndexChanged.connect(self.val_wait_time)
+        self.waitTimeFill.textChanged.connect(self.val_wait_time)
         self.modModeSel.currentIndexChanged.connect(self.set_mod_mode)
         self.modFreqFill.textChanged.connect(self.val_syn_mod_freq)
         self.modAmpFill.textChanged.connect(self.val_syn_amp)
@@ -380,9 +144,9 @@ class JPLLIAScanEntry(QtWidgets.QWidget):
         self.avg = default[4]
         self.avgFill.setText(str(self.avg))
         self.sensSel.setCurrentIndex(default[5])
-        self.tcSel.setCurrentIndex(default[6])
-        self.waittime = default[7]
-        self.waitTimeFill.setText('{:g}'.format(self.waittime))
+        self.tauSel.setCurrentIndex(default[6])
+        self.wait_time = default[7]
+        self.waitTimeFill.setText('{:g}'.format(self.wait_time))
         self.modFreq = default[9]
         self.modFreqFill.setText('{:g}'.format(self.modFreq))
         self.modAmp = default[10]
@@ -426,7 +190,7 @@ class JPLLIAScanEntry(QtWidgets.QWidget):
 
         vdi_index = self.main.synPanel.bandSel.currentIndex()
         status, _temp = api_val.val_prob_freq(text, vdi_index)
-        self.startFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.startFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msg_color(status)))
         self.status['startFreq'] = bool(status)
         self.startFreq = _temp * self.main.synInfo.vdiBandMultiplication * 1e-6
 
@@ -434,7 +198,7 @@ class JPLLIAScanEntry(QtWidgets.QWidget):
 
         vdi_index = self.main.synPanel.bandSel.currentIndex()
         status, _temp = api_val.val_prob_freq(text, vdi_index)
-        self.stopFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.stopFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msg_color(status)))
         self.status['stopFreq'] = bool(status)
         self.stopFreq = _temp * self.main.synInfo.vdiBandMultiplication * 1e-6
 
@@ -444,23 +208,23 @@ class JPLLIAScanEntry(QtWidgets.QWidget):
         text = self.stepFill.text()
         status, self.step = api_val.val_float(text, safe=[('>=', 0.01), ('<', win)],
                                               warning=[('>', 0), ('<', win)])
-        self.stepFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.stepFill.setStyleSheet('border: 1px solid {:s}'.format(msg_color(status)))
         self.status['step'] = bool(status)
 
     def val_avg(self, text):
 
-        vdi_index = self.main.synPanel.bandSel.currentIndex()
+        band_idx = self.main.synPanel.bandSel.currentIndex()
         status, self.avg = api_val.val_int(text, safe=[('>', 0)])
-        self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.avgFill.setStyleSheet('border: 1px solid {:s}'.format(msg_color(status)))
         self.status['avg'] = bool(status)
 
-    def val_waittime(self):
+    def val_wait_time(self):
 
-        text = self.waitTimeFill.text()
-        tc_index = self.tcSel.currentIndex()
-        status, self.waittime = api_val.val_lia_waittime(text, tc_index)
-        self.waitTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
-        self.status['waittime'] = bool(status)
+        txt = self.waitTimeFill.text()
+        tau_idx = self.tauSel.currentIndex()
+        status, self.wait_time = api_val.val_lia_wait_time(txt, tau_idx)
+        self.waitTimeFill.setStyleSheet('border: 1px solid {:s}'.format(msg_color(status)))
+        self.status['wait_time'] = bool(status)
 
     def val_syn_mod_freq(self, text):
 
@@ -482,8 +246,8 @@ class JPLLIAScanEntry(QtWidgets.QWidget):
         else:
             status = 2
 
-        self.modFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
-        self.harmSel.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.modFreqFill.setStyleSheet('border: 1px solid {:s}'.format(msg_color(status)))
+        self.harmSel.setStyleSheet('border: 1px solid {:s}'.format(msg_color(status)))
 
         self.status['modFreq'] = bool(status1)
         self.status['refHarm'] = bool(status2)
@@ -497,13 +261,13 @@ class JPLLIAScanEntry(QtWidgets.QWidget):
         else:
             status = 2
 
-        self.modAmpFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.modAmpFill.setStyleSheet('border: 1px solid {:s}'.format(msg_color(status)))
         self.status['modAmp'] = bool(status)
 
     def val_lia_phase(self, text):
 
         status, self.refPhase = api_val.val_lia_phase(text)
-        self.refPhaseFill.setStyleSheet('border: 1px solid {:s}'.format(msgcolor(status)))
+        self.refPhaseFill.setStyleSheet('border: 1px solid {:s}'.format(msg_color(status)))
         self.status['refPhase'] = bool(status)
 
     def update_lia_harm(self, text):
@@ -639,7 +403,7 @@ class LWAScanHdEntry(QtWidgets.QWidget):
         self.phaseLabel.setText('{:.2f} deg'.format(entry_setting[16]))
 
 
-def msgcolor(status_code):
+def msg_color(status_code):
     """ Return message color based on status_code.
         0: fatal, red
         1: warning, gold
