@@ -12,10 +12,10 @@ _SENS_STR = ('2 nV', '5 nV', '10 nV', '20 nV', '50 nV', '100 nV',
                    '200 mV', '500 mV', '1 V')
 
 # LOCKIN AMPLIFIER SENSTIVITY LIST (IN VOLTS)
-_SEN_VAL = (2e-9, 5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7,
-            1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4,
-            1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1, 5e-1, 1
-            )
+_SENS_VAL = (2e-9, 5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7,
+             1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4,
+             1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1, 5e-1, 1
+             )
 
 # LOCKIN AMPLIFIER TIME CONSTANT LIST
 _TAU_STR = ('10 μs', '30 μs', '100 μs', '300 μs', '1 ms', '3 ms', '10 ms',
@@ -25,32 +25,32 @@ _TAU_STR = ('10 μs', '30 μs', '100 μs', '300 μs', '1 ms', '3 ms', '10 ms',
 _TAU_VAL = (1e-2, 3e-2, 1e-1, 3e-1, 1, 3, 10, 30, 1e2, 3e2, 1e3, 3e3, 1e4, 3e4)
 
 # LOCKIN COUPLE LIST
-_COUPLE = ('AC', 'DC')
+COUPLE = ('AC', 'DC')
 
 # LOCKIN RESERVE LIST
-_RESERVE = ('High Reserve', 'Normal', 'Low Noise')
+RESERVE = ('High Reserve', 'Normal', 'Low Noise')
 
 # LOCKIN REF SOURCE LIST
-_REF_SRC = ('External', 'Internal')
+REF_SRC = ('External', 'Internal')
 
 # LOCKIN INPUT CONFIG LIST
-_INPUT_CONFIG = ('A', 'B', 'I (1 MΩ)', 'I (100 MΩ)')
+INPUT_CONFIG = ('A', 'B', 'I (1 MΩ)', 'I (100 MΩ)')
 
 # LOCKIN INPUT GROUNDING LIST
-_GND = ('Float', 'Ground')
+GND = ('Float', 'Ground')
 
 # LOCKIN INPUT FILTER LIST
-_FILTER = ('No filter', '1× Line notch', '2× Line notch', '1× & 2× Line notch')
+FILTER = ('No filter', '1× Line notch', '2× Line notch', '1× & 2× Line notch')
 
 # LOCKIN LP SLOPE LIST
-_OCTAVE = ('6 dB/oct', '12 dB/oct', '18 dB/oct', '24 dB/oct')
+OCTAVE = ('6 dB/oct', '12 dB/oct', '18 dB/oct', '24 dB/oct')
 
 # LOCKIN SAMPLE RATE LIST
-_SAMPLE_RATE = ('1/16 Hz', '1/8 Hz', '1/4 Hz', '1/2 Hz', '1 Hz',
-                      '2 Hz', '4 Hz', '8 Hz', '16 Hz', '32 Hz', '64 Hz',
-                      '128 Hz', '256 Hz', '512 Hz', 'Trigger')
+SAMPLE_RATE = ('1/16 Hz', '1/8 Hz', '1/4 Hz', '1/2 Hz', '1 Hz',
+                '2 Hz', '4 Hz', '8 Hz', '16 Hz', '32 Hz', '64 Hz',
+                '128 Hz', '256 Hz', '512 Hz', 'Trigger')
 
-_MODU_MODE = ('NONE', 'AM', 'FM')
+MODU_MODE = ('NONE', 'AM', 'FM')
 
 
 @dataclass
@@ -63,36 +63,75 @@ class Lockin_Info:
     ref_freq: float = 1
     ref_phase: float = 0
     ref_harm: int = 1
-    ref_harm_txt: str = '1'
-    ref_harm_idx: int = 0
     config_idx: int = 1
-    config_txt: str = ''
     gnd_idx: int = 1
-    gnd_txt: str = ''
     couple_idx: int = 1
-    couple_txt: str = ''
     input_filter_idx: int = 1
-    input_filter_txt: str = ''
     sens_idx: int = 26
-    sens_txt: str = ''
-    sens_val: float = 1e-6
     tau_idx: int = 5
-    tau_txt: str = ''
-    tau_val: float = 1e-7
     reserve_idx: int = 1
-    reserve_txt: str = ''
     octave_idx: int = 0
-    octave_txt: str = ''
     disp1_txt: str = ''
     disp2_txt: str = ''
     front1_txt: str = ''
     front2_txt: str = ''
     sample_rate_idx: int = 0
-    sample_rate_txt: str = ''
 
     def reset(self):
         for field in fields(self):
             setattr(self, field.name, field.default)
+
+    @property
+    def ref_harm_txt(self):
+        return str(self.ref_harm)
+
+    @property
+    def ref_harm_idx(self):
+        return self.ref_harm - 1
+
+    @property
+    def sens_txt(self):
+        return _SENS_STR[self.sens_idx]
+
+    @property
+    def sens_val(self):
+        return _SENS_VAL[self.sens_idx]
+
+    @property
+    def tau_val(self):
+        return _TAU_VAL[self.tau_idx]
+
+    @property
+    def tau_txt(self):
+        return _TAU_STR[self.tau_idx]
+
+    @property
+    def reserve_txt(self):
+        return RESERVE[self.reserve_idx]
+
+    @property
+    def config_txt(self):
+        return INPUT_CONFIG[self.config_idx]
+
+    @property
+    def gnd_txt(self):
+        return GND[self.gnd_idx]
+
+    @property
+    def couple_txt(self):
+        return COUPLE[self.couple_idx]
+
+    @property
+    def input_filter_txt(self):
+        return FILTER[self.input_filter_idx]
+
+    @property
+    def octave_txt(self):
+        return OCTAVE[self.octave_idx]
+
+    @property
+    def sample_rate_txt(self):
+        return SAMPLE_RATE[self.sample_rate_idx]
 
 
 def init_lia(handle):
@@ -555,7 +594,7 @@ def full_info_query_(info, handle):
         info.input_filter_txt = _FILTER[info.input_filter_idx]
         info.sens_idx = read_sens(handle)
         info.sens_txt = _SENS_STR[info.sens_idx]
-        info.sens_val = _SEN_VAL[info.sens_idx]
+        info.sens_val = _SENS_VAL[info.sens_idx]
         info.tau_idx = read_tc(handle)
         info.tau_txt = _TAU_STR[info.tau_idx]
         info.tau_val = _TAU_VAL[info.tau_idx]

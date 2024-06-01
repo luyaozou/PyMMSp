@@ -3,7 +3,6 @@
 
 import numpy as np
 import pyqtgraph as pg
-import pyvisa
 # import standard libraries
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt
@@ -25,7 +24,7 @@ class MainUI(QtWidgets.QWidget):
         super().__init__(parent)
 
         self.synStatus = SynStatus(self)
-        self.liaStatus = LockinStatus(self)
+        self.liaStatus = LiaStatus(self)
         self.scopeStatus = ScopeStatus(self)
         self.synPanel = SynPanel(self)
         self.lockinPanel = LockinPanel(self)
@@ -160,9 +159,7 @@ class SynStatus(QtWidgets.QGroupBox):
         self.errMsgLabel.setText(syn_info.err_msg)
 
 
-
-
-class LockinStatus(QtWidgets.QGroupBox):
+class LiaStatus(QtWidgets.QGroupBox):
     """
         Lockin status display
     """
@@ -177,9 +174,9 @@ class LockinStatus(QtWidgets.QGroupBox):
         self.setChecked(False)
 
         ## -- Define synthesizer status elements --
-        refreshButton = QtWidgets.QPushButton('Manual Refresh')
-        moreInfoButton = QtWidgets.QPushButton('More Info')
-        errMsgBtn = QtWidgets.QPushButton('Pop Err Msg')
+        self.refreshButton = QtWidgets.QPushButton('Manual Refresh')
+        self.moreInfoButton = QtWidgets.QPushButton('More Info')
+        self.errMsgBtn = QtWidgets.QPushButton('Pop Err Msg')
         self.addressText = QtWidgets.QLabel()
         self.liaHarmLabel = QtWidgets.QLabel()
         self.liaPhaseLabel = QtWidgets.QLabel()
@@ -197,8 +194,8 @@ class LockinStatus(QtWidgets.QGroupBox):
         mainLayout = QtWidgets.QGridLayout()
         mainLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         # first column
-        mainLayout.addWidget(refreshButton, 0, 0, 1, 2)
-        mainLayout.addWidget(moreInfoButton, 0, 2, 1, 2)
+        mainLayout.addWidget(self.refreshButton, 0, 0, 1, 2)
+        mainLayout.addWidget(self.moreInfoButton, 0, 2, 1, 2)
         mainLayout.addWidget(QtWidgets.QLabel('Inst. Name'), 1, 0)
         mainLayout.addWidget(self.addressText, 1, 1, 1, 3)
         mainLayout.addWidget(QtWidgets.QLabel('Harmonics'), 2, 0)
@@ -211,7 +208,7 @@ class LockinStatus(QtWidgets.QGroupBox):
         mainLayout.addWidget(self.liaTCLabel, 5, 1)
         mainLayout.addWidget(QtWidgets.QLabel('Ref Source'), 6, 0)
         mainLayout.addWidget(self.liaRefSrcLabel, 6, 1)
-        mainLayout.addWidget(errMsgBtn, 7, 0)
+        mainLayout.addWidget(self.errMsgBtn, 7, 0)
         mainLayout.addWidget(self.errMsgLabel, 7, 1, 1, 3)
         # second column
         mainLayout.addWidget(QtWidgets.QLabel('Couple'), 2, 2)
@@ -226,70 +223,20 @@ class LockinStatus(QtWidgets.QGroupBox):
         mainLayout.addWidget(self.liaFreqLabel, 6, 3)
         self.setLayout(mainLayout)
 
-        # this dialog is a child class of the main window
-        self.infoDialog = ui_dialog.LockinInfoDialog(self.parent)
-        ## -- Trigger status updates
-        errMsgBtn.clicked.connect(self.pop_err_msg)
-        refreshButton.clicked.connect(self.manual_refresh)
-        moreInfoButton.clicked.connect(self.show_info_dialog)
-        # initial status
-        self.print_info()
-
-        # Trigger groupbox check_state
-        self.clicked.connect(self.check)
-
-    def check(self):
-        """ Enable/disable this groupbox """
-
-        if (self.parent.testModeAction.isChecked() or self.parent.lockin_handle):
-            self.setChecked(True)
-        else:
-            msg = ui_shared.MsgError(self, 'No Instrument!', 'No lockin amplifier is connected!')
-            msg.exec()
-            self.setChecked(False)
-
-    def print_info(self):
+    def print_info(self, info):
         """ Print instrument information in this panel """
 
-        self.addressText.setText(self.parent.liaInfo.instName)
-        self.liaHarmLabel.setText(self.parent.liaInfo.refHarmText)
-        self.liaPhaseLabel.setText('{:.2f}'.format(self.parent.liaInfo.refPhase))
-        self.liaSensLabel.setText(self.parent.liaInfo.sensText)
-        self.liaTCLabel.setText(self.parent.liaInfo.tcText)
-        self.liaFreqLabel.setText(pg.siFormat(self.parent.liaInfo.refFreq, suffix='Hz'))
-        self.liaCoupleLabel.setText(self.parent.liaInfo.coupleText)
-        self.liaReserveLabel.setText(self.parent.liaInfo.reserveText)
-        self.liaGroundingLabel.setText(self.parent.liaInfo.groundingText)
-        self.liaFilterLabel.setText(self.parent.liaInfo.inputFilterText)
-        self.liaRefSrcLabel.setText(self.parent.liaInfo.refSrcText)
-
-    def manual_refresh(self):
-        """ Manually refresh status. Also update the LIACtrl widgets,
-        which will in turn trigger the refresh function.
-        """
-
-        if self.parent.testModeAction.isChecked() or (not self.parent.lockin_handle):
-            pass
-        else:
-            self.parent.liaInfo.full_info_query(self.parent.lockin_handle)
-            self.parent.lockinPanel.harmSel.setCurrentIndex(self.parent.liaInfo.refHarmIndex)
-            self.parent.lockinPanel.phaseFill.setText('{:.2f}'.format(self.parent.liaInfo.refPhase))
-            self.parent.lockinPanel.sensSel.setCurrentIndex(self.parent.liaInfo.sensIndex)
-            self.parent.lockinPanel.tcSel.setCurrentIndex(self.parent.liaInfo.tcIndex)
-            self.parent.lockinPanel.coupleSel.setCurrentIndex(self.parent.liaInfo.coupleIndex)
-            self.parent.lockinPanel.reserveSel.setCurrentIndex(self.parent.liaInfo.reserveIndex)
-            self.parent.liaMonitor.set_waittime()
-
-    def show_info_dialog(self):
-
-        self.parent.liaInfoDialog.display()
-
-    def pop_err_msg(self):
-        """ Pop error message """
-        if self.parent.lockin_handle:
-            self.errMsgLabel.setText(api_lia.query_err_msg(self.parent.lockin_handle))
-        else:
-            pass
+        self.addressText.setText(info.inst_name)
+        self.liaHarmLabel.setText(info.ref_harm_txt)
+        self.liaPhaseLabel.setText('{:.2f}'.format(info.ref_phase))
+        self.liaSensLabel.setText(info.sens_txt)
+        self.liaTCLabel.setText(info.tau_txt)
+        self.liaFreqLabel.setText(pg.siFormat(info.ref_freq, suffix='Hz'))
+        self.liaCoupleLabel.setText(info.couple_txt)
+        self.liaReserveLabel.setText(info.reserve_txt)
+        self.liaGroundingLabel.setText(info.gnd_txt)
+        self.liaFilterLabel.setText(info.input_filter_txt)
+        self.liaRefSrcLabel.setText(info.ref_src_txt)
 
 
 class ScopeStatus(QtWidgets.QGroupBox):
@@ -331,7 +278,7 @@ class ScopeStatus(QtWidgets.QGroupBox):
     def check(self):
         """ Enable/disable this groupbox """
 
-        if (self.parent.testModeAction.isChecked() or self.parent.oscillo_handle):
+        if self.parent.testModeAction.isChecked() or self.parent.oscillo_handle:
             self.setChecked(True)
         else:
             msg = ui_shared.MsgError(self, 'No Instrument!', 'No PCI card is connected!')
@@ -465,12 +412,10 @@ class SynPanel(QtWidgets.QGroupBox):
         self.setLayout(mainLayout)
 
 
-
 class LockinPanel(QtWidgets.QGroupBox):
 
-    def __init__(self, parent):
-        QtWidgets.QWidget.__init__(self, parent)
-        self.parent = parent
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         self.setTitle('Lockin Control')
         self.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)  # align left
@@ -485,19 +430,19 @@ class LockinPanel(QtWidgets.QGroupBox):
         self.sensSel = ui_shared.LIASensBox()
         self.tcSel = ui_shared.LIATCBox()
         self.coupleSel = QtWidgets.QComboBox()
-        self.coupleSel.addItems(api_lia.COUPLE_LIST)
+        self.coupleSel.addItems(list(api_lia.COUPLE))
         self.coupleSel.setCurrentIndex(1)
         self.reserveSel = QtWidgets.QComboBox()
-        self.reserveSel.addItems(api_lia.RESERVE_LIST)
+        self.reserveSel.addItems(list(api_lia.RESERVE))
         self.reserveSel.setCurrentIndex(1)
         self.groundingSel = QtWidgets.QComboBox()
-        self.groundingSel.addItems(api_lia.INPUT_GND_LIST)
+        self.groundingSel.addItems(list(api_lia.GND))
         self.groundingSel.setCurrentIndex(1)
         self.filterSel = QtWidgets.QComboBox()
-        self.filterSel.addItems(api_lia.INPUT_FILTER_LIST)
+        self.filterSel.addItems(list(api_lia.FILTER))
         self.filterSel.setCurrentIndex(1)
-        autoPhaseBtn = QtWidgets.QPushButton('Auto Phase')
-        resetBtn = QtWidgets.QPushButton('Reset')
+        self.autoPhaseBtn = QtWidgets.QPushButton('Auto Phase')
+        self.resetBtn = QtWidgets.QPushButton('Reset')
 
         ## -- Set up main layout --
         mainLayout = QtWidgets.QGridLayout()
@@ -518,242 +463,9 @@ class LockinPanel(QtWidgets.QGroupBox):
         mainLayout.addWidget(self.groundingSel, 2, 3)
         mainLayout.addWidget(QtWidgets.QLabel('Input Filter'), 3, 2)
         mainLayout.addWidget(self.filterSel, 3, 3)
-        mainLayout.addWidget(autoPhaseBtn, 4, 2)
-        mainLayout.addWidget(resetBtn, 4, 3)
+        mainLayout.addWidget(self.autoPhaseBtn, 4, 2)
+        mainLayout.addWidget(self.resetBtn, 4, 3)
         self.setLayout(mainLayout)
-
-        ## -- Trigger setting status and communication
-        self.phaseFill.textChanged.connect(self.tune_phase)
-        self.harmSel.currentTextChanged[str].connect(self.tune_harmonics)
-        self.tcSel.currentIndexChanged[int].connect(self.tune_time_const)
-        self.sensSel.currentIndexChanged[int].connect(self.tune_sensitivity)
-        self.coupleSel.currentIndexChanged[int].connect(self.tune_couple)
-        self.reserveSel.currentIndexChanged[int].connect(self.tune_reserve)
-        self.groundingSel.currentIndexChanged[int].connect(self.tune_grounding)
-        self.filterSel.currentIndexChanged[int].connect(self.tune_filter)
-        autoPhaseBtn.clicked.connect(self.auto_phase)
-        resetBtn.clicked.connect(self.reset)
-        self.clicked.connect(self.check)
-
-    def check(self):
-        """ Enable/disable this groupbox """
-
-        if (self.parent.testModeAction.isChecked() or self.parent.lockin_handle):
-            api_lia.init_lia(self.parent.lockin_handle)
-            self.setChecked(True)
-        else:
-            msg = ui_shared.MsgError(self, 'No Instrument!', 'No lockin amplifier is connected!')
-            msg.exec()
-            self.setChecked(False)
-
-        self.parent.liaStatus.print_info()
-
-    def tune_phase(self, phase_text):
-        """
-            Communicate with the lockin and set phase
-        """
-
-        status, phase = api_val.val_lia_phase(phase_text)
-        self.phaseFill.setStyleSheet('border: 1px solid {:s}'.format(ui_shared.msgcolor(status)))
-
-        if status:
-            if self.parent.testModeAction.isChecked():
-                # fake a successful communication on test mode
-                self.parent.liaInfo.refPhase = phase
-            else:
-                vCode = api_lia.set_phase(self.parent.lockin_handle, phase)
-                if vCode == pyvisa.constants.StatusCode.success:
-                    self.parent.liaInfo.refPhase = api_lia.read_phase(self.parent.lockin_handle)
-                else:
-                    msg = ui_shared.InstStatus(self, vCode)
-                    msg.exec()
-        else:
-            pass
-
-        self.parent.liaStatus.print_info()  # auto refresh status panel
-
-    def tune_harmonics(self, harm_text):
-        """
-            Communicate with the lockin and set Harmonics
-        """
-
-        if self.parent.testModeAction.isChecked():
-            lia_freq = self.parent.liaInfo.refFreq
-        else:
-            lia_freq = api_lia.read_freq(self.parent.lockin_handle)
-        status, harm = api_val.val_lia_harm(harm_text, lia_freq)
-
-        if status:
-            if self.parent.testModeAction.isChecked():
-                # fake a successful communication on test mode
-                self.parent.liaInfo.refHarm = harm
-                self.parent.liaInfo.refHarmText = str(harm)
-            else:
-                vCode = api_lia.set_harm(self.parent.lockin_handle, harm)
-                if vCode == pyvisa.constants.StatusCode.success:
-                    self.parent.liaInfo.refHarm = api_lia.read_harm(self.parent.lockin_handle)
-                    self.parent.liaInfo.refHarmText = str(self.parent.liaInfo.refHarm)
-                else:
-                    msg = ui_shared.InstStatus(self, vCode)
-                    msg.exec()
-        else:
-            msg = ui_shared.MsgError(self, 'Out of Range!', 'Input harmonics exceed legal range!')
-            msg.exec()
-
-        self.parent.liaStatus.print_info()  # auto refresh status panel
-
-    def tune_sensitivity(self, idx):
-        """
-            Communicate with the lockin and set sensitivity
-        """
-
-        if self.parent.testModeAction.isChecked():
-            # fake a successful communication on test mode
-            self.parent.liaInfo.sensIndex = idx
-            self.parent.liaInfo.sensText = api_lia.SENS_LIST[idx]
-        else:
-            vCode = api_lia.set_sens(self.parent.lockin_handle, idx)
-            if vCode == pyvisa.constants.StatusCode.success:
-                self.parent.liaInfo.sensIndex = api_lia.read_sens(self.parent.lockin_handle)
-                self.parent.liaInfo.sensText = api_lia.SENS_LIST[self.parent.liaInfo.sensIndex]
-            else:
-                msg = ui_shared.InstStatus(self, vCode)
-                msg.exec()
-
-        self.parent.liaStatus.print_info()  # auto refresh status panel
-
-    def tune_time_const(self, idx):
-        """
-            Communicate with the lockin and set sensitivity
-        """
-
-        if self.parent.testModeAction.isChecked():
-            # fake a successful communication on test mode
-            self.parent.liaInfo.tcIndex = idx
-            self.parent.liaInfo.tcText = api_lia.TC_LIST[idx]
-        else:
-            vCode = api_lia.set_tc(self.parent.lockin_handle, idx)
-            if vCode == pyvisa.constants.StatusCode.success:
-                self.parent.liaInfo.tcIndex = api_lia.read_tc(self.parent.lockin_handle)
-                self.parent.liaInfo.tcText = api_lia.TC_LIST[self.parent.liaInfo.tcIndex]
-            else:
-                msg = ui_shared.InstStatus(self, vCode)
-                msg.exec()
-
-        self.parent.liaStatus.print_info()  # auto refresh status panel
-        self.parent.liaMonitor.set_waittime()
-
-    def tune_couple(self, idx):
-        """
-            Communicate with the lockin and set couple mode
-        """
-
-        if self.parent.testModeAction.isChecked():
-            # fake a successful communication on test mode
-            self.parent.liaInfo.coupleIndex = idx
-            self.parent.liaInfo.coupleText = api_lia.COUPLE_LIST[idx]
-        else:
-            vCode = api_lia.set_couple(self.parent.lockin_handle, idx)
-            if vCode == pyvisa.constants.StatusCode.success:
-                self.parent.liaInfo.coupleIndex = api_lia.read_couple(self.parent.lockin_handle)
-                self.parent.liaInfo.coupleText = api_lia.COUPLE_LIST[self.parent.liaInfo.coupleIndex]
-            else:
-                msg = ui_shared.InstStatus(self, vCode)
-                msg.exec()
-
-        self.parent.liaStatus.print_info()  # auto refresh status panel
-
-    def tune_reserve(self, idx):
-        """
-            Communicate with the lockin and set reserve
-        """
-
-        if self.parent.testModeAction.isChecked():
-            # fake a successful communication on test mode
-            self.parent.liaInfo.reserveIndex = idx
-            self.parent.liaInfo.reserveText = api_lia.RESERVE_LIST[idx]
-        else:
-            vCode = api_lia.set_reserve(self.parent.lockin_handle, idx)
-            if vCode == pyvisa.constants.StatusCode.success:
-                self.parent.liaInfo.reserveIndex = api_lia.read_reserve(self.parent.lockin_handle)
-                self.parent.liaInfo.reserveText = api_lia.RESERVE_LIST[self.parent.liaInfo.reserveIndex]
-            else:
-                msg = ui_shared.InstStatus(self, vCode)
-                msg.exec()
-
-        self.parent.liaStatus.print_info()  # auto refresh status panel
-
-    def tune_grounding(self, idx):
-        """
-            Communicate with the lockin and set input grounding
-        """
-
-        if self.parent.testModeAction.isChecked():
-            # fake a successful communication on test mode
-            self.parent.liaInfo.groundingIndex = idx
-            self.parent.liaInfo.groundingText = api_lia.INPUT_GND_LIST[idx]
-        else:
-            vCode = api_lia.set_input_grounding(self.parent.lockin_handle, idx)
-            if vCode == pyvisa.constants.StatusCode.success:
-                self.parent.liaInfo.groundingIndex = api_lia.read_input_grounding(self.parent.lockin_handle)
-                self.parent.liaInfo.groundingText = api_lia.INPUT_GND_LIST[self.parent.liaInfo.groundingIndex]
-            else:
-                msg = ui_shared.InstStatus(self, vCode)
-                msg.exec()
-
-        self.parent.liaStatus.print_info()  # auto refresh status panel
-
-    def tune_filter(self, idx):
-        """
-            Communicate with the lockin and set input notch filter
-        """
-
-        if self.parent.testModeAction.isChecked():
-            # fake a successful communication on test mode
-            self.parent.liaInfo.inputFilterIndex = idx
-            self.parent.liaInfo.inputFilterText = api_lia.INPUT_FILTER_LIST[idx]
-        else:
-            vCode = api_lia.set_input_filter(self.parent.lockin_handle, idx)
-            if vCode == pyvisa.constants.StatusCode.success:
-                self.parent.liaInfo.inputFilterIndex = api_lia.read_input_filter(self.parent.lockin_handle)
-                self.parent.liaInfo.inputFilterText = api_lia.INPUT_FILTER_LIST[self.parent.liaInfo.inputFilterIndex]
-            else:
-                msg = ui_shared.InstStatus(self, vCode)
-                msg.exec()
-
-        self.parent.liaStatus.print_info()  # auto refresh status panel
-
-    def auto_phase(self):
-
-        if self.parent.testModeAction.isChecked():
-            # fake a successful communication on test mode
-            print('auto (random) phase (test)')
-            self.parent.liaInfo.refPhase = np.random.randint(-180, 180)
-            self.phaseFill.setText('{:.2f}'.format(self.parent.liaInfo.refPhase))
-        else:
-            vCode = api_lia.auto_phase(self.parent.lockin_handle)
-            if vCode == pyvisa.constants.StatusCode.success:
-                self.parent.liaInfo.refPhase = api_lia.read_phase(self.parent.lockin_handle)
-                self.phaseFill.setText('{:.2f}'.format(self.parent.liaInfo.refPhase))
-            else:
-                msg = ui_shared.InstStatus(self, vCode)
-                msg.exec()
-
-        self.parent.liaStatus.print_info()  # auto refresh status panel
-
-    def reset(self):
-
-        if self.parent.testModeAction.isChecked():
-            # fake a successful communication on test mode
-            vCode = pyvisa.constants.StatusCode.success
-        else:
-            vCode = api_lia.reset(self.parent.lockin_handle)
-
-        if vCode == pyvisa.constants.StatusCode.success:
-            self.parent.liaStatus.manual_refresh()
-        else:
-            msg = ui_shared.InstStatus(self, vCode)
-            msg.exec()
 
 
 class OscilloPanel(QtWidgets.QGroupBox):
@@ -966,14 +678,14 @@ class LockinMonitor(QtWidgets.QWidget):
     def set_waittime(self):
         """ Set wait time according to self.updateRate """
 
-        status, waittime = api_val.val_lia_monitor_srate(self.updateRate.currentIndex(), self.parent.liaInfo.tcIndex)
+        status, waittime = api_val.val_lia_monitor_srate(self.updateRate.currentIndex(), info.tcIndex)
         self.timer.setInterval(int(waittime))
         self.updateRate.setStyleSheet('border: 1px solid {:s}'.format(ui_shared.msgcolor(status)))
         if status:
             pass
         else:
             msg = ui_shared.MsgWarning(self, 'Update speed warning!',
-                                    """The picked update speed is faster than the lockin time constant.
+                                       """The picked update speed is faster than the lockin time constant.
                                     Automatically reset the update speed to 3pi * time_constant """)
             msg.exec()
             self.updateRate.setCurrentIndex(7)

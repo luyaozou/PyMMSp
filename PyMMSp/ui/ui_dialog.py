@@ -13,9 +13,8 @@ import pyqtgraph as pg
 class SelInstDialog(QtWidgets.QDialog):
     """ Dialog window for instrument selection. """
 
-    def __init__(self, parent):
-        QtWidgets.QDialog.__init__(self, parent)
-        self.parent = parent
+    def __init__(self, parent=None): 
+        super().__init__(parent)
         self.setMinimumWidth(400)
         self.setMinimumHeight(400)
         self.setWindowTitle('Select Instrument')
@@ -131,9 +130,8 @@ class ViewPG(QtWidgets.QDialog):
 class CloseSelInstDialog(QtWidgets.QDialog):
     """ Dialog window for closing selected instrument. """
 
-    def __init__(self, parent):
-        QtWidgets.QDialog.__init__(self, parent)
-        self.parent = parent
+    def __init__(self, parent=None): 
+        super().__init__(parent)
         self.setMinimumWidth(400)
         self.setMinimumHeight(400)
         self.setWindowTitle('Close Instrument')
@@ -215,9 +213,8 @@ class CloseSelInstDialog(QtWidgets.QDialog):
 class SynInfoDialog(QtWidgets.QDialog):
     """ Dialog window for displaying full synthesizer settings. """
 
-    def __init__(self, parent):
-        QtWidgets.QDialog.__init__(self, parent)
-        self.parent = parent
+    def __init__(self, parent=None): 
+        super().__init__(parent)
         self.setMinimumWidth(800)
         self.setMinimumHeight(400)
         self.setWindowTitle('Synthesizer Settings')
@@ -427,9 +424,9 @@ class SynInfoDialog(QtWidgets.QDialog):
 class LockinInfoDialog(QtWidgets.QDialog):
     """ Dialog window for displaying full lockin settings. """
 
-    def __init__(self, parent):
-        QtWidgets.QDialog.__init__(self, parent)
-        self.parent = parent
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
         self.setMinimumWidth(600)
         self.setMinimumHeight(400)
         self.setWindowTitle('Lockin Amplifier Settings')
@@ -455,7 +452,7 @@ class LockinInfoDialog(QtWidgets.QDialog):
         self.refFreqLabel = QtWidgets.QLabel()
         self.refHarmLabel = QtWidgets.QLabel()
         self.refPhaseLabel = QtWidgets.QLabel()
-        refGroupLayout =  QtWidgets.QFormLayout()
+        refGroupLayout = QtWidgets.QFormLayout()
         refGroupLayout.addRow(QtWidgets.QLabel('Reference Source'), self.refSrcLabel)
         refGroupLayout.addRow(QtWidgets.QLabel('Reference Freq'), self.refFreqLabel)
         refGroupLayout.addRow(QtWidgets.QLabel('Harmonics'), self.refHarmLabel)
@@ -517,65 +514,39 @@ class LockinInfoDialog(QtWidgets.QDialog):
         mainLayout.addWidget(self.acceptButton, 3, 2, 1, 2)
         self.setLayout(mainLayout)
 
-        self.refreshButton.clicked.connect(self.manual_refresh)
         self.acceptButton.clicked.connect(self.accept)
 
-    def display(self):
-
-        self.acceptButton.setText(ui_shared.btn_label('accept'))
-
-        if self.parent.liaHandle:
-            self.print_info()
-            self.instGroup.show()
-            self.refGroup.show()
-            self.gainGroup.show()
-            self.inputGroup.show()
-            self.outputGroup.show()
-        else:
-            self.instGroup.hide()
-            self.refGroup.hide()
-            self.gainGroup.hide()
-            self.inputGroup.hide()
-            self.outputGroup.hide()
-
-        self.exec()
-
-    def manual_refresh(self):
-
-        self.parent.synInfo.full_info_query(self.parent.liaHandle)
-        self.print_info()
-
-    def print_info(self):
+    def print_info(self, info):
 
         # update instrument panel
-        self.instNameLabel.setText(self.parent.liaInfo.instName)
-        self.instInterfaceLabel.setText(self.parent.liaInfo.instInterface)
-        self.instInterfaceNumLabel.setText(str(self.parent.liaInfo.instInterfaceNum))
+        self.instNameLabel.setText(info.inst_name)
+        self.instInterfaceLabel.setText(info.inst_interface)
+        self.instInterfaceNumLabel.setText(str(info.inst_interface_num))
 
         # update ref group
-        self.refSrcLabel.setText(self.parent.liaInfo.refSrcText)
-        self.refFreqLabel.setText(siFormat(self.parent.liaInfo.refFreq, suffix='Hz'))
-        self.refHarmLabel.setText('{:d}'.format(self.parent.liaInfo.refHarm))
-        self.refPhaseLabel.setText('{:.2f} deg'.format(self.parent.liaInfo.refPhase))
+        self.refSrcLabel.setText(info.ref_src_txt)
+        self.refFreqLabel.setText(siFormat(info.ref_freq, suffix='Hz'))
+        self.refHarmLabel.setText('{:d}'.format(info.ref_harm))
+        self.refPhaseLabel.setText('{:.2f} deg'.format(info.ref_phase))
 
         # update input group
-        self.inputConfigLabel.setText(self.parent.liaInfo.configText)
-        self.inputGroundingLabel.setText(self.parent.liaInfo.groundingText)
-        self.inputCoupleLabel.setText(self.parent.liaInfo.coupleText)
-        self.inputFilterLabel.setText(self.parent.liaInfo.inputFilterText)
+        self.inputConfigLabel.setText(info.config_txt)
+        self.inputGroundingLabel.setText(info.gnd_txt)
+        self.inputCoupleLabel.setText(info.couple_txt)
+        self.inputFilterLabel.setText(info.input_filter_txt)
 
         # update gain group
-        self.gainSensLabel.setText(self.parent.liaInfo.sensText)
-        self.gainTCLabel.setText(self.parent.liaInfo.tcText)
-        self.gainReserveLabel.setText(self.parent.liaInfo.reserveText)
-        self.lpSlopeLabel.setText(self.parent.liaInfo.lpSlopeText)
+        self.gainSensLabel.setText(info.sens_txt)
+        self.gainTCLabel.setText(info.tau_txt)
+        self.gainReserveLabel.setText(info.reserve_txt)
+        self.lpSlopeLabel.setText(info.octave_txt)
 
         # update output group
-        self.outputDisp1Label.setText(self.parent.liaInfo.disp1Text)
-        self.outputDisp2Label.setText(self.parent.liaInfo.disp2Text)
-        self.outputFront1Label.setText(self.parent.liaInfo.front1Text)
-        self.outputFront2Label.setText(self.parent.liaInfo.front2Text)
-        self.outputSRateLabel.setText(self.parent.liaInfo.sampleRateText)
+        self.outputDisp1Label.setText(info.disp1_txt)
+        self.outputDisp2Label.setText(info.disp2_txt)
+        self.outputFront1Label.setText(info.front1_txt)
+        self.outputFront2Label.setText(info.front2_txt)
+        self.outputSRateLabel.setText(info.sample_rate_txt)
 
 
 class LWAParserDialog(QtWidgets.QDialog):

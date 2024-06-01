@@ -55,7 +55,6 @@ class CtrlSyn(QtWidgets.QWidget):
         else:
             self.ui.synPanel.synPowerSwitchBtn.setText('OFF')
 
-
     def check(self):
         """ Enable/disable this groupbox """
 
