@@ -132,7 +132,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.liaStatus.setChecked(not (self.lockin_handle is None))
             self.ui.scopeStatus.setChecked(not (self.oscillo_handle is None))
 
-        self.ctrl_syn.manual_refresh()
+        self.ctrl_syn.refresh()
         self.ctrl_lockin.manual_refresh()
         self.ctrl_oscillo.manual_refresh()
 

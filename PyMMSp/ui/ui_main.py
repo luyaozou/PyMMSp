@@ -386,6 +386,29 @@ class SynPanel(QtWidgets.QGroupBox):
         mainLayout.addWidget(modGBox)
         self.setLayout(mainLayout)
 
+    def print_info(self, info):
+        self.synPowerSwitchBtn.setChecked(info.rf_toggle)
+        self.probFreqFill.setText(f'{info.freq * 1e-6:.9f}')
+        self.modSwitchBtn.setChecked(info.modu_toggle)
+        self.modSwitchBtn.setText('ON' if info.modu_toggle else 'OFF')
+        if info.am1_toggle and (not info.fm1_toggle):
+            self.modModeSel.setCurrentIndex(1)
+            self.modFreqFill.setText(f'{info.am1_freq * 1e-3:.1f}')
+            self.modFreqUnitSel.setCurrentIndex(1)
+            self.modAmpFill.setText(f'{info.am1_depth_pct:.1f}')
+            self.modAmpAMUnitSel.setCurrentIndex(0)
+        elif (not info.am1_toggle) and info.FM1Toggle:
+            self.modModeSel.setCurrentIndex(2)
+            self.modFreqFill.setText(f'{info.fm1_toggle * 1e-3:.1f}')
+            self.modFreqUnitSel.setCurrentIndex(1)
+            self.modAmpFill.setText(f'{info.fm1_dev * 1e-3:.1f}')
+            self.modAmpFMUnitSel.setCurrentIndex(1)
+        else:
+            self.modModeSel.setCurrentIndex(0)
+        self.lfSwitchBtn.setChecked(info.lf_toggle)
+        self.lfSwitchBtn.setText('ON' if info.lf_toggle else 'OFF')
+        self.lfVolFill.setText(f'{info.lf_vol:.3f}')
+
 
 class LockinPanel(QtWidgets.QGroupBox):
 

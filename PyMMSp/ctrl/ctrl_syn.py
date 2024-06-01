@@ -39,8 +39,9 @@ class CtrlSyn(QtWidgets.QWidget):
         self.ui.synPanel.clicked.connect(self.check)
         self.ui.synStatus.clicked.connect(self.check)
         ## -- Trigger status updates
-        self.ui.synStatus.refreshButton.clicked.connect(self.manual_refresh)
-        self.ui.synStatus.moreInfoButton.clicked.connect(self.ui.synInfoDialog.display)
+        self.ui.synStatus.refreshButton.clicked.connect(self.refresh)
+        self.ui.synStatus.moreInfoButton.clicked.connect(self.refresh)
+        self.ui.synStatus.moreInfoButton.clicked.connect(self.ui.synInfoDialog.exec)
         self.ui.synStatus.errMsgBtn.clicked.connect(self.pop_err_msg)
 
         self.ui.synPanel.synPowerSwitchBtn.toggled.connect(self.set_syn_power_switch_btn_label)
@@ -66,9 +67,9 @@ class CtrlSyn(QtWidgets.QWidget):
             self.ui.synStatus.setChecked(False)
             self.ui.msgErr.setText('No synthesizer is connected!')
             self.ui.msgErr.exec()
-        self.ui.synStatus.print_info(self.info)
+        self.refresh()
 
-    def manual_refresh(self):
+    def refresh(self):
         """ Manually refresh status. Also update the SynCtrl widgets,
         which will in turn trigger the refresh function
         """
@@ -77,27 +78,9 @@ class CtrlSyn(QtWidgets.QWidget):
             pass
         else:
             api_syn.full_info_query_(self.info, self.handle)
-            self.ui.synPanel.synPowerSwitchBtn.setChecked(self.info.rf_toggle)
-            self.ui.synPanel.probFreqFill.setText(f'{self.info.freq * 1e-6:.9f}')
-            self.ui.synPanel.modSwitchBtn.setChecked(self.info.modu_toggle)
-            self.ui.synPanel.modSwitchBtn.setText('ON' if self.info.modu_toggle else 'OFF')
-            if self.ui.synInfo.AM1Toggle and (not self.info.fm1_toggle):
-                self.ui.synPanel.modModeSel.setCurrentIndex(1)
-                self.ui.synPanel.modFreqFill.setText(f'{self.info.am1_freq * 1e-3:.1f}')
-                self.ui.synPanel.modFreqUnitSel.setCurrentIndex(1)
-                self.ui.synPanel.modAmpFill.setText(f'{self.info.am1_depth_pct:.1f}')
-                self.ui.synPanel.modAmpAMUnitSel.setCurrentIndex(0)
-            elif (not self.info.am1_toggle) and self.info.FM1Toggle:
-                self.ui.synPanel.modModeSel.setCurrentIndex(2)
-                self.ui.synPanel.modFreqFill.setText(f'{self.info.fm1_toggle * 1e-3:.1f}')
-                self.ui.synPanel.modFreqUnitSel.setCurrentIndex(1)
-                self.ui.synPanel.modAmpFill.setText(f'{self.info.fm1_dev * 1e-3:.1f}')
-                self.ui.synPanel.modAmpFMUnitSel.setCurrentIndex(1)
-            else:
-                self.ui.synPanel.modModeSel.setCurrentIndex(0)
-            self.ui.synPanel.lfSwitchBtn.setChecked(self.info.lf_toggle)
-            self.ui.synPanel.lfSwitchBtn.setText('ON' if self.info.lf_toggle else 'OFF')
-            self.ui.synPanel.lfVolFill.setText(f'{self.info.lf_vol:.3f}')
+            self.ui.synPanel.print_info(self.info)
+            self.ui.synStatus.print_info(self.info)
+            self.ui.synInfoDialog.print_info(self.info)
 
     def pop_err_msg(self):
         """ Pop error message """

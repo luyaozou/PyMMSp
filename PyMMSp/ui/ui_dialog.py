@@ -167,6 +167,7 @@ class SynInfoDialog(QtWidgets.QDialog):
 
     def __init__(self, parent=None): 
         super().__init__(parent)
+
         self.setMinimumWidth(800)
         self.setMinimumHeight(400)
         self.setWindowTitle('Synthesizer Settings')
@@ -285,92 +286,68 @@ class SynInfoDialog(QtWidgets.QDialog):
         self.modGroup.setLayout(modGroupLayout)
 
         self.refreshButton = QtWidgets.QPushButton('Manual Refresh')
-        self.acceptButton = QtWidgets.QPushButton(ui_shared.btn_label('accept'))
-
+        self.acceptButton = QtWidgets.QPushButton('OK')
         mainLayout = QtWidgets.QGridLayout()
         mainLayout.addWidget(self.instGroup, 0, 0, 1, 5)
         mainLayout.addWidget(self.rfGroup, 1, 0, 1, 5)
         mainLayout.addWidget(self.modGroup, 2, 0, 1, 5)
         mainLayout.addWidget(self.acceptButton, 3, 2, 1, 1)
         self.setLayout(mainLayout)
-
-        self.refreshButton.clicked.connect(self.manual_refresh)
         self.acceptButton.clicked.connect(self.accept)
 
-    def display(self):
-
-        self.acceptButton.setText(ui_shared.btn_label('accept'))
-
-        if self.parent.synHandle:
-            self.print_info()
-            self.instGroup.show()
-            self.rfGroup.show()
-            self.modGroup.show()
-        else:
-            self.instGroup.hide()
-            self.rfGroup.hide()
-            self.modGroup.hide()
-
-        self.exec()
-
-    def manual_refresh(self):
-
-        self.parent.synInfo.full_info_query(self.parent.synHandle)
-        self.print_info()
-
-    def print_info(self):
+    def print_info(self, info):
 
         # update instrument panel
-        self.instNameLabel.setText(self.parent.synInfo.instName)
-        self.instInterfaceLabel.setText(self.parent.synInfo.instInterface)
-        self.instInterfaceNumLabel.setText(str(self.parent.synInfo.instInterfaceNum))
-        self.instRemoteDispLabel.setText('ON' if self.parent.synInfo.instRemoteDisp else 'OFF')
+        self.instNameLabel.setText(info.instName)
+        self.instInterfaceLabel.setText(info.instInterface)
+        self.instInterfaceNumLabel.setText(str(info.instInterfaceNum))
+        self.instRemoteDispLabel.setText('ON' if info.instRemoteDisp else 'OFF')
 
         # update RF setting panel
-        self.rfOutputLabel.setText('ON' if self.parent.synInfo.rfToggle else 'OFF')
-        self.modOutputLabel.setText('ON' if self.parent.synInfo.modToggle else 'OFF')
-        self.synFreqLabel.setText('{:.9f} MHz'.format(self.parent.synInfo.synFreq * 1e-6))
+        self.rfOutputLabel.setText('ON' if info.rfToggle else 'OFF')
+        self.modOutputLabel.setText('ON' if info.modToggle else 'OFF')
+        self.synFreqLabel.setText('{:.9f} MHz'.format(info.synFreq * 1e-6))
 
         # update modulation setting panel
-        self.am1StateLabel.setText('ON' if self.parent.synInfo.AM1Toggle else 'OFF')
-        self.am1SrcLabel.setText(self.parent.synInfo.AM1Src)
-        self.am1DepthLabel.setText('{:.1f}% ({:.0f} dB)'.format(self.parent.synInfo.AM1DepthPercent, self.parent.synInfo.AM1DepthDbm))
-        self.am1FreqLabel.setText(siFormat(self.parent.synInfo.AM1Freq, suffix='Hz'))
-        self.am1WaveLabel.setText(self.parent.synInfo.AM1Wave)
+        self.am1StateLabel.setText('ON' if info.AM1Toggle else 'OFF')
+        self.am1SrcLabel.setText(info.AM1Src)
+        self.am1DepthLabel.setText('{:.1f}% ({:.0f} dB)'.format(info.AM1DepthPercent, info.AM1DepthDbm))
+        self.am1FreqLabel.setText(siFormat(info.AM1Freq, suffix='Hz'))
+        self.am1WaveLabel.setText(info.AM1Wave)
 
-        self.am2StateLabel.setText('ON' if self.parent.synInfo.AM2Toggle else 'OFF')
-        self.am2SrcLabel.setText(self.parent.synInfo.AM2Src)
-        self.am2DepthLabel.setText('{:.1f}% ({:.0f} dB)'.format(self.parent.synInfo.AM2DepthPercent, self.parent.synInfo.AM2DepthDbm))
-        self.am2FreqLabel.setText(siFormat(self.parent.synInfo.AM2Freq, suffix='Hz'))
-        self.am2WaveLabel.setText(self.parent.synInfo.AM2Wave)
+        self.am2StateLabel.setText('ON' if info.AM2Toggle else 'OFF')
+        self.am2SrcLabel.setText(info.AM2Src)
+        self.am2DepthLabel.setText('{:.1f}% ({:.0f} dB)'.format(info.AM2DepthPercent, info.AM2DepthDbm))
+        self.am2FreqLabel.setText(siFormat(info.AM2Freq, suffix='Hz'))
+        self.am2WaveLabel.setText(info.AM2Wave)
 
-        self.fm1StateLabel.setText('ON' if self.parent.synInfo.FM1Toggle else 'OFF')
-        self.fm1SrcLabel.setText(self.parent.synInfo.FM1Src)
-        self.fm1DevLabel.setText(siFormat(self.parent.synInfo.FM1Dev, suffix='Hz'))
-        self.fm1FreqLabel.setText(siFormat(self.parent.synInfo.FM1Freq, suffix='Hz'))
-        self.fm1WaveLabel.setText(self.parent.synInfo.FM1Wave)
+        self.fm1StateLabel.setText('ON' if info.FM1Toggle else 'OFF')
+        self.fm1SrcLabel.setText(info.FM1Src)
+        self.fm1DevLabel.setText(siFormat(info.FM1Dev, suffix='Hz'))
+        self.fm1FreqLabel.setText(siFormat(info.FM1Freq, suffix='Hz'))
+        self.fm1WaveLabel.setText(info.FM1Wave)
 
-        self.fm2StateLabel.setText('ON' if self.parent.synInfo.FM2Toggle else 'OFF')
-        self.fm2SrcLabel.setText(self.parent.synInfo.FM2Src)
-        self.fm2DevLabel.setText(siFormat(self.parent.synInfo.FM2Dev, suffix='Hz'))
-        self.fm2FreqLabel.setText(siFormat(self.parent.synInfo.FM2Freq, suffix='Hz'))
-        self.fm2WaveLabel.setText(self.parent.synInfo.FM2Wave)
+        self.fm2StateLabel.setText('ON' if info.FM2Toggle else 'OFF')
+        self.fm2SrcLabel.setText(info.FM2Src)
+        self.fm2DevLabel.setText(siFormat(info.FM2Dev, suffix='Hz'))
+        self.fm2FreqLabel.setText(siFormat(info.FM2Freq, suffix='Hz'))
+        self.fm2WaveLabel.setText(info.FM2Wave)
 
-        self.pm1StateLabel.setText('ON' if self.parent.synInfo.PM1Toggle else 'OFF')
-        self.pm1SrcLabel.setText(self.parent.synInfo.PM1Src)
-        self.pm1DevLabel.setText(siFormat(self.parent.synInfo.PM1Dev, suffix='rad'))
-        self.pm1FreqLabel.setText(siFormat(self.parent.synInfo.PM1Freq, suffix='Hz'))
-        self.pm1WaveLabel.setText(self.parent.synInfo.PM1Wave)
+        self.pm1StateLabel.setText('ON' if info.PM1Toggle else 'OFF')
+        self.pm1SrcLabel.setText(info.PM1Src)
+        self.pm1DevLabel.setText(siFormat(info.PM1Dev, suffix='rad'))
+        self.pm1FreqLabel.setText(siFormat(info.PM1Freq, suffix='Hz'))
+        self.pm1WaveLabel.setText(info.PM1Wave)
 
-        self.pm2StateLabel.setText('ON' if self.parent.synInfo.PM2Toggle else 'OFF')
-        self.pm2SrcLabel.setText(self.parent.synInfo.PM2Src)
-        self.pm2DevLabel.setText(siFormat(self.parent.synInfo.PM2Dev, suffix='rad'))
-        self.pm2FreqLabel.setText(siFormat(self.parent.synInfo.PM2Freq,  suffix='Hz'))
-        self.pm2WaveLabel.setText(self.parent.synInfo.PM2Wave)
+        self.pm2StateLabel.setText('ON' if info.PM2Toggle else 'OFF')
+        self.pm2SrcLabel.setText(info.PM2Src)
+        self.pm2DevLabel.setText(siFormat(info.PM2Dev, suffix='rad'))
+        self.pm2FreqLabel.setText(siFormat(info.PM2Freq,  suffix='Hz'))
+        self.pm2WaveLabel.setText(info.PM2Wave)
 
-        self.lfStateLabel.setText('ON' if self.parent.synInfo.LFToggle else 'OFF')
-        self.lfSrcLabel.setText(self.parent.synInfo.LFSrc)
-        self.lfVolLabel.setText(siFormat(self.parent.synInfo.LFVoltage, suffix='V'))
+        self.lfStateLabel.setText('ON' if info.LFToggle else 'OFF')
+        self.lfSrcLabel.setText(info.LFSrc)
+        self.lfVolLabel.setText(siFormat(info.LFVoltage, suffix='V'))
 
 
 class LockinInfoDialog(QtWidgets.QDialog):
