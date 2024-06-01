@@ -465,3 +465,138 @@ def jpl_scan_time(jpl_entry_settings):
         total_time += data_points * entry[7] * 1e-3
 
     return total_time
+
+
+class CommStatusBulb(QtWidgets.QPushButton):
+    """ Status bulb. Inherite from QPushButton, but display it
+    as a round circle and cannot be pressed.
+    -----
+    Public methods
+        setStatus(bool)         Set bulb status, green(True) or red(False)
+    -----
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        self.setFlat(True)
+        self.setStatus(False)
+
+    def setStatus(self, b):
+        """ Set color by bool """
+
+        if b:    # green color
+            self.setStyleSheet("""background-color: #6ec56e;
+                                  border-style: solid;
+                                  border-width:1px;
+                                  border-radius:8px;
+                                  border-color: #6ec56e;
+                                  max-width:16px;
+                                  max-height:16px;
+                                  min-width:16px;
+                                  min-height:16px """)
+        else:       # red color
+            self.setStyleSheet("""background-color: #fe2e2e;
+                                  border-style: solid;
+                                  border-width:1px;
+                                  border-radius:8px;
+                                  border-color: #fe2e2e;
+                                  max-width:16px;
+                                  max-height:16px;
+                                  min-width:16px;
+                                  min-height:16px """)
+
+
+class InstState(QtWidgets.QWidget):
+    """ A packed widget to show the instrument connection state.
+        Added to the pyDAQ GUI via its DialogInstState dialog window
+    """
+
+    def __init__(self, name='', addr='', port='', mask='', port_range=()):
+
+        super().__init__()
+
+        self._is_addr = bool(addr)
+        self._is_port = isinstance(port, int)
+
+        self.nameLabel = QtWidgets.QLabel(name)
+        self.bulb = CommStatusBulb()
+        self.msgLabel = QtWidgets.QLabel()
+        self.msgLabel.setWordWrap(True)
+        self.msgLabel.setMargin(2)
+        self.msgLabel.setMinimumWidth(360)
+        self.btn = QtWidgets.QPushButton('Test Connection')
+
+        self.addrInput = QtWidgets.QLineEdit()
+        if mask:
+            self.addrInput.setInputMask(mask)
+        else:
+            pass
+        self.addrInput.setMinimumWidth(90)
+        self.addrInput.setMaximumWidth(120)
+
+        if self._is_port:
+            # if port is given, set the value to widget
+            self.portInput = QtWidgets.QSpinBox()
+            if port_range:
+                self.portInput.setMinimum(port_range[0])
+                self.portInput.setMaximum(port_range[1])
+            else:
+                pass
+            self.portInput.setValue(port)
+        else:
+            # if no port is given, disable the widget
+            self.portInput = QtWidgets.QLineEdit()
+            self.portInput.setReadOnly(True)
+            self.portInput.setStyleSheet('background-color: #E0E0E0')
+
+        self.portInput.setMinimumWidth(60)
+        self.portInput.setMaximumWidth(80)
+
+    def update_state(self, is_active, addr='', port='', txt=''):
+        """ Update information """
+        # update connection status bulb
+        self.bulb.setStatus(is_active)
+        self.addrInput.setText(addr)
+        if self._is_port:
+            if isinstance(port, int):
+                self.portInput.setValue(port)
+            else:
+                self.portInput.setValue(0)
+        else:
+            self.portInput.setText('' or port)
+        # update message
+        self.msgLabel.setText(txt)
+
+
+class BtnSwitch(QtWidgets.QPushButton):
+    """ A checkable switch button """
+
+    def __init__(self, title='', ontxt='', offtxt=''):
+
+        super().__init__()
+        self._title = title
+        self._ontxt = ontxt
+        self._offtxt = offtxt
+        self.setCheckable(True)
+        self.setChecked(False)
+        if offtxt:
+            self.setText(offtxt)
+        else:
+            self.setText('{:s} OFF'.format(title))
+        # don't add [int] because it throws keyError
+        super().toggled.connect(self._change_label)
+
+    def _change_label(self, toggle_state):
+
+        if toggle_state:
+            if self._ontxt:
+                self.setText(self._ontxt)
+            else:
+                self.setText('{:s} ON'.format(self._title))
+        else:
+            if self._offtxt:
+                self.setText(self._offtxt)
+            else:
+                self.setText('{:s} OFF'.format(self._title))
+

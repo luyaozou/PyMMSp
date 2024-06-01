@@ -59,10 +59,6 @@ class MainWindow(QtWidgets.QMainWindow):
             config.from_json_(self.prefs, f)
         self.setGeometry(QtCore.QRect(*self.prefs.geometry))
 
-        self.testModeSignLabel = QtWidgets.QLabel('[TEST MODE ACTIVE -- NOTHING IS REAL]!')
-        self.testModeSignLabel.setStyleSheet('color: {:s}'.format(ui_shared.msg_color(0)))
-        self.testModeSignLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-
         # Initiate pyvisa instrument objects
         self.syn_handle = None
         self.lockin_handle = None
@@ -72,6 +68,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Set menu bar
         self.menuBar = ui_menu.MenuBar(self)
+        self.setMenuBar(self.menuBar)
+        self.statusBar = ui_menu.StatusBar(self)
+        self.setStatusBar(self.statusBar)
 
         # Set classes to store all instrument info
         self.syn_info = api_syn.Syn_Info()
@@ -114,17 +113,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self.menuBar.testModeAction.isChecked():
             self.setWindowTitle('Yo! Go PyMMSp! [TEST MODE]')
-            self.testModeSignLabel.show()
-            self.ui.synPanel.setChecked(Qt.CheckState.Checked)
-            self.ui.lockinPanel.setChecked(Qt.CheckState.Checked)
-            self.ui.oscilloPanel.setChecked(Qt.CheckState.Checked)
-            self.ui.motorPanel.setChecked(Qt.CheckState.Checked)
-            self.ui.synStatus.setChecked(Qt.CheckState.Checked)
-            self.ui.liaStatus.setChecked(Qt.CheckState.Checked)
-            self.ui.scopeStatus.setChecked(Qt.CheckState.Checked)
+            self.statusBar.testModeLabel.show()
+            self.ui.synPanel.setChecked(True)
+            self.ui.lockinPanel.setChecked(True)
+            self.ui.oscilloPanel.setChecked(True)
+            self.ui.motorPanel.setChecked(True)
+            self.ui.synStatus.setChecked(True)
+            self.ui.liaStatus.setChecked(True)
+            self.ui.scopeStatus.setChecked(True)
         else:
             self.setWindowTitle('Yo! Go PyMMSp!')
-            self.testModeSignLabel.hide()
+            self.statusBar.testModeLabel.hide()
             self.ui.synPanel.setChecked(not (self.syn_handle is None))
             self.ui.lockinPanel.setChecked(not (self.lockin_handle is None))
             self.ui.oscilloPanel.setChecked(not (self.oscillo_handle is None))

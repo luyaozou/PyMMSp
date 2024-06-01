@@ -2,9 +2,11 @@
 
 """ Collection of menubar, toolbar and status bar """
 
-from PyQt6.QtWidgets import QMenuBar
+from PyQt6.QtWidgets import QMenuBar, QLabel
 from PyQt6.QtWidgets import QStatusBar
 from PyQt6.QtGui import QAction
+from PyQt6 import QtCore
+from PyMMSp.ui.ui_shared import CommStatusBulb, msg_color
 
 
 class MenuBar(QMenuBar):
@@ -79,3 +81,40 @@ class StatusBar(QStatusBar):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self.synBulb = CommStatusBulb()
+        self.liaBulb = CommStatusBulb()
+        self.oscilloBulb = CommStatusBulb()
+        self.gaugeBulb = CommStatusBulb()
+
+        self.testModeLabel = QLabel('[TEST MODE ACTIVE -- NOTHING IS REAL]!')
+        self.testModeLabel.setStyleSheet(f'color: {msg_color(0)}')
+        self.testModeLabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+
+        self.labelInst = QLabel()
+        self.addPermanentWidget(self.testModeLabel)
+        self.addPermanentWidget(self.labelInst)
+        self.addPermanentWidget(QLabel('Synthesizer'))
+        self.addPermanentWidget(self.synBulb)
+        self.addPermanentWidget(QLabel('Lockin'))
+        self.addPermanentWidget(self.liaBulb)
+        self.addPermanentWidget(QLabel('Oscilloscope'))
+        self.addPermanentWidget(self.oscilloBulb)
+        self.addPermanentWidget(QLabel('Gauge'))
+        self.addPermanentWidget(self.gaugeBulb)
+
+        self._inst_map = {
+            'syn': self.synBulb,
+            'lia': self.liaBulb,
+            'oscillo': self.oscilloBulb,
+            'gauge': self.gaugeBulb
+        }
+
+    @QtCore.pyqtSlot(str, bool)
+    def update_inst_state(self, inst, b):
+        self._inst_map[inst].setStatus(b)
+
+    def set_sim(self, b):
+        if b:
+            self.labelInst.setText('Simulator: ')
+        else:
+            self.labelInst.setText('Real: ')

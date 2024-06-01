@@ -452,7 +452,7 @@ class CtrlSynPower(QtWidgets.QWidget):
                 pass
             else:
                 api_syn.set_power_toggle(self.handle, False)
-            self.ui.synPanel.synPowerSwitchBtn.setChecked(QtCore.Qt.CheckState.Unchecked)
+            self.ui.synPanel.synPowerSwitchBtn.setChecked(False)
 
         self.ui.synStatus.print_info(self.info)
 
