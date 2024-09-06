@@ -3,11 +3,48 @@
 
 
 from PyQt6 import QtGui, QtCore, QtWidgets
-from PyMMSp.inst import general as api_gen
+from PyMMSp.inst.base import CONNECTION_TYPES
+
 from PyMMSp.libs import lwa
 from PyMMSp.ui import ui_shared
 from pyqtgraph import siFormat
 import pyqtgraph as pg
+
+
+class DialogConfigIndvInst(QtWidgets.QDialog):
+    """ Configure an individual instrument """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        thisLayout = QtWidgets.QFormLayout()
+        self.comboConnectionType = QtWidgets.QComboBox()
+        self.comboConnectionType.addItems(list(CONNECTION_TYPES))
+        self.editInstAddr = QtWidgets.QLineEdit()
+        self.comboInstModel = QtWidgets.QComboBox()
+        self.btnAccept = QtWidgets.QPushButton('Ok')
+        self.btnCancel = QtWidgets.QPushButton('Cancel')
+        thisLayout.addRow(QtWidgets.QLabel('Connection Type'), self.comboConnectionType)
+        thisLayout.addRow(QtWidgets.QLabel('Address'), self.editInstAddr)
+        thisLayout.addRow(QtWidgets.QLabel('Model'), self.comboInstModel)
+        thisLayout.addRow(self.btnCancel, self.btnAccept)
+        self.setLayout(thisLayout)
+
+        self.btnAccept.clicked.connect(self.accept)
+        self.btnCancel.clicked.connect(self.reject)
+
+        # set input mask according to coonection type
+        self.comboConnectionType.currentTextChanged.connect(self.set_input_mask)
+        # initialize input mask
+        self.set_input_mask(self.comboConnectionType.currentText())
+
+    def set_input_mask(self, text):
+        if text == 'GPIB VISA':
+            self.editInstAddr.setInputMask("GPIB0::000;_::000;_::INSTR")
+        elif text == 'COM':
+            self.editInstAddr.setInputMask('COM0;0')
+        elif text == 'Ethernet':
+            self.editInstAddr.setInputMask('000.000.000.000:_')
 
 
 class SelInstDialog(QtWidgets.QDialog):
@@ -18,74 +55,117 @@ class SelInstDialog(QtWidgets.QDialog):
         self.setMinimumWidth(400)
         self.setMinimumHeight(400)
         self.setWindowTitle('Select Instrument')
+        self.dIndvInst = DialogConfigIndvInst(self)
 
         refreshButton = QtWidgets.QPushButton('Refresh Available Instrument List')
         acceptButton = QtWidgets.QPushButton(ui_shared.btn_label('confirm'))
         cancelButton = QtWidgets.QPushButton(ui_shared.btn_label('reject'))
 
-        self.availableInst = QtWidgets.QLabel()
-        instList, instStr = api_gen.list_inst()
-        self.availableInst.setText(instStr)
+        self.gpBtnInst = QtWidgets.QGroupBox('Select Instrument')
 
-        selInst = QtWidgets.QWidget()
-        selInstLayout = QtWidgets.QFormLayout()
-        self.selSyn = QtWidgets.QComboBox()
-        self.selSyn.addItems(['N.A.'])
-        self.selSyn.addItems(instList)
-        self.selLockin = QtWidgets.QComboBox()
-        self.selLockin.addItems(['N.A.'])
-        self.selLockin.addItems(instList)
-        self.selScope = QtWidgets.QComboBox()
-        self.selScope.addItems(['N.A.'])
-        self.selScope.addItems(instList)
-        self.selMotor = QtWidgets.QComboBox()
-        self.selMotor.addItems(['N.A.'])
-        self.selMotor.addItems(instList)
-        self.selPressure = QtWidgets.QComboBox()
-        self.selPressure.addItems(['N.A.'])
-        self.selPressure.addItems(instList)
-        selInstLayout.addRow(QtWidgets.QLabel('Synthesizer'), self.selSyn)
-        selInstLayout.addRow(QtWidgets.QLabel('Lock-in'), self.selLockin)
-        selInstLayout.addRow(QtWidgets.QLabel('Oscilloscope'), self.selScope)
-        selInstLayout.addRow(QtWidgets.QLabel('Step Motor'), self.selMotor)
-        selInstLayout.addRow(QtWidgets.QLabel('CENTER TWO Pressure Readout'), self.selPressure)
-        selInst.setLayout(selInstLayout)
+        self.btnSyn = QtWidgets.QPushButton('Synthesizer')
+        self.btnLockin = QtWidgets.QPushButton('Lock-in')
+        self.btnAWG = QtWidgets.QPushButton('AWG')
+        self.btnOscillo = QtWidgets.QPushButton('Oscilloscope')
+        self.btnUCA = QtWidgets.QPushButton('UCA Power Supply')
+        self.btnFlow = QtWidgets.QPushButton('Flow Controller')
+        self.btnGauge1 = QtWidgets.QPushButton('Gauge1')
+        self.btnGauge2 = QtWidgets.QPushButton('Gauge2')
 
-        # Set main layout
-        mainLayout = QtWidgets.QGridLayout()
-        mainLayout.addWidget(self.availableInst, 0, 0, 1, 2)
-        mainLayout.addWidget(refreshButton, 1, 0, 1, 2)
-        mainLayout.addWidget(selInst, 2, 0, 1, 2)
-        mainLayout.addWidget(cancelButton, 3, 0)
-        mainLayout.addWidget(acceptButton, 3, 1)
+        btnInstLayout = QtWidgets.QGridLayout()
+        btnInstLayout.addWidget(self.btnSyn, 0, 0)
+        btnInstLayout.addWidget(self.btnLockin, 0, 1)
+        btnInstLayout.addWidget(self.btnAWG, 1, 0)
+        btnInstLayout.addWidget(self.btnOscillo, 1, 1)
+        btnInstLayout.addWidget(self.btnUCA, 2, 0)
+        btnInstLayout.addWidget(self.btnFlow, 2, 1)
+        btnInstLayout.addWidget(self.btnGauge1, 3, 0)
+        btnInstLayout.addWidget(self.btnGauge2, 3, 1)
+        self.gpBtnInst.setLayout(btnInstLayout)
 
-        self.setLayout(mainLayout)
+        self.lblConnSyn = QtWidgets.QLabel('N.A')
+        self.statusSyn = ui_shared.CommStatusBulb(-1)
+        self.lblConnLockin = QtWidgets.QLabel('N.A')
+        self.statusLockin = ui_shared.CommStatusBulb(-1)
+        self.lblConnAWG = QtWidgets.QLabel('N.A')
+        self.statusAWG = ui_shared.CommStatusBulb(-1)
+        self.lblConnScope = QtWidgets.QLabel('N.A')
+        self.statusScope = ui_shared.CommStatusBulb(-1)
+        self.lblConnUCA = QtWidgets.QLabel('N.A')
+        self.statusUCA = ui_shared.CommStatusBulb(-1)
+        self.lblConnFlow = QtWidgets.QLabel('N.A')
+        self.statusFlow = ui_shared.CommStatusBulb(-1)
+        self.lblConnGauge1 = QtWidgets.QLabel('N.A')
+        self.statusGauge1 = ui_shared.CommStatusBulb(-1)
+        self.lblConnGauge2 = QtWidgets.QLabel('N.A')
+        self.statusGauge2 = ui_shared.CommStatusBulb(-1)
 
-        refreshButton.clicked.connect(self.refresh)
-        cancelButton.clicked.connect(self.reject)
-        acceptButton.clicked.connect(self.accept)
+        instListLayout = QtWidgets.QGridLayout()
+        instListLayout.addWidget(QtWidgets.QLabel('Instrument'), 0, 0)
+        instListLayout.addWidget(QtWidgets.QLabel('Connection'), 0, 1)
+        instListLayout.addWidget(QtWidgets.QLabel('Status'), 0, 2)
+
+        instListLayout.addWidget(QtWidgets.QLabel('Synthesizer'), 1, 0)
+        instListLayout.addWidget(self.lblConnSyn, 1, 1)
+        instListLayout.addWidget(self.statusSyn, 1, 2)
+        instListLayout.addWidget(QtWidgets.QLabel('Lock-in'), 2, 0)
+        instListLayout.addWidget(self.lblConnLockin, 2, 1)
+        instListLayout.addWidget(self.statusLockin, 2, 2)
+        instListLayout.addWidget(QtWidgets.QLabel('AWG'), 3, 0)
+        instListLayout.addWidget(self.lblConnAWG, 3, 1)
+        instListLayout.addWidget(self.statusAWG, 3, 2)
+        instListLayout.addWidget(QtWidgets.QLabel('Oscilloscope'), 4, 0)
+        instListLayout.addWidget(self.lblConnScope, 4, 1)
+        instListLayout.addWidget(self.statusScope, 4, 2)
+        instListLayout.addWidget(QtWidgets.QLabel('UCA Power Supply'), 5, 0)
+        instListLayout.addWidget(self.lblConnUCA, 5, 1)
+        instListLayout.addWidget(self.statusUCA, 5, 2)
+        instListLayout.addWidget(QtWidgets.QLabel('Flow Meter'), 6, 0)
+        instListLayout.addWidget(self.lblConnFlow, 6, 1)
+        instListLayout.addWidget(self.statusFlow, 6, 2)
+        instListLayout.addWidget(QtWidgets.QLabel('Gauge1'), 7, 0)
+        instListLayout.addWidget(self.lblConnGauge1, 7, 1)
+        instListLayout.addWidget(self.statusGauge1, 7, 2)
+        instListLayout.addWidget(QtWidgets.QLabel('Gauge2'), 8, 0)
+        instListLayout.addWidget(self.lblConnGauge2, 8, 1)
+        instListLayout.addWidget(self.statusGauge2, 8, 2)
+
+        btnLayout = QtWidgets.QHBoxLayout()
+        btnLayout.addWidget(cancelButton)
+        btnLayout.addWidget(acceptButton)
+        btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.addWidget(self.gpBtnInst)
+        thisLayout.addLayout(instListLayout)
+        thisLayout.addLayout(btnLayout)
+        self.setLayout(thisLayout)
+
+#        refreshButton.clicked.connect(self.refresh)
+#        cancelButton.clicked.connect(self.reject)
+#        acceptButton.clicked.connect(self.accept)
 
     def refresh(self):
         """ Refresh instrument list """
 
         # refresh avaiable instrument list
-        instList, instStr = api_gen.list_inst()
+        instList, instStr = api_gen.list_visa_inst()
         self.availableInst.setText(instStr)
 
         # refresh QComboBoxes
-        item_count = self.selSyn.count()
+        item_count = self.btnSyn.count()
         # remove all items but the first one
         for i in range(item_count-1):
             # Because Qt automatically update the index, this loop needs to
             # keep deleting the 'second' item, whose index is 1
-            self.selSyn.removeItem(1)
-            self.selLockin.removeItem(1)
-            self.selScope.removeItem(1)
+            self.btnSyn.removeItem(1)
+            self.btnLockin.removeItem(1)
+            self.btnOscillo.removeItem(1)
             self.selMotor.removeItem(1)
             self.selPressure.removeItem(1)
-        self.selSyn.addItems(instList)
-        self.selLockin.addItems(instList)
-        self.selScope.addItems(instList)
+        self.btnSyn.addItems(instList)
+        self.btnLockin.addItems(instList)
+        self.btnOscillo.addItems(instList)
         self.selMotor.addItems(instList)
         self.selPressure.addItems(instList)
 
@@ -99,9 +179,9 @@ class SelInstDialog(QtWidgets.QDialog):
                            self.parent.pressureHandle)
 
         # open new instrument handles
-        self.parent.synHandle = api_gen.open_inst(self.selSyn.currentText())
-        self.parent.liaHandle = api_gen.open_inst(self.selLockin.currentText())
-        self.parent.pciHandle = api_gen.open_inst(self.selScope.currentText())
+        self.parent.synHandle = api_gen.open_inst(self.btnSyn.currentText())
+        self.parent.liaHandle = api_gen.open_inst(self.btnLockin.currentText())
+        self.parent.pciHandle = api_gen.open_inst(self.btnOscillo.currentText())
         self.parent.motorHandle = api_gen.open_inst(self.selMotor.currentText())
         self.parent.pressureHandle = api_gen.open_inst(self.selPressure.currentText())
 

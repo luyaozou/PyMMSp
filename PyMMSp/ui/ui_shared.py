@@ -472,29 +472,41 @@ class CommStatusBulb(QtWidgets.QPushButton):
     as a round circle and cannot be pressed.
     -----
     Public methods
-        setStatus(bool)         Set bulb status, green(True) or red(False)
+        setStatus(bool/int)
+            Set bulb status, green(True) or red(False), or gray(-1)
     -----
     """
 
-    def __init__(self):
+    def __init__(self, stat=False):
         super().__init__()
 
         self.setFlat(True)
-        self.setStatus(False)
+        self.setStatus(stat)
 
     def setStatus(self, b):
         """ Set color by bool """
 
-        if b:    # green color
-            self.setStyleSheet("""background-color: #6ec56e;
-                                  border-style: solid;
-                                  border-width:1px;
-                                  border-radius:8px;
-                                  border-color: #6ec56e;
-                                  max-width:16px;
-                                  max-height:16px;
-                                  min-width:16px;
-                                  min-height:16px """)
+        if b:
+            if int(b) > 0:  # green color
+                self.setStyleSheet("""background-color: #6ec56e;
+                                      border-style: solid;
+                                      border-width:1px;
+                                      border-radius:8px;
+                                      border-color: #6ec56e;
+                                      max-width:16px;
+                                      max-height:16px;
+                                      min-width:16px;
+                                      min-height:16px """)
+            else:           # gray color
+                self.setStyleSheet("""background-color: #C0C0C0;
+                                      border-style: solid;
+                                      border-width:1px;
+                                      border-radius:8px;
+                                      border-color: #C0C0C0;
+                                      max-width:16px;
+                                      max-height:16px;
+                                      min-width:16px;
+                                      min-height:16px """)
         else:       # red color
             self.setStyleSheet("""background-color: #fe2e2e;
                                   border-style: solid;

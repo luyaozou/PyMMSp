@@ -1,6 +1,10 @@
 #! encoding = utf-8
 from dataclasses import dataclass, fields
 
+LOCKIN_MODELS = (
+    'SR830',
+)
+
 _WAVE_STR = ('SINE', 'SQU', 'TRI', 'RAMP')
 
 # LOCKIN AMPLIFIER SENSTIVITY LIST
@@ -131,6 +135,11 @@ class Lockin_Info:
     @property
     def sample_rate_txt(self):
         return SAMPLE_RATE[self.sample_rate_idx]
+
+
+def get_lockin_info(handle, info):
+    """ Get lockin information """
+    pass
 
 
 def init_lia(handle):

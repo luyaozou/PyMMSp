@@ -3,6 +3,9 @@ from dataclasses import dataclass, fields
 
 SENS = (20, 5, 1, 0.5, 0.2)
 SENS_STR = ('20 V', '5 V', '1 V', '0.5 V', '0.2 V')
+OSCILLO_MODELS = (
+    'Tektronix TDS1002',
+)
 
 @dataclass
 class Oscilloscope_Info:
@@ -11,6 +14,11 @@ class Oscilloscope_Info:
     def reset(self):
         for field in fields(self):
             setattr(self, field.name, field.default)
+
+
+def get_oscillo_info(handle, info):
+    """ Get oscilloscope information """
+    pass
 
 
 def query_inst_name(handle):

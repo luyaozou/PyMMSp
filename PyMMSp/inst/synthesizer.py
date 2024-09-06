@@ -1,6 +1,10 @@
 #! encoding = utf-8
 from dataclasses import dataclass, fields
 
+SYN_MODELS = (
+    'Rohde & Schwarz SMF100A',
+)
+
 # VDI band information.
 # Keys are the indices used in VDIBandComboBox,
 # and values are the names, multiplication factors, and recommended frequency ranges.
@@ -60,6 +64,7 @@ class Syn_Info:
     inst_interface: str = ''
     inst_interface_num: int = 0
     inst_remote_disp: bool = False
+    conn_status: bool = False       # connection status
     rf_toggle: bool = False
     syn_power: float = -20.
     syn_freq: float = 3e10  # Hz
@@ -117,6 +122,11 @@ class Syn_Info:
     @property
     def modu_mode_txt(self):
         return MODU_MODE[self.modu_mode_idx]
+
+
+def get_syn_info(handle, info):
+    """ Get synthesizer information """
+    pass
 
 
 def ramp_up(start, stop):

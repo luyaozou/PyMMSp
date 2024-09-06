@@ -11,8 +11,9 @@ from PyMMSp.ui import ui_dialog
 from PyMMSp.ui import ui_menu
 from PyMMSp.ui import ui_shared
 from PyMMSp.daq import JPLScan
+from PyMMSp.inst.base import Handles
 from PyMMSp.inst import lockin as api_lia
-from PyMMSp.inst import general as api_gen
+from PyMMSp.inst import base as api_gen
 from PyMMSp.inst import synthesizer as api_syn
 from PyMMSp.inst import oscillo as api_oscillo
 from PyMMSp.inst import motor as api_motor
@@ -22,6 +23,7 @@ from PyMMSp.ctrl import (ctrl_syn,
                          ctrl_oscillo,
                          ctrl_motor,
                          ctrl_gauge,
+                         ctrl_insts,
                          )
 from PyMMSp.config import config
 from PyMMSp.libs.util import abs_path
@@ -38,6 +40,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setMinimumWidth(1500)
         self.setMinimumHeight(840)
         self.prefs = config.Prefs()
+        # Initiate instrument objects
+        self.inst_handles = Handles()
+
         # set default geometry
         screen = QtWidgets.QApplication.primaryScreen()
         screen_geometry = screen.geometry()
@@ -83,6 +88,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui = ui_main.MainUI(self)
         self.setCentralWidget(self.ui)
 
+        self.ctrl_insts = ctrl_insts.CtrlInsts(
+            self.prefs, self.ui, self.inst_handles, parent=self)
         self.ctrl_syn = ctrl_syn.CtrlSyn(
             self.prefs, self.ui, self.syn_info, self.syn_handle, parent=self)
         self.ctrl_syn_pow = ctrl_syn.CtrlSynPower(
@@ -95,6 +102,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.prefs, self.ui, self.motor_info, self.motor_handle, parent=self)
         self.ctrl_gauge = ctrl_gauge.CtrlGauge(
             self.prefs, self.ui, self.gauge_info, self.gauge_handle, parent=self)
+        self.ctrl_insts = ctrl_insts.CtrlInsts(
+            self.prefs, self.ui, self.inst_infos, self.inst_handles, parent=self)
         self.refresh_inst()
 
         # connect menubar signals

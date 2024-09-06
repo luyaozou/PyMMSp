@@ -1,6 +1,9 @@
 #! encoding = utf-8
 from dataclasses import dataclass, fields
 
+GAUGE_CTRL_MODELS = (
+    'Pfeiffer TPG 261',
+)
 
 # internal code dictionaries
 _P_STATUS = {'0': 'Okay',
@@ -26,6 +29,11 @@ class Gauge_Info:
     def reset(self):
         for field in fields(self):
             setattr(self, field.name, field.default)
+
+
+def get_gauge_info(handle, info):
+    """ Get pressure gauge information """
+    pass
 
 
 def query_p(handle, chn):
