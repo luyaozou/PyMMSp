@@ -1,5 +1,7 @@
 #! encoding = utf-8
 from dataclasses import dataclass, fields
+from abc import ABC
+import json
 
 SYN_MODELS = (
     'Rohde & Schwarz SMF100A',
@@ -64,7 +66,7 @@ class Syn_Info:
     inst_interface: str = ''
     inst_interface_num: int = 0
     inst_remote_disp: bool = False
-    conn_status: bool = False       # connection status
+    conn_status: bool = False  # connection status
     rf_toggle: bool = False
     syn_power: float = -20.
     syn_freq: float = 3e10  # Hz
@@ -127,6 +129,183 @@ class Syn_Info:
 def get_syn_info(handle, info):
     """ Get synthesizer information """
     pass
+
+
+class _SynAPI(ABC):
+    """ Base API with method stubs in order to enable IDE features
+    Contains all functions need to be defined in the API_MAP file
+
+    Get functions always returns a tuple (bool, value) where first element is the status of the query
+    Set functions always returns a boolean value indicating the success of the operation
+    """
+
+    def get_inst_name(self, handle) -> (bool, str):
+        pass
+
+    def init_syn(self, handle) -> None:
+        pass
+
+    def get_power_stat(self, handle) -> (bool, bool):
+        pass
+
+    def set_power_stat(self, handle, stat: bool) -> bool:
+        pass
+
+    def get_power_level(self, handle) -> (bool, float):
+        pass
+
+    def set_power_level(self, handle, power: float) -> bool:
+        pass
+
+    def get_cw_freq(self, handle) -> (bool, float):
+        pass
+
+    def set_cw_freq(self, handle, freq: float, unit: str) -> bool:
+        pass
+
+    def get_modu_stat(self, handle) -> (bool, bool):
+        pass
+
+    def set_modu_stat(self, handle, stat: bool) -> bool:
+        pass
+
+    def get_am_stat(self, handle, chan: int) -> (bool, bool):
+        pass
+
+    def set_am_stat(self, handle, chan: int, stat: bool) -> bool:
+        pass
+
+    def get_am_source(self, handle, chan: int) -> (bool, str):
+        pass
+
+    def set_am_source(self, handle, chan: int, source: str) -> bool:
+        pass
+
+    def get_am_waveform(self, handle, chan: int) -> (bool, str):
+        pass
+
+    def set_am_waveform(self, handle, chan: int, wave: str) -> bool:
+        pass
+
+    def get_am_freq(self, handle, chan: int) -> (bool, float):
+        pass
+
+    def set_am_freq(self, handle, chan: int, freq: float, unit: str) -> bool:
+        pass
+
+    def get_am_depth(self, handle, chan: int) -> (bool, float):
+        pass
+
+    def get_am_depth_db(self, handle, chan: int) -> (bool, float):
+        pass
+
+    def set_am_depth(self, handle, chan: int, depth: float) -> bool:
+        pass
+
+    def get_fm_stat(self, handle, chan: int) -> (bool, bool):
+        pass
+
+    def set_fm_stat(self, handle, chan: int, stat: bool) -> bool:
+        pass
+
+    def get_fm_freq(self, handle, chan: int) -> (bool, float):
+        pass
+
+    def set_fm_freq(self, handle, chan: int, freq: float, unit: str) -> bool:
+        pass
+
+    def get_fm_dev(self, handle, chan: int) -> (bool, float):
+        pass
+
+    def set_fm_dev(self, handle, chan: int, dev: float, unit: str) -> bool:
+        pass
+
+    def get_fm_waveform(self, handle, chan: int) -> (bool, str):
+        pass
+
+    def set_fm_waveform(self, handle, chan: int, wave: str) -> bool:
+        pass
+
+    def get_pm_stat(self, handle, chan: int) -> (bool, bool):
+        pass
+
+    def set_pm_stat(self, handle, chan: int, stat: bool) -> bool:
+        pass
+
+    def get_pm_freq(self, handle, chan: int) -> (bool, float):
+        pass
+
+    def set_pm_freq(self, handle, chan: int, freq: float, unit: str) -> bool:
+        pass
+
+    def get_pm_dev(self, handle, chan: int) -> (bool, float):
+        pass
+
+    def set_pm_dev(self, handle, chan: int, dev: float, unit: str) -> bool:
+        pass
+
+    def get_pm_waveform(self, handle, chan: int) -> (bool, str):
+        pass
+
+    def set_pm_waveform(self, handle, chan: int, wave: str) -> bool:
+        pass
+
+    def get_lfo_stat(self, handle) -> (bool, bool):
+        pass
+
+    def set_lfo_stat(self, handle, stat: bool) -> bool:
+        pass
+
+    def get_lfo_source(self, handle) -> (bool, float):
+        pass
+
+    def get_lfo_ampl(self, handle) -> (bool, float):
+        pass
+
+    def set_lfo_ampl(self, handle, ampl: float) -> bool:
+        pass
+
+    def get_err(self, handle) -> (bool, str):
+        pass
+
+    def get_remote_disp_stat(self, handle) -> (bool, bool):
+        pass
+
+
+class DynamicSynAPI(_SynAPI):
+    """ Dynamic API loading API_MAP file to create real functions """
+
+    def __init__(self, api_map_file):
+        functions = create_functions(api_map_file)
+        for name, func in functions.items():
+            setattr(self, name, func)
+
+
+def create_functions(api_map_file):
+    """ Create functions from the API_MAP file """
+    with open(api_map_file, 'r') as f:
+        api_map = json.load(f)
+    functions = {}
+    for item in api_map['functions']:
+        name = item['name']
+        args = item['args']
+        kwargs = item['kwargs']
+        cmd = item['cmd']
+        if name.startswith('set_'):
+            def func(handle, *args, cmd=cmd, **kwargs):
+                code = cmd.format(*args, **kwargs)
+                stat = handle.send(code)
+                return stat
+        elif name.startswith('get_'):
+            def func(handle, *args, cmd=cmd, **kwargs):
+                code = cmd.format(*args, **kwargs)
+                stat, value = handle.query(code)
+                return stat, value
+        else:
+            def func(handle, *args, **kwargs):
+                pass
+        functions[name] = func
+    return functions
 
 
 def ramp_up(start, stop):

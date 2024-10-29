@@ -73,18 +73,30 @@ class Handles:
                 if value and value.is_active:
                     value.close()
 
-    def connect(self, inst_type, connection_type, inst_addr, inst_model):
+    def connect(self, inst_type, connection_type, inst_addr, inst_model, is_sim=False):
 
-        if connection_type == 'Ethernet':
-            # split the IP address and port
-            ip, port = inst_addr.split(':')
-            conn = _SocketHandle(ip, port, inst_model)
-        elif connection_type == 'COM':
-            conn = _COMHandle(inst_addr, inst_model)
-        elif connection_type == 'GPIB VISA':
-            conn = _VISAHandle(inst_addr, inst_model)
+        if is_sim:
+            if connection_type == 'Ethernet':
+                # split the IP address and port
+                ip, port = inst_addr.split(':')
+                conn = _SimSocketHandle(ip, port, inst_model)
+            elif connection_type == 'COM':
+                conn = _SimCOMHandle(inst_addr, inst_model)
+            elif connection_type == 'GPIB VISA':
+                conn = _SimVISAHanlde(inst_addr, inst_model)
+            else:
+                raise ConnectionError('Connection type not supported.')
         else:
-            raise ConnectionError('Connection type not supported.')
+            if connection_type == 'Ethernet':
+                # split the IP address and port
+                ip, port = inst_addr.split(':')
+                conn = _SocketHandle(ip, port, inst_model)
+            elif connection_type == 'COM':
+                conn = _COMHandle(inst_addr, inst_model)
+            elif connection_type == 'GPIB VISA':
+                conn = _VISAHandle(inst_addr, inst_model)
+            else:
+                raise ConnectionError('Connection type not supported.')
 
         if inst_type == 'Synthesizer':
             self.h_syn = conn
@@ -139,6 +151,7 @@ class Infos:
         self.gauge1 = Gauge_Info()
         self.gauge2 = Gauge_Info()
 
+
 class _BadHandle:
     """ A "bad" instrument handle class.
     Used for representing the error instrument connection.
@@ -161,22 +174,7 @@ class _BadHandle:
 
 
 class _SocketHandle:
-    """ Ethernet socket connection. Both Agilent instruments are using this
-
-    Attributes
-    ----------
-        addr: str           IP address
-        port: int           port
-        is_sim: False       is simulator ? (False)
-        is_active: bool     Is session active?
-
-    Public methods
-    --------------
-        query(code, byte, skip) -> str             query inst
-        send(code)                                 send code to inst
-        recv(byte)                                 receive byte from inst
-        close()                                    close connection
-    """
+    """ Ethernet socket connection. """
 
     def __init__(self, ip, port, model, timeout=1, line_ending='\n', encoding='ASCII', terminal_code=None):
 
@@ -208,7 +206,7 @@ class _SocketHandle:
         if self._term:      # loop until get terminal char
             ml = []
             while True:
-                msg = self._handle.recv(byte)[skip:].decode(self._enc)
+                msg = self.recv(byte, skip=skip)
                 ml.append(msg)
                 if msg.endswith(self._term):
                     break
@@ -216,7 +214,7 @@ class _SocketHandle:
                     pass
             return ''.join(ml)
         else:
-            msg = self._handle.recv(byte)[skip:].decode(self._enc).strip()
+            msg = self.recv(byte, skip=skip)
             return msg
 
     def send(self, code):
@@ -226,8 +224,8 @@ class _SocketHandle:
         self._handle.send(code_str.encode(self._enc))
         return None
 
-    def recv(self, byte):
-        return self._handle.recv(byte).decode(self._enc).strip()
+    def recv(self, byte, skip=0):
+        return self._handle.recv(byte)[skip:].decode(self._enc).strip()
 
     def close(self):
         self._handle.close()
@@ -251,6 +249,57 @@ class _SocketHandle:
     def is_active(self):
         # fileno() returns -1 for closed socket object
         return self._handle.fileno() != -1
+
+
+class _SimSocketHandle(_SocketHandle):
+    """ Ethernet socket connection simulator
+    Make the simulator a child class of the real socket handle to ensure same behavior and less code duplication.
+    We only need to override certain methods & properties
+    """
+
+    def __init__(self, ip, port, model, timeout=1, line_ending='\n', encoding='ASCII', terminal_code=None):
+        try:    # we catch the connection exception because the simulator is used without real connection
+            super().__init__(ip, port, model, timeout=1, line_ending='\n', encoding='ASCII', terminal_code=None)
+            # if there exists a real connection, close it
+            self._handle.close()
+        except:
+            pass
+        self._handle = None
+        self._le = line_ending
+        self._enc = encoding
+        self._term = terminal_code
+        self._ip = ip
+        self._port = port
+        self._model = model
+        self._buffer = bytearray()  # this is the new stuff for simulator, a buffer to store all commands
+        self.msg = ''
+
+    def send(self, code):
+        """ Override _SocketHandle send method. Send the code to internal buffer """
+
+        code_str = code + self._le
+        self._buffer.extend(code_str.encode(self._enc))
+        return None
+
+    def recv(self, byte, skip=0):
+        """ Override _SocketHandle recv method. Read from internal buffer """
+        data = self._buffer[skip:byte+skip]
+        self._buffer = self._buffer[byte+skip:]
+        return data.decode(self._enc).strip()
+
+    def close(self):
+        """ Override _SocketHandle close method. Do nothing """
+        pass
+
+    @property
+    def is_sim(self):
+        """ Override _SocketHandle is_sim property. It is a simulator """
+        return True
+
+    @property
+    def is_active(self):
+        """ Override _SocketHandle is_active property. It is always active """
+        return True
 
 
 class _COMHandle:
@@ -283,7 +332,7 @@ class _COMHandle:
         if self._term:      # loop until get terminal char
             ml = []
             while True:
-                msg = self._handle.read(byte)[skip:].decode(self._enc)
+                msg = self.recv(byte, skip=skip)
                 ml.append(msg)
                 if msg.endswith(self._term):
                     break
@@ -291,7 +340,7 @@ class _COMHandle:
                     pass
             return ''.join(ml)
         else:
-            msg = self._handle.read(byte)[skip:].decode(self._enc).strip()
+            msg = self.recv(byte, skip=skip)
             return msg
 
     def send(self, code):
@@ -301,6 +350,9 @@ class _COMHandle:
         self._handle.write(code_str.encode(self._enc))
         return None
 
+    def recv(self, byte, skip=0):
+        return self._handle.read(byte)[skip:].decode(self._enc).strip()
+
     @property
     def is_sim(self):
         return False
@@ -309,6 +361,50 @@ class _COMHandle:
     def is_active(self):
         return self._handle.is_open
 
+
+class _SimCOMHandle(_COMHandle):
+    """ Serial connection simulator
+    Make the simulator a child class of the real serial handle to ensure same behavior and less code duplication.
+    We only need to override certain methods & properties
+    """
+
+    def __init__(self, addr, model, timeout=1, baudrate=57600, line_ending='\n', encoding='ASCII', terminal_code=None):
+        try:
+            super().__init__(addr, model, timeout=1, baudrate=57600, line_ending='\n', encoding='ASCII', terminal_code=None)
+            self._handle.close()
+        except:
+            pass
+        self._handle = None
+        self._addr = addr
+        self._le = line_ending
+        self._enc = encoding
+        self._term = terminal_code
+        self._model = model
+        self._buffer = bytearray()
+        self.msg = ''
+
+    def send(self, code):
+        """ Override _COMHandle send method. Send the code to internal buffer """
+
+        code_str = code + self._le
+        self._buffer.extend(code_str.encode(self._enc))
+        return None
+
+    def recv(self, byte, skip=0):
+        """ Override _COMHandle recv method. Read from internal buffer """
+        data = self._buffer[skip:byte+skip]
+        self._buffer = self._buffer[byte+skip:]
+        return data.decode(self._enc).strip()
+
+    @property
+    def is_sim(self):
+        """ Override _COMHandle is_sim property. It is a simulator """
+        return True
+
+    @property
+    def is_active(self):
+        """ Override _COMHandle is_active property. It is always active """
+        return True
 
 
 class _VISAHandle:
@@ -340,7 +436,7 @@ class _VISAHandle:
         self._model = model
         self.msg = ''
 
-    def query(self, code):
+    def query(self, code=None, byte=64, skip=0):
         """ Send and read
 
         Arguments
@@ -350,11 +446,24 @@ class _VISAHandle:
         """
 
         if code:
-            msg = self.query(code.encode(self._enc))
+            self.send(code)
         else:
-            msg = ''
+            pass
+        stat = True
 
-        return msg.strip()
+        if self._term:  # loop until get terminal char
+            ml = []
+            while True:
+                msg = self.recv(byte, skip=skip)
+                ml.append(msg)
+                if msg.endswith(self._term):
+                    break
+                else:
+                    pass
+            return ''.join(ml)
+        else:
+            msg = self.recv(byte, skip=skip)
+            return stat, msg
 
     def send(self, code):
         """ Send only """
@@ -363,6 +472,12 @@ class _VISAHandle:
         num, vcode = self._handle.write(code_str.encode(self._enc))
         return vcode
 
+    def recv(self, byte, skip=0):
+        return self._handle.read(byte)[skip:].decode(self._enc).strip()
+
+    def close(self):
+        pass
+
     @property
     def is_sim(self):
         return False
@@ -370,6 +485,54 @@ class _VISAHandle:
     @property
     def is_active(self):
         return self._handle.is_open
+
+
+class _SimVISAHanlde(_VISAHandle):
+    """ VISA connection simulator
+    Make the simulator a child class of the real VISA handle to ensure same behavior and less code duplication.
+    We only need to override certain methods & properties
+    """
+
+    def __init__(self, addr, model, timeout=1, line_ending='\n', encoding='ASCII', terminal_code=None):
+        try:
+            super().__init__(addr, model, timeout=1, line_ending='\n', encoding='ASCII', terminal_code=None)
+            self._handle.close()
+        except:
+            pass
+        self._rm = None
+        self._handle = None
+        self._addr = addr
+        self._le = line_ending
+        self._enc = encoding
+        self._term = terminal_code
+        self._model = model
+        self._buffer = bytearray()
+        self.msg = ''
+
+    def send(self, code):
+        """ Override _VISAHandle send method. Send the code to internal buffer """
+
+        code_str = code + self._le
+        self._buffer.extend(code_str.encode(self._enc))
+        return 1
+
+    def recv(self, byte, skip=0):
+        """ Override _VISAHandle recv method. Read from internal buffer """
+        data = self._buffer[skip:byte + skip]
+        self._buffer = self._buffer[byte + skip:]
+        return data.decode(self._enc).strip()
+
+    def close(self):
+        pass
+    @property
+    def is_sim(self):
+        """ Override _VISAHandle is_sim property. It is a simulator """
+        return True
+
+    @property
+    def is_active(self):
+        """ Override _VISAHandle is_active property. It is always active """
+        return True
 
 
 def list_visa_inst():

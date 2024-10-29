@@ -6,6 +6,7 @@ from os.path import isfile
 
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt
+from importlib.resources import files
 from PyMMSp.ui import ui_main
 from PyMMSp.ui import ui_dialog
 from PyMMSp.ui import ui_menu
@@ -26,7 +27,7 @@ from PyMMSp.ctrl import (ctrl_syn,
                          ctrl_insts,
                          )
 from PyMMSp.config import config
-from PyMMSp.libs.util import abs_path
+
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -59,8 +60,8 @@ class MainWindow(QtWidgets.QMainWindow):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
-        f = abs_path('PyMMSp.config', 'prefs.json')
-        if isfile(f):
+        f = files('PyMMSp.config').joinpath('prefs.json')
+        if f.is_file():
             config.from_json_(self.prefs, f)
         self.setGeometry(QtCore.QRect(*self.prefs.geometry))
 

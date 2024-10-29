@@ -1,2 +1,0 @@
-get_inst_name: 'IDN?'
-get_fm_freq, chn: 'FM{chn:d}:DEV?'
