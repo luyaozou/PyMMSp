@@ -30,15 +30,15 @@ class CtrlGauge(QtWidgets.QWidget):
         self.timer.start()
 
         # trigger settings
-        self.ui.gaugeDialog.channelSel.activated.connect(self.set_channel)
-        self.ui.gaugeDialog.updateRate.textChanged.connect(self.set_update_period)
-        self.ui.gaugeDialog.updateRateUnitSel.activated.connect(self.protect_update_period)
-        self.ui.gaugeDialog.pUnitSel.activated.connect(self.protect_p_unit)
-        self.ui.gaugeDialog.startButton.clicked.connect(self.start)
-        self.ui.gaugeDialog.stopButton.clicked.connect(self.stop)
-        self.ui.gaugeDialog.saveButton.clicked.connect(self.save)
-        self.ui.gaugeDialog.savepButton.clicked.connect(self.save_and_continue)
-        self.ui.gaugeDialog.finished.connect(self.timer.stop)
+        self.ui.dGauge.channelSel.activated.connect(self.set_channel)
+        self.ui.dGauge.updateRate.textChanged.connect(self.set_update_period)
+        self.ui.dGauge.updateRateUnitSel.activated.connect(self.protect_update_period)
+        self.ui.dGauge.pUnitSel.activated.connect(self.protect_p_unit)
+        self.ui.dGauge.startButton.clicked.connect(self.start)
+        self.ui.dGauge.stopButton.clicked.connect(self.stop)
+        self.ui.dGauge.saveButton.clicked.connect(self.save)
+        self.ui.dGauge.savepButton.clicked.connect(self.save_and_continue)
+        self.ui.dGauge.finished.connect(self.timer.stop)
         self.timer.timeout.connect(self.daq)
         self._data_collecting = False
         self._counter = 0
@@ -61,8 +61,8 @@ class CtrlGauge(QtWidgets.QWidget):
             # turn data collection status on
             self._data_collecting = True
             # disable update rate QLineEdit
-            self.ui.gaugeDialog.updateRate.setReadOnly(True)
-            self.ui.gaugeDialog.updateRate.setStyleSheet('color: grey')
+            self.ui.dGauge.updateRate.setReadOnly(True)
+            self.ui.dGauge.updateRate.setStyleSheet('color: grey')
             # store start time (for file saving)
             self._data_start_time = datetime.datetime.today()
             # restart QtTimer
@@ -85,8 +85,8 @@ class CtrlGauge(QtWidgets.QWidget):
             pass
         self._data_collecting = False  # turn data collection status off
         # enable update rate QLineEdit
-        self.ui.gaugeDialog.updateRate.setReadOnly(False)
-        self.ui.gaugeDialog.updateRate.setStyleSheet(
+        self.ui.dGauge.updateRate.setReadOnly(False)
+        self.ui.dGauge.updateRate.setStyleSheet(
             f'color: black; border: 1px solid {ui_shared.msg_color(self._msg_code)}')
 
     def save(self):
@@ -117,7 +117,7 @@ class CtrlGauge(QtWidgets.QWidget):
                     self.set_update_period()
                 else:
                     # change the index back to what it was before
-                    self.ui.gaugeDialog.updateRateUnitSel.setCurrentIndex(self._current_unit_idx)
+                    self.ui.dGauge.updateRateUnitSel.setCurrentIndex(self._current_unit_idx)
             else:
                 # update index
                 self._current_unit_idx = idx
@@ -128,17 +128,17 @@ class CtrlGauge(QtWidgets.QWidget):
 
         # stop data collection and re-enable update rate QLineEdit
         self.stop()
-        self.ui.gaugeDialog.updateRate.setReadOnly(False)
-        self.ui.gaugeDialog.updateRate.setStyleSheet('color: black')
+        self.ui.dGauge.updateRate.setReadOnly(False)
+        self.ui.dGauge.updateRate.setStyleSheet('color: black')
 
-        tau_scalar = self._TIMEUNIT[self.ui.gaugeDialog.updateRateUnitSel.currentIndex()]
+        tau_scalar = self._TIMEUNIT[self.ui.dGauge.updateRateUnitSel.currentIndex()]
 
         self._msg_code, self.wait_time = api_val.val_float(
-            self.ui.gaugeDialog.updateRate.text(), safe=[('>=', 0.1 / tau_scalar)])
-        self.ui.gaugeDialog.updateRate.setStyleSheet(f'border: 1px solid {ui_shared.msg_color(self._msg_code)}')
+            self.ui.dGauge.updateRate.text(), safe=[('>=', 0.1 / tau_scalar)])
+        self.ui.dGauge.updateRate.setStyleSheet(f'border: 1px solid {ui_shared.msg_color(self._msg_code)}')
         if self._msg_code == 2:
-            self.ui.gaugeDialog.set_label(
-                'bottom', text='Time', units=self.ui.gaugeDialog.updateRateUnitSel.currentText())
+            self.ui.dGauge.set_label(
+                'bottom', text='Time', units=self.ui.dGauge.updateRateUnitSel.currentText())
             self.timer.setInterval(self.wait_time * tau_scalar * 1000)
         else:
             pass
@@ -162,7 +162,7 @@ class CtrlGauge(QtWidgets.QWidget):
                     self.set_p_unit()
                 else:
                     # change the index back to what it was before
-                    self.ui.gaugeDialog.pUnitSel.setCurrentIndex(self._current_p_unit_idx)
+                    self.ui.dGauge.pUnitSel.setCurrentIndex(self._current_p_unit_idx)
             else:
                 # update pressure unit index
                 self._current_p_unit_idx = idx
@@ -172,14 +172,14 @@ class CtrlGauge(QtWidgets.QWidget):
         """ Set pressure unit """
 
         if self.prefs.is_test:
-            unit_txt = self.ui.gaugeDialog.pUnitSel.currentText()
+            unit_txt = self.ui.dGauge.pUnitSel.currentText()
         else:
             _, unit_txt = api_gauge.set_query_p_unit(
-                self.handle, self.ui.gaugeDialog.pUnitSel.currentIndex())
+                self.handle, self.ui.dGauge.pUnitSel.currentIndex())
         # update real time monitor panel
-        self.ui.gaugeDialog.currentUnit.setText(unit_txt)
+        self.ui.dGauge.currentUnit.setText(unit_txt)
         # update plot label
-        self.ui.gaugeDialog.set_label('left', 'Pressure', unit_txt)
+        self.ui.dGauge.set_label('left', 'Pressure', unit_txt)
         if self._data_collecting:
             # restart data collection
             self.start()
@@ -201,15 +201,15 @@ class CtrlGauge(QtWidgets.QWidget):
                     QtWidgets.QMessageBox.StandardButton.Yes)
                 if q == QtWidgets.QMessageBox.StandardButton.Yes:
                     self._current_chn_idx = idx
-                    self.ui.gaugeDialog.currentChannel.setText(self.ui.gaugeDialog.channelSel.currentText())
+                    self.ui.dGauge.currentChannel.setText(self.ui.dGauge.channelSel.currentText())
                     # restart data collection
                     self.start()
                 else:
                     # change the index back to what it was before
-                    self.ui.gaugeDialog.channelSel.setCurrentIndex(self._current_chn_idx)
+                    self.ui.dGauge.channelSel.setCurrentIndex(self._current_chn_idx)
             else:
                 self._current_chn_idx = idx
-                self.ui.gaugeDialog.currentChannel.setText(self.ui.gaugeDialog.channelSel.currentText())
+                self.ui.dGauge.currentChannel.setText(self.ui.dGauge.channelSel.currentText())
                 # restart daq
                 self.timer.start()
 
@@ -221,10 +221,10 @@ class CtrlGauge(QtWidgets.QWidget):
             status_txt = 'Okay'
         else:
             msg_code, status_txt, self._current_p = api_gauge.query_p(
-                self.handle, self.ui.gaugeDialog.channelSel.currentText())
-        self.ui.gaugeDialog.currentP.setText('{:.3e}'.format(self._current_p))
-        self.ui.gaugeDialog.currentStatus.setText(status_txt)
-        self.ui.gaugeDialog.currentStatus.setStyleSheet(f'color: {ui_shared.msg_color(msg_code)}')
+                self.handle, self.ui.dGauge.channelSel.currentText())
+        self.ui.dGauge.currentP.setText('{:.3e}'.format(self._current_p))
+        self.ui.dGauge.currentStatus.setText(status_txt)
+        self.ui.dGauge.currentStatus.setStyleSheet(f'color: {ui_shared.msg_color(msg_code)}')
 
         if not msg_code:  # if fatal, stop daq
             self.timer.stop()
@@ -235,7 +235,7 @@ class CtrlGauge(QtWidgets.QWidget):
         self._counter += 1
         t = self._counter * self.wait_time
         self._data = np.row_stack((self._data, np.array([t, self._current_p])))
-        self.ui.gaugeDialog.plot(self._data)
+        self.ui.dGauge.plot(self._data)
 
     def save_data(self):
         try:
@@ -245,8 +245,8 @@ class CtrlGauge(QtWidgets.QWidget):
                 np.savetxt(filename, self._data, comments='#', fmt=['%g', '%.3e'],
                            header='Data collection starts at {:s} \ntime({:s}) pressure({:s})'.format(
                                self._data_start_time.strftime('%I:%M:%S %p, %m-%d-%Y (%a)'),
-                               self.ui.gaugeDialog.updateRateUnitSel.currentText(),
-                               self.ui.gaugeDialog.currentUnit.text()))
+                               self.ui.dGauge.updateRateUnitSel.currentText(),
+                               self.ui.dGauge.currentUnit.text()))
             else:
                 pass
         except AttributeError:
@@ -255,8 +255,8 @@ class CtrlGauge(QtWidgets.QWidget):
 
     def eventFilter(self, obj, ev):
         """ Override eventFilter to close the dialog when ESC is pressed """
-        if obj == self.ui.gaugeDialog and ev.type() == QtCore.QEvent.Type.KeyPress:
+        if obj == self.ui.dGauge and ev.type() == QtCore.QEvent.Type.KeyPress:
             if ev.key() == QtCore.Qt.Key.Key_Escape:
-                self.ui.gaugeDialog.close()
+                self.ui.dGauge.close()
                 return True
         return super().eventFilter(obj, ev)

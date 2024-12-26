@@ -116,8 +116,8 @@ class JPLScanConfig(QtWidgets.QDialog):
             entry.stopFreqFill.setText(last_entry.stopFreqFill.text())
             entry.stepFill.setText(last_entry.stepFill.text())
             entry.avgFill.setText(last_entry.avgFill.text())
-            entry.sensSel.setCurrentIndex(last_entry.sensSel.currentIndex())
-            entry.tauSel.setCurrentIndex(last_entry.tauSel.currentIndex())
+            entry.sensSel.setCurrentIndex(last_entry.comboSens.currentIndex())
+            entry.tauSel.setCurrentIndex(last_entry.comboTau.currentIndex())
             entry.waitTimeFill.setText(last_entry.waitTimeFill.text())
             entry.modModeSel.setCurrentIndex(last_entry.modModeSel.currentIndex())
             entry.modFreqFill.setText(last_entry.modFreqFill.text())
@@ -165,10 +165,10 @@ class JPLScanConfig(QtWidgets.QDialog):
             entry.stepFill.deleteLater()
             self.entryLayout.removeWidget(entry.avgFill)
             entry.avgFill.deleteLater()
-            self.entryLayout.removeWidget(entry.sensSel)
-            entry.sensSel.deleteLater()
-            self.entryLayout.removeWidget(entry.tauSel)
-            entry.tauSel.deleteLater()
+            self.entryLayout.removeWidget(entry.comboSens)
+            entry.comboSens.deleteLater()
+            self.entryLayout.removeWidget(entry.comboTau)
+            entry.comboTau.deleteLater()
             self.entryLayout.removeWidget(entry.waitTimeFill)
             entry.waitTimeFill.deleteLater()
             self.entryLayout.removeWidget(entry.modModeSel)
@@ -214,8 +214,8 @@ class JPLScanConfig(QtWidgets.QDialog):
                     # read settings
                     entry_setting = (entry.commentFill.text(),
                                      entry.startFreq, entry.stopFreq, entry.step,
-                                     entry.avg, entry.sensSel.currentIndex(),
-                                     entry.tauSel.currentIndex(), entry.wait_time,
+                                     entry.avg, entry.comboSens.currentIndex(),
+                                     entry.comboTau.currentIndex(), entry.wait_time,
                                      entry.modModeSel.currentIndex(),
                                      entry.modFreq, entry.modAmp, entry.refHarm,
                                      entry.refPhase)

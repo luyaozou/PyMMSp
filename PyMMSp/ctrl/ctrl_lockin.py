@@ -27,8 +27,8 @@ class CtrlLockin(QtWidgets.QWidget):
         # -- Trigger setting status and communication
         self.ui.lockinPanel.phaseFill.textChanged.connect(self.tune_phase)
         self.ui.lockinPanel.harmSel.currentTextChanged[str].connect(self.tune_harmonics)
-        self.ui.lockinPanel.tauSel.currentIndexChanged[int].connect(self.tune_time_const)
-        self.ui.lockinPanel.sensSel.currentIndexChanged[int].connect(self.tune_sensitivity)
+        self.ui.lockinPanel.comboTau.currentIndexChanged[int].connect(self.tune_time_const)
+        self.ui.lockinPanel.comboSens.currentIndexChanged[int].connect(self.tune_sensitivity)
         self.ui.lockinPanel.coupleSel.currentIndexChanged[int].connect(self.tune_couple)
         self.ui.lockinPanel.reserveSel.currentIndexChanged[int].connect(self.tune_reserve)
         self.ui.lockinPanel.groundingSel.currentIndexChanged[int].connect(self.tune_grounding)
@@ -39,8 +39,8 @@ class CtrlLockin(QtWidgets.QWidget):
         self.ui.liaStatus.clicked.connect(self.check)
         self.ui.liaStatus.errMsgBtn.clicked.connect(self.pop_err_msg)
         self.ui.liaStatus.refreshButton.clicked.connect(self.manual_refresh)
-        self.ui.liaStatus.moreInfoButton.clicked.connect(self.ui.liaInfoDialog.show)
-        self.ui.liaInfoDialog.refreshButton.clicked.connect(self.dialog_manual_refresh)
+        self.ui.liaStatus.moreInfoButton.clicked.connect(self.ui.dLockin.show)
+        self.ui.dLockin.refreshButton.clicked.connect(self.dialog_manual_refresh)
         self.timer.timeout.connect(self.monitor_daq)
         self.ui.liaMonitor.startButton.clicked.connect(self.monitor_start)
         self.ui.liaMonitor.restartButton.clicked.connect(self.monitor_restart)
@@ -267,8 +267,8 @@ class CtrlLockin(QtWidgets.QWidget):
             api_lia.full_info_query_(self.info, self.handle)
             self.ui.lockinPanel.harmSel.setCurrentIndex(self.info.ref_harm_idx)
             self.ui.lockinPanel.phaseFill.setText('{:.2f}'.format(self.info.ref_phase))
-            self.ui.lockinPanel.sensSel.setCurrentIndex(self.info.sens_idx)
-            self.ui.lockinPanel.tauSel.setCurrentIndex(self.info.tau_idx)
+            self.ui.lockinPanel.comboSens.setCurrentIndex(self.info.sens_idx)
+            self.ui.lockinPanel.comboTau.setCurrentIndex(self.info.tau_idx)
             self.ui.lockinPanel.coupleSel.setCurrentIndex(self.info.couple_idx)
             self.ui.lockinPanel.reserveSel.setCurrentIndex(self.info.reserve_idx)
             self.ui.liaMonitor.set_wait_time()
@@ -283,7 +283,7 @@ class CtrlLockin(QtWidgets.QWidget):
     def dialog_manual_refresh(self):
 
         api_lia.full_info_query_(self.info, self.handle)
-        self.ui.liaInfoDialog.print_info(self.info)
+        self.ui.dLockin.print_info(self.info)
 
     def monitor_start(self, btn_pressed):
 

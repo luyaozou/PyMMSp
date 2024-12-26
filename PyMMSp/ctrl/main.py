@@ -25,6 +25,7 @@ from PyMMSp.ctrl import (ctrl_syn,
                          ctrl_motor,
                          ctrl_gauge,
                          ctrl_insts,
+                         ctrl_flow,
                          )
 from PyMMSp.config import config
 
@@ -68,8 +69,6 @@ class MainWindow(QtWidgets.QMainWindow):
         # Set menu bar
         self.menuBar = ui_menu.MenuBar(self)
         self.setMenuBar(self.menuBar)
-        self.statusBar = ui_menu.StatusBar(self)
-        self.setStatusBar(self.statusBar)
 
         # Set main window widgets
         self.ui = ui_main.MainUI(self)
@@ -81,14 +80,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self.prefs, self.ui, self.inst_handles.info_syn, self.inst_handles.h_syn, parent=self)
         self.ctrl_syn_pow = ctrl_syn.CtrlSynPower(
             self.prefs, self.ui, self.inst_handles.info_syn, self.inst_handles.h_syn, parent=self)
-        self.ctrl_lockin = ctrl_lockin.CtrlLockin(
-            self.prefs, self.ui, self.inst_handles.info_lockin, self.inst_handles.h_lockin, parent=self)
+        #self.ctrl_lockin = ctrl_lockin.CtrlLockin(
+        #    self.prefs, self.ui, self.inst_handles.info_lockin, self.inst_handles.h_lockin, parent=self)
         self.ctrl_oscillo = ctrl_oscillo.CtrlOscillo(
             self.prefs, self.ui, self.inst_handles.info_oscillo, self.inst_handles.h_oscillo, parent=self)
         #self.ctrl_motor = ctrl_motor.CtrlMotor(
         #    self.prefs, self.ui, self.inst_handles.info_mo, self.motor_handle, parent=self)
         self.ctrl_gauge = ctrl_gauge.CtrlGauge(
             self.prefs, self.ui, self.inst_handles.info_gauge1, self.inst_handles.h_gauge1, parent=self)
+        self.ctrl_flow = ctrl_flow.CtrlFlow(
+            self.prefs, self.ui, self.inst_handles.h_flow, parent=self)
 
         # connect menubar signals
         self.menuBar.instSelAction.triggered.connect(self.on_sel_inst)
@@ -97,6 +98,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.menuBar.scanCEAction.triggered.connect(self.on_scan_cavity)
         self.menuBar.lwaParserAction.triggered.connect(self.on_lwa_parser)
         self.menuBar.testModeAction.toggled.connect(self.refresh_inst)
+
+        self.ui.synPanel.comboMonitor.currentIndexChanged[int].connect(self.connect2monitor_syn)
+        self.ui.lockinPanel.comboMonitor.currentIndexChanged[int].connect(self.connect2monitor_lockin)
+        self.ui.oscilloPanel.comboMonitor.currentIndexChanged[int].connect(self.connect2monitor_oscillo)
+        self.ui.motorPanel.comboMonitor.currentIndexChanged[int].connect(self.connect2monitor_motor)
+        self.ui.gaugePanel.comboMonitor.currentIndexChanged[int].connect(self.connect2monitor_gauge)
+        self.ui.flowPanel.comboMonitor.currentIndexChanged[int].connect(self.connect2monitor_flow)
+        self.ui.dcPanel.comboMonitor.currentIndexChanged[int].connect(self.connect2monitor_dc)
+        self.ui.awgPanel.comboMonitor.currentIndexChanged[int].connect(self.connect2monitor_awg)
 
     def refresh_inst(self):
 
@@ -126,7 +136,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ctrl_oscillo.manual_refresh()
 
     def on_sel_inst(self):
-        result = self.ui.selInstDialog.exec()
+        result = self.ui.dConnInst.exec()
         if result:
             # simply uncheck main to prevent the warning dialog
             if self.inst_handles.h_syn:
@@ -146,7 +156,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def on_close_sel_inst(self):
 
-        self.ui.closeSelInstDialog.exec()
+        self.ui.dCloseInst.exec()
         # simply uncheck main to prevent the warning dialog
         self.refresh_inst()
 
@@ -195,7 +205,7 @@ class MainWindow(QtWidgets.QMainWindow):
             pass
 
     def on_scan_pci(self):
-        d = ui_dialog.OscilloscopeDialog(self)
+        d = ui_dialog.DialogOscillo(self)
         d.exec()
 
     def on_scan_cavity(self):
@@ -223,4 +233,30 @@ class MainWindow(QtWidgets.QMainWindow):
             self.inst_handles.close_all()
         else:
             ev.ignore()
+
+    def connect2monitor_syn(self, id_):
+        pass
+
+    def connect2monitor_lockin(self, id_):
+        pass
+
+    def connect2monitor_oscillo(self, id_):
+        pass
+
+    def connect2monitor_motor(self, id_):
+        pass
+
+    def connect2monitor_gauge(self, id_):
+        pass
+
+    def connect2monitor_flow(self, id_):
+        pass
+
+    def connect2monitor_dc(self, id_):
+        pass
+
+    def connect2monitor_awg(self, id_):
+        pass
+
+
 

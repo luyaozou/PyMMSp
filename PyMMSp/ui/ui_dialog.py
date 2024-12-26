@@ -4,7 +4,7 @@
 
 from PyQt6 import QtGui, QtCore, QtWidgets
 from PyMMSp.inst.base import CONNECTION_TYPES
-
+from PyMMSp.inst import flow as api_flow
 from PyMMSp.libs import lwa
 from PyMMSp.ui import ui_shared
 from pyqtgraph import siFormat
@@ -47,7 +47,7 @@ class DialogConfigIndvInst(QtWidgets.QDialog):
             self.editInstAddr.setInputMask('000.000.000.000:_')
 
 
-class SelInstDialog(QtWidgets.QDialog):
+class DialogConnInst(QtWidgets.QDialog):
     """ Dialog window for instrument selection. """
 
     def __init__(self, parent=None): 
@@ -145,15 +145,597 @@ class SelInstDialog(QtWidgets.QDialog):
         acceptButton.clicked.connect(self.accept)
 
 
-class OscilloscopeDialog(QtWidgets.QDialog):
+class DialogOscillo(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setWindowTitle('View Oscilloscope')
+        self.setWindowTitle('Configure Oscilloscope')
+
+        btnLayout = QtWidgets.QHBoxLayout()
+        btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        self.btnOk = QtWidgets.QPushButton('OK')
+        btnLayout.addWidget(self.btnOk)
+
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.addLayout(btnLayout)
+        self.setLayout(thisLayout)
+
+        self.btnOk.clicked.connect(self.accept)
 
 
-class CloseSelInstDialog(QtWidgets.QDialog):
+class DialogFlow(QtWidgets.QDialog):
+    """ Dialog window to configure MKS flow controller """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle('Configure MKS Flow Controller')
+        self.setMinimumWidth(1350)
+        self.setWindowFlags(QtCore.Qt.WindowType.Window)
+
+        self.lblScreenSavor = QtWidgets.QLabel()
+        self.lblMsg = QtWidgets.QLabel()
+        self.inpScreenSavor = ui_shared.create_int_spin_box(0, minimum=0, maximum=240)
+        self.btnScreenSavor = QtWidgets.QPushButton('Commit')
+        self.btnRefresh = QtWidgets.QPushButton('Refresh All Setting')
+        self.btnGCF = QtWidgets.QPushButton('Scale Factor Calculator')
+        box1 = QtWidgets.QGroupBox()
+        box1.setTitle('General Setting')
+        box1Layout = QtWidgets.QGridLayout()
+        box1Layout.addWidget(QtWidgets.QLabel('Current Setting'), 0, 1)
+        box1Layout.addWidget(QtWidgets.QLabel('New Setting'), 0, 2)
+        box1Layout.addWidget(QtWidgets.QLabel('Screen Savor'), 1, 0)
+        box1Layout.addWidget(self.lblScreenSavor, 1, 1)
+        box1Layout.addWidget(self.inpScreenSavor, 1, 2)
+        box1Layout.addWidget(self.btnScreenSavor, 1, 3)
+        box1Layout.addWidget(self.btnGCF, 2, 0)
+        box1Layout.addWidget(self.lblMsg, 2, 1, 1, 2)
+        box1Layout.addWidget(self.btnRefresh, 2, 3)
+        box1.setLayout(box1Layout)
+
+        self.boxChn1 = _MKSChannel(1, parent=self)
+        self.boxChn2 = _MKSChannel(2, parent=self)
+
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        thisLayout.addWidget(box1)
+        thisLayout.addWidget(self.boxChn1)
+        thisLayout.addWidget(self.boxChn2)
+        self.setLayout(thisLayout)
+        self.adjustSize()
+
+        self.btnGroup = QtWidgets.QButtonGroup()
+        self.btnGroup.addButton(self.btnScreenSavor, 0)
+        self._btnMap = (
+            ('SST', '{:d}', 'int', self.lblScreenSavor, self.inpScreenSavor),
+        )
+
+    def update_flow_reading(self, tuple_flow):
+        for chn, f in zip([self.boxChn1, self.boxChn2], tuple_flow):
+            try:
+                chn.lblFlow.setText('{:.2f}'.format(float(f)))
+            except ValueError:
+                chn.lblFlow.setText(f)
+
+    def mks_cmd(self, btn_id):
+        """ Get the MKS command associated with btn_id """
+        cmd, pfmt, dtype, lbl, cfg = self._btnMap[btn_id]
+        # get setted value
+        if dtype in ['int', 'float']:
+            param = pfmt.format(cfg.value())
+        elif dtype == 'str':
+            if isinstance(cfg, QtWidgets.QLabel):
+                param = pfmt.format(cfg.text())
+            else:
+                param = pfmt.format(cfg.currentText())
+        else:
+            raise ValueError
+        return cmd, param
+
+    def update_current(self, btn_id, ans):
+        """ Update the MKS setting value associated with btn_id """
+        cmd, pfmt, dtype, lbl, cfg = self._btnMap[btn_id]
+        # write new value to current value label
+        lbl.setText(ans)
+
+    def yield_all(self):
+        """ yield all command & label corresponding to the button group buttons """
+        for btn_tuple in self._btnMap:
+            cmd, pfmt, dtype, lbl, cfg = btn_tuple
+            yield cmd, lbl
+
+
+class _MKSChannel(QtWidgets.QGroupBox):
+    """ Subclass to configure MKS channel setting """
+
+    def __init__(self, chn, parent=None):
+        super().__init__(parent)
+        self.chn = chn      # channal id
+        self.setTitle('Channel {:d} Setting'.format(chn))
+
+        self.lblFlow = QtWidgets.QLabel()
+        self.btnZero = QtWidgets.QPushButton('Zero')
+        self.lblScale = QtWidgets.QLabel()
+        self.inpScale = ui_shared.create_double_spin_box(1.0, minimum=0.01, maximum=10,
+                                                         dec=2, step=0.01)
+        self.btnScale = QtWidgets.QPushButton('Commit')
+        self.lblRange = QtWidgets.QLabel()
+        self.comboRange = QtWidgets.QComboBox()
+        self.comboRange.addItems(['1', '2', '5', '10', '20', '50', '100', '200',
+                                  '500', '1000', '2000', '5000', '10000', '20000',
+                                  '50000', '100000'])
+        self.btnRange = QtWidgets.QPushButton('Commit')
+        self.lblSP = QtWidgets.QLabel()
+        self.inpSP = ui_shared.create_double_spin_box(1.00, minimum=0.01, maximum=1e6,
+                                                      dec=2, stepType=1)
+        self.btnSP = QtWidgets.QPushButton('Commit')
+        self.lblOpMode = QtWidgets.QLabel()
+        self.comboOpMode = QtWidgets.QComboBox()
+        self.comboOpMode.addItems(['Open', 'Close', 'SetPoint', 'Ratio', 'PCTRL', 'Preset'])
+        self.btnOpMode = QtWidgets.QPushButton('Commit')
+
+        col1Layout = QtWidgets.QGridLayout()
+        col1Layout.setHorizontalSpacing(4)
+        col1Layout.setVerticalSpacing(2)
+        col1Layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        col1Layout.addWidget(QtWidgets.QLabel('Current'), 0, 1)
+        col1Layout.addWidget(QtWidgets.QLabel('Target'), 0, 2)
+        col1Layout.addWidget(QtWidgets.QLabel('Flow (sccm)'), 1, 0)
+        col1Layout.addWidget(self.lblFlow, 1, 1)
+        col1Layout.addWidget(self.btnZero, 1, 3)
+        col1Layout.addWidget(QtWidgets.QLabel('Full Norminal Range'), 2, 0)
+        col1Layout.addWidget(self.lblRange, 2, 1)
+        col1Layout.addWidget(self.comboRange, 2, 2)
+        col1Layout.addWidget(self.btnRange, 2, 3)
+        col1Layout.addWidget(QtWidgets.QLabel('Scale Factor'), 3, 0)
+        col1Layout.addWidget(self.lblScale, 3, 1)
+        col1Layout.addWidget(self.inpScale, 3, 2)
+        col1Layout.addWidget(self.btnScale, 3, 3)
+        col1Layout.addWidget(QtWidgets.QLabel('Set Point'), 4, 0)
+        col1Layout.addWidget(self.lblSP, 4, 1)
+        col1Layout.addWidget(self.inpSP, 4, 2)
+        col1Layout.addWidget(self.btnSP, 4, 3)
+        col1Layout.addWidget(QtWidgets.QLabel('Operation Mode'), 5, 0)
+        col1Layout.addWidget(self.lblOpMode, 5, 1)
+        col1Layout.addWidget(self.comboOpMode, 5, 2)
+        col1Layout.addWidget(self.btnOpMode, 5, 3)
+
+        self.lblRelaySP1 = QtWidgets.QLabel()
+        self.lblRelaySP2 = QtWidgets.QLabel()
+        self.inpRelaySP1 = ui_shared.create_double_spin_box(1.0, minimum=0, dec=2, stepType=1)
+        self.inpRelaySP2 = ui_shared.create_double_spin_box(1.0, minimum=0, dec=2, stepType=1)
+        self.btnRelaySP1 = QtWidgets.QPushButton('Commit')
+        self.btnRelaySP2 = QtWidgets.QPushButton('Commit')
+        self.lblRelayHys1 = QtWidgets.QLabel()
+        self.lblRelayHys2 = QtWidgets.QLabel()
+        self.inpRelayHys1 = ui_shared.create_double_spin_box(1.0, minimum=0, dec=2, stepType=1)
+        self.inpRelayHys2 = ui_shared.create_double_spin_box(1.0, minimum=0, dec=2, stepType=1)
+        self.btnRelayHys1 = QtWidgets.QPushButton('Commit')
+        self.btnRelayHys2 = QtWidgets.QPushButton('Commit')
+        self.lblRelayDir1 = QtWidgets.QLabel()
+        self.lblRelayDir2 = QtWidgets.QLabel()
+        self.comboRelayDir1 = QtWidgets.QComboBox()
+        self.comboRelayDir1.addItems(['Above', 'Below'])
+        self.comboRelayDir2 = QtWidgets.QComboBox()
+        self.comboRelayDir2.addItems(['Above', 'Below'])
+        self.btnRelayDir1 = QtWidgets.QPushButton('Commit')
+        self.btnRelayDir2 = QtWidgets.QPushButton('Commit')
+        self.lblRelayStat1 = QtWidgets.QLabel()
+        self.lblRelayStat2 = QtWidgets.QLabel()
+        self.comboRelayStat1 = QtWidgets.QComboBox()
+        self.comboRelayStat1.addItems(['Set', 'Enable', 'Clear'])
+        self.comboRelayStat2 = QtWidgets.QComboBox()
+        self.comboRelayStat2.addItems(['Set', 'Enable', 'Clear'])
+        self.btnRelayStat1 = QtWidgets.QPushButton('Commit')
+        self.btnRelayStat2 = QtWidgets.QPushButton('Commit')
+
+        col2Layout = QtWidgets.QGridLayout()
+        col2Layout.setHorizontalSpacing(4)
+        col2Layout.setVerticalSpacing(2)
+        col2Layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        col2Layout.addWidget(QtWidgets.QLabel('Current'), 0, 1)
+        col2Layout.addWidget(QtWidgets.QLabel('Target'), 0, 2)
+        col2Layout.addWidget(QtWidgets.QLabel('Current'), 0, 4)
+        col2Layout.addWidget(QtWidgets.QLabel('Target'), 0, 5)
+        col2Layout.addWidget(QtWidgets.QLabel('Relay {:d}'.format(chn*2-1)), 1, 1, 1, 3)
+        col2Layout.addWidget(QtWidgets.QLabel('Relay {:d}'.format(chn*2)), 1, 4, 1, 3)
+        col2Layout.addWidget(QtWidgets.QLabel('Set Point'), 2, 0)
+        col2Layout.addWidget(self.lblRelaySP1, 2, 1)
+        col2Layout.addWidget(self.inpRelaySP1, 2, 2)
+        col2Layout.addWidget(self.btnRelaySP1, 2, 3)
+        col2Layout.addWidget(self.lblRelaySP2, 2, 4)
+        col2Layout.addWidget(self.inpRelaySP2, 2, 5)
+        col2Layout.addWidget(self.btnRelaySP2, 2, 6)
+        col2Layout.addWidget(QtWidgets.QLabel('Hysteris'), 3, 0)
+        col2Layout.addWidget(self.lblRelayHys1, 3, 1)
+        col2Layout.addWidget(self.inpRelayHys1, 3, 2)
+        col2Layout.addWidget(self.btnRelayHys1, 3, 3)
+        col2Layout.addWidget(self.lblRelayHys2, 3, 4)
+        col2Layout.addWidget(self.inpRelayHys2, 3, 5)
+        col2Layout.addWidget(self.btnRelayHys2, 3, 6)
+        col2Layout.addWidget(QtWidgets.QLabel('Direction'), 4, 0)
+        col2Layout.addWidget(self.lblRelayDir1, 4, 1)
+        col2Layout.addWidget(self.comboRelayDir1, 4, 2)
+        col2Layout.addWidget(self.btnRelayDir1, 4, 3)
+        col2Layout.addWidget(self.lblRelayDir2, 4, 4)
+        col2Layout.addWidget(self.comboRelayDir2, 4, 5)
+        col2Layout.addWidget(self.btnRelayDir2, 4, 6)
+        col2Layout.addWidget(QtWidgets.QLabel('Status'), 5, 0)
+        col2Layout.addWidget(self.lblRelayStat1, 5, 1)
+        col2Layout.addWidget(self.comboRelayStat1, 5, 2)
+        col2Layout.addWidget(self.btnRelayStat1, 5, 3)
+        col2Layout.addWidget(self.lblRelayStat2, 5, 4)
+        col2Layout.addWidget(self.comboRelayStat2, 5, 5)
+        col2Layout.addWidget(self.btnRelayStat2, 5, 6)
+
+        thisLayout = QtWidgets.QGridLayout()
+        thisLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        thisLayout.setHorizontalSpacing(20)
+        thisLayout.addLayout(col1Layout, 0, 0)
+        thisLayout.addLayout(col2Layout, 0, 1)
+        thisLayout.setColumnStretch(0, 1)
+        thisLayout.setColumnStretch(1, 2)
+        self.setLayout(thisLayout)
+
+        self.btnGroup = QtWidgets.QButtonGroup()
+        self.btnGroup.addButton(self.btnRange, 0)
+        self.btnGroup.addButton(self.btnScale, 1)
+        self.btnGroup.addButton(self.btnSP, 2)
+        self.btnGroup.addButton(self.btnOpMode, 3)
+        self.btnGroup.addButton(self.btnRelaySP1, 4)
+        self.btnGroup.addButton(self.btnRelaySP2, 5)
+        self.btnGroup.addButton(self.btnRelayHys1, 6)
+        self.btnGroup.addButton(self.btnRelayHys2, 7)
+        self.btnGroup.addButton(self.btnRelayDir1, 8)
+        self.btnGroup.addButton(self.btnRelayDir2, 9)
+        self.btnGroup.addButton(self.btnRelayStat1, 10)
+        self.btnGroup.addButton(self.btnRelayStat2, 11)
+
+        self._btnMap = (
+            ('RNG'+str(chn), '{:.2E}', 'float', self.lblRange, self.comboRange),
+            ('QSF'+str(chn), '{:.2E}', 'float', self.lblScale, self.inpScale),
+            ('QSP'+str(chn), '{:.2E}', 'float', self.lblSP, self.inpSP),
+            ('QMD'+str(chn), '{:s}', 'str', self.lblOpMode, self.comboOpMode),
+            ('SP'+str(2*chn-1), '{:.2E}', 'float', self.lblRelaySP1, self.inpRelaySP1),
+            ('SP'+str(2*chn), '{:.2E}', 'float', self.lblRelaySP2, self.inpRelaySP2),
+            ('SH'+str(2*chn-1), '{:.2E}', 'float', self.lblRelayHys1, self.inpRelayHys1),
+            ('SH'+str(2*chn), '{:.2E}', 'float', self.lblRelayHys2, self.inpRelayHys2),
+            ('SD'+str(2*chn-1), '{:s}', 'str', self.lblRelayDir1, self.comboRelayDir1),
+            ('SD'+str(2*chn), '{:s}', 'str', self.lblRelayDir2, self.comboRelayDir2),
+            ('EN'+str(2*chn-1), '{:s}', 'str', self.lblRelayStat1, self.comboRelayStat1),
+            ('EN'+str(2*chn), '{:s}', 'str', self.lblRelayStat2, self.comboRelayStat2),
+        )
+
+    def mks_cmd(self, btn_id):
+        """ Get the MKS command associated with btn_id """
+        cmd, pfmt, dtype, lbl, cfg = self._btnMap[btn_id]
+        # get setted value
+        if dtype == 'float':
+            if isinstance(cfg, QtWidgets.QComboBox):
+                param = pfmt.format(float(cfg.currentText()))
+            else:
+                param = pfmt.format(cfg.value())
+        elif dtype == 'str':
+            param = pfmt.format(cfg.currentText())
+        else:
+            raise ValueError
+        return cmd, param
+
+    def update_current(self, btn_id, ans):
+        """ Update the MKS setting value associated with btn_id """
+        cmd, pfmt, dtype, lbl, cfg = self._btnMap[btn_id]
+        # write new value to current value label
+        lbl.setText(ans)
+
+    def yield_all(self):
+        for btn_tuple in self._btnMap:
+            cmd, pfmt, dtype, lbl, cfg = btn_tuple
+            yield cmd, lbl
+
+
+class DialogGCF(QtWidgets.QDialog):
+    """ MKS GCF scaling factor calculator """
+
+    sig_calc_gcf = QtCore.pyqtSignal()
+
+    STRUC_CORRECTION = {
+        'Monoatomic': 1.030,
+        'Diatomic': 1.000,
+        'Triatomic': 0.941,
+        'Polyatomic': 0.880,
+    }
+
+    # scaling factor for density unit (-> g L-1)
+    UNIT_DENSITY = {
+        'g L-1': 1.0,
+        'g cm-3': 1e-3,
+        'kg m-3': 1.0,
+    }
+
+    # scaling factor for heat capacity unit (-> cal g-1 K-1)
+    UNIT_CP = {
+        'cal g-1 K-1': 1.0,
+        'J g-1 K-1': 1.0 / 4.184,
+    }
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle('MKS GCF Scaling Factor Calculator')
+        self.setMinimumWidth(800)
+        self.setWindowFlags(QtCore.Qt.WindowType.Window)
+
+        self.btnAddGas = QtWidgets.QPushButton('+')
+        self.btnAddGas.setFixedWidth(25)
+        self._gas_entries = {}  # {id: entry}
+        self._dGasSel = DialogGCFGasSel(parent=self)
+
+        self._layout = QtWidgets.QGridLayout()
+        self._layout.addWidget(self.btnAddGas, 0, 0)
+        self._layout.addWidget(QtWidgets.QLabel('Gas'), 0, 1, 1, 2)
+        self._layout.addWidget(QtWidgets.QLabel('Structure'), 0, 3)
+        self._layout.addWidget(QtWidgets.QLabel('Fraction'), 0, 4)
+        self._layout.addWidget(QtWidgets.QLabel('Density'), 0, 5, 1, 2)
+        self._layout.addWidget(QtWidgets.QLabel('Specific Heat Capacity Cp'),
+                               0, 7, 1, 2)
+        self.inpTemperature = ui_shared.create_double_spin_box(293, minimum=0, dec=1,
+                                                               suffix=' K', step=1)
+        self.inpTemperature.setFixedWidth(100)
+        self.lblGCF = QtWidgets.QLabel()
+        self.lblGCF.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextSelectableByMouse)
+        box1 = QtWidgets.QGroupBox()
+        box1Layout = QtWidgets.QHBoxLayout()
+        box1Layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+        box1Layout.addWidget(QtWidgets.QLabel('Temperature'))
+        box1Layout.addWidget(self.inpTemperature)
+        box1Layout.addWidget(QtWidgets.QLabel('GCF Scaling Factor'))
+        box1Layout.addWidget(self.lblGCF)
+        box1.setLayout(box1Layout)
+
+        box2 = QtWidgets.QGroupBox()
+        box2.setLayout(self._layout)
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        thisLayout.addWidget(box1)
+        thisLayout.addWidget(box2)
+        self.setLayout(thisLayout)
+
+        self.btnAddGas.clicked.connect(self._add_entry)
+        self.delBtnGroup = QtWidgets.QButtonGroup()
+        self.delBtnGroup.buttonClicked.connect(self._del_entry)
+        self.gasBtnGroup = QtWidgets.QButtonGroup()
+        self.gasBtnGroup.buttonClicked.connect(self._sel_gas)
+        self.inpTemperature.valueChanged.connect(self.sig_calc_gcf.emit)
+        self._add_entry()
+
+    def _add_entry(self):
+        newEntry = _GCFGasEntry(parent=self)
+        if self._gas_entries:
+            n = max(self._gas_entries.keys()) + 1
+        else:
+            n = 1
+        self._gas_entries[n] = newEntry
+        r = self._layout.rowCount()
+        self._layout.addWidget(newEntry.btnDel, r, 0)
+        self._layout.addWidget(newEntry.btnSelGas, r, 1)
+        self._layout.addWidget(newEntry.inpGas, r, 2)
+        self._layout.addWidget(newEntry.comboGeom, r, 3)
+        self._layout.addWidget(newEntry.inpFraction, r, 4)
+        self._layout.addWidget(newEntry.inpDensity, r, 5)
+        self._layout.addWidget(newEntry.unitDensity, r, 6)
+        self._layout.addWidget(newEntry.inpCP, r, 7)
+        self._layout.addWidget(newEntry.unitCP, r, 8)
+        self.adjustSize()
+        self.delBtnGroup.addButton(newEntry.btnDel, n)
+        self.gasBtnGroup.addButton(newEntry.btnSelGas, n)
+        newEntry.comboGeom.currentIndexChanged.connect(self.sig_calc_gcf.emit)
+        newEntry.inpFraction.valueChanged.connect(self.sig_calc_gcf.emit)
+        newEntry.inpCP.valueChanged.connect(self.sig_calc_gcf.emit)
+        newEntry.unitCP.currentIndexChanged.connect(self.sig_calc_gcf.emit)
+        newEntry.inpDensity.valueChanged.connect(self.sig_calc_gcf.emit)
+        newEntry.unitDensity.currentIndexChanged.connect(self.sig_calc_gcf.emit)
+
+    def _del_entry(self, btn):
+
+        entry_id = self.delBtnGroup.id(btn)
+        entry = self._gas_entries[entry_id]
+        self.delBtnGroup.removeButton(entry.btnDel)
+        self.gasBtnGroup.removeButton(entry.btnSelGas)
+        self._layout.removeWidget(entry.btnDel)
+        self._layout.removeWidget(entry.btnSelGas)
+        self._layout.removeWidget(entry.inpGas)
+        self._layout.removeWidget(entry.comboGeom)
+        self._layout.removeWidget(entry.inpFraction)
+        self._layout.removeWidget(entry.inpDensity)
+        self._layout.removeWidget(entry.unitDensity)
+        self._layout.removeWidget(entry.inpCP)
+        self._layout.removeWidget(entry.unitCP)
+        del self._gas_entries[entry_id]
+        entry.deleteLater()
+        self.adjustSize()
+
+    def _sel_gas(self, btn):
+        entry_id = self.gasBtnGroup.id(btn)
+        self._dGasSel.exec()
+        if self._dGasSel.result() == QtWidgets.QDialog.DialogCode.Accepted:
+            gas, mass, name, struc, rho, cp = self._dGasSel.current_gas_params()
+            entry = self._gas_entries[entry_id]
+            entry.update_gas_params(gas, struc, rho, cp)
+
+    def yield_entry_params(self):
+        for entry in self._gas_entries.values():
+            yield (self.STRUC_CORRECTION[entry.comboGeom.currentText()],
+                   entry.inpFraction.value(),
+                   entry.inpDensity.value() * self.UNIT_DENSITY[entry.unitDensity.currentText()],
+                   entry.inpCP.value() * self.UNIT_CP[entry.unitCP.currentText()])
+
+
+class _GCFGasEntry(QtWidgets.QWidget):
+    """ MKS gas entry, include gas properties:
+        fractional flow
+        structure: mono, diatomic, polyatomic
+        density
+        heat capacity
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        thisLayout = QtWidgets.QHBoxLayout()
+        self.btnDel = QtWidgets.QPushButton('-')
+        self.btnDel.setFixedWidth(25)
+        self.btnSelGas = QtWidgets.QPushButton('🔍')
+        self.btnSelGas.setFixedWidth(35)
+        self.inpGas = QtWidgets.QLineEdit()
+        self.inpFraction = ui_shared.create_double_spin_box(100.0, minimum=0., maximum=100.,
+                                                            dec=2, suffix=' %', stepType=1)
+        self.inpFraction.setFixedWidth(125)
+        self.inpDensity = ui_shared.create_double_spin_box(1, minimum=0, dec=4)
+        self.inpDensity.setFixedWidth(120)
+        self.comboGeom = QtWidgets.QComboBox()
+        self.comboGeom.addItems(['Monoatomic', 'Diatomic', 'Triatomic', 'Polyatomic'])
+        self.inpCP = ui_shared.create_double_spin_box(1, minimum=0, dec=4)
+        self.inpCP.setFixedWidth(120)
+        self.unitDensity = QtWidgets.QComboBox()
+        self.unitDensity.addItems(['g L-1', 'g cm-3', 'kg m-3'])
+        self.unitCP = QtWidgets.QComboBox()
+        self.unitCP.addItems(['cal g-1 K-1', 'J g-1 K-1'])
+        thisLayout.addWidget(self.btnDel)
+        thisLayout.addWidget(self.btnSelGas)
+        thisLayout.addWidget(self.inpGas)
+        thisLayout.addWidget(self.comboGeom)
+        thisLayout.addWidget(self.inpFraction)
+        thisLayout.addWidget(self.inpDensity)
+        thisLayout.addWidget(self.unitDensity)
+        thisLayout.addWidget(self.inpCP)
+        thisLayout.addWidget(self.unitCP)
+        self.setLayout(thisLayout)
+        self.btnDel.clicked.connect(self.deleteLater)
+
+    def update_gas_params(self, gas, struc, rho, cp):
+
+        self.inpGas.setText(gas)
+        self.comboGeom.setCurrentText(struc)
+        self.inpDensity.setValue(rho)
+        self.inpCP.setValue(cp)
+        self.unitDensity.setCurrentIndex(0)
+        self.unitCP.setCurrentIndex(0)
+
+
+class DialogGCFGasSel(QtWidgets.QDialog):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle('Select a pre-defined gas')
+        self.setMinimumWidth(500)
+        self.gcf_gases = api_flow.load_gcf_gases()
+        self.gcf_gas_formulae = tuple(x[0] for x in self.gcf_gases)
+        self._sort_idx = {'name': 2, 'formula': 0, 'mass': 1}
+        box1 = QtWidgets.QGroupBox()
+        box1.setTitle('Sort by')
+        box1Layout = QtWidgets.QHBoxLayout()
+        self.btnSortByName = QtWidgets.QPushButton('Name')
+        self.btnSortByFormula = QtWidgets.QPushButton('Formula')
+        self.btnSortByMass = QtWidgets.QPushButton('Mass')
+        box1Layout.addWidget(self.btnSortByName)
+        box1Layout.addWidget(self.btnSortByFormula)
+        box1Layout.addWidget(self.btnSortByMass)
+        box1.setLayout(box1Layout)
+
+        monoFont = QtGui.QFont()
+        monoFont.setStyleHint(QtGui.QFont.StyleHint.Monospace)
+        self.gasList = QtWidgets.QListWidget()
+        self.gasList.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.MultiSelection)
+        self.gasList.setFont(monoFont)
+        self.gasList.setStyleSheet('font-family: Monospace')
+        for params in self.gcf_gases:
+            txt = '{:<12s} {:>3d} {:<24s}'.format(*params[:3])
+            self.gasList.addItem(QtWidgets.QListWidgetItem(txt))
+        area = QtWidgets.QScrollArea()
+        area.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        area.setWidget(self.gasList)
+        area.setWidgetResizable(True)
+
+        self.btnOk = QtWidgets.QPushButton('Ok')
+        self.btnCancel = QtWidgets.QPushButton('Cancel')
+        box2Layout = QtWidgets.QHBoxLayout()
+        box2Layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        box2Layout.addWidget(self.btnCancel)
+        box2Layout.addWidget(self.btnOk)
+        self.btnOk.clicked.connect(self.accept)
+        self.btnCancel.clicked.connect(self.reject)
+
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        thisLayout.addWidget(box1)
+        thisLayout.addWidget(area)
+        thisLayout.addLayout(box2Layout)
+        self.setLayout(thisLayout)
+
+        self.btnSortByName.clicked.connect(lambda: self.sortby('name'))
+        self.btnSortByFormula.clicked.connect(lambda: self.sortby('formula'))
+        self.btnSortByMass.clicked.connect(lambda: self.sortby('mass'))
+        self.gasList.itemDoubleClicked.connect(self.accept)
+
+    def current_gas_params(self):
+        """ Return the current selected gas parameter """
+        row = self.gasList.currentRow()
+        txt = self.gasList.item(row).text()
+        formula = txt.split()[0]
+        i = self.gcf_gas_formulae.index(formula)
+        return self.gcf_gases[i]
+
+    def sortby(self, order):
+
+        newlist = sorted(self.gcf_gases, key=lambda x: x[self._sort_idx[order]])
+        self.gasList.clear()
+        for params in newlist:
+            txt = '{:<12s} {:>3d} {:<24s}'.format(*params[:3])
+            self.gasList.addItem(QtWidgets.QListWidgetItem(txt))
+        self.gasList.setCurrentRow(0)
+
+
+class DialogAWG(QtWidgets.QDialog):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle('Configure AWG')
+
+        btnLayout = QtWidgets.QHBoxLayout()
+        btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        self.btnOk = QtWidgets.QPushButton('OK')
+        btnLayout.addWidget(self.btnOk)
+
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.addLayout(btnLayout)
+        self.setLayout(thisLayout)
+
+        self.btnOk.clicked.connect(self.accept)
+
+
+class DialogPowerSupp(QtWidgets.QDialog):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle('Configure Power Supply')
+
+        btnLayout = QtWidgets.QHBoxLayout()
+        btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        self.btnOk = QtWidgets.QPushButton('OK')
+        btnLayout.addWidget(self.btnOk)
+
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.addLayout(btnLayout)
+        self.setLayout(thisLayout)
+
+        self.btnOk.clicked.connect(self.accept)
+
+
+
+class DialogCloseInst(QtWidgets.QDialog):
     """ Dialog window for closing selected instrument. """
 
     def __init__(self, parent=None): 
@@ -188,7 +770,7 @@ class CloseSelInstDialog(QtWidgets.QDialog):
         okButton.clicked.connect(self.accept)
 
 
-class SynInfoDialog(QtWidgets.QDialog):
+class DialogSyn(QtWidgets.QDialog):
     """ Dialog window for displaying full synthesizer settings. """
 
     def __init__(self, parent=None): 
@@ -196,7 +778,8 @@ class SynInfoDialog(QtWidgets.QDialog):
 
         self.setMinimumWidth(800)
         self.setMinimumHeight(400)
-        self.setWindowTitle('Synthesizer Settings')
+        self.setWindowTitle('Configure Synthesizer')
+        self.setWindowFlag(QtCore.Qt.WindowType.Window)
 
         self.instGroup = QtWidgets.QGroupBox()
         self.rfGroup = QtWidgets.QGroupBox()
@@ -376,7 +959,7 @@ class SynInfoDialog(QtWidgets.QDialog):
         self.lfVolLabel.setText(siFormat(info.LFVoltage, suffix='V'))
 
 
-class LockinInfoDialog(QtWidgets.QDialog):
+class DialogLockin(QtWidgets.QDialog):
     """ Dialog window for displaying full lockin settings. """
 
     def __init__(self, parent=None):
@@ -719,7 +1302,7 @@ class PrevSpectrumDialog(QtWidgets.QDialog):
         self.curve.setData(self._data[:,0], self._data[:,1])
 
 
-class GaugeDialog(QtWidgets.QDialog):
+class DialogGauge(QtWidgets.QDialog):
     """
         Pressure reader window
     """

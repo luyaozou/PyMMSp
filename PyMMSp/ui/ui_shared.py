@@ -2,7 +2,7 @@
 
 from PyQt6 import QtWidgets
 import random
-from math import ceil
+from math import ceil, floor, log10
 import numpy as np
 from pyqtgraph import siFormat
 from PyMMSp.inst import lockin as api_lia
@@ -612,3 +612,107 @@ class BtnSwitch(QtWidgets.QPushButton):
             else:
                 self.setText('{:s} OFF'.format(self._title))
 
+
+
+def create_double_spin_box(v, minimum=None, maximum=None, step=1., stepType=0,
+                           dec=1, prefix=None, suffix=None):
+    """ Create a QDoubleSpinBox with preset values """
+
+    box = QtWidgets.QDoubleSpinBox()
+    box.setSingleStep(step)
+    if stepType == 0:
+        box.setStepType(QtWidgets.QAbstractSpinBox.StepType.DefaultStepType)
+    else:
+        box.setStepType(QtWidgets.QAbstractSpinBox.StepType.AdaptiveDecimalStepType)
+    box.setDecimals(dec)
+
+    # the Pythonic convention "if minimum:" cannot be used here,
+    # incase minimum / maximum actually has value zero.
+    if isinstance(minimum, type(None)):
+        box.setMinimum(float('-inf'))
+    else:
+        box.setMinimum(minimum)
+
+    if isinstance(maximum, type(None)):
+        box.setMaximum(float('inf'))
+    else:
+        box.setMaximum(maximum)
+
+    if prefix:
+        box.setPrefix(prefix)
+    else:
+        pass
+
+    if suffix:
+        box.setSuffix(suffix)
+    else:
+        pass
+
+    # one needs to set the value at last so that the value
+    # does not get clipped by default minimum and maximum
+    box.setValue(v)
+
+    return box
+
+
+def create_int_spin_box(v, minimum=None, maximum=None, step=1, stepType=0,
+                        prefix=None, suffix=None):
+    """ Create a QSpinBox with preset values """
+
+    box = QtWidgets.QSpinBox()
+    if stepType == 0:
+        box.setStepType(QtWidgets.QAbstractSpinBox.StepType.DefaultStepType)
+    else:
+        box.setStepType(QtWidgets.QAbstractSpinBox.StepType.AdaptiveDecimalStepType)
+    box.setSingleStep(step)
+
+    # the Pythonic convention "if minimum:" cannot be used here,
+    # incase minimum / maximum actually has value zero.
+    if isinstance(minimum, type(None)):
+        box.setMinimum(-2147483648)
+    else:
+        box.setMinimum(floor(minimum))
+
+    if isinstance(maximum, type(None)):
+        box.setMaximum(2147483647)
+    else:
+        box.setMaximum(ceil(maximum))
+
+    if prefix:
+        box.setPrefix(prefix)
+    else:
+        pass
+
+    if suffix:
+        box.setSuffix(suffix)
+    else:
+        pass
+
+    # one needs to set the value at last so that the value
+    # does not get clipped by default minimum and maximum
+    box.setValue(v)
+
+    return box
+
+
+def msg(title='', context='', style=''):
+    """ Pop up a message dialog for information / warning
+    :argument
+        parent: QWiget          parent QWiget
+        title: str              title string
+        context: str            context string
+        style: str              style of message box
+            'info'              information box
+            'warning'           warning box
+            'critical'          critical box
+    """
+
+    if style == 'info':
+        d = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information, title, context)
+    elif style == 'warning':
+        d = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning, title, context)
+    elif style == 'critical':
+        d = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Critical, title, context)
+    else:
+        d = QtWidgets.QMessageBox(QtWidgets.QMessageBox.NoIcon, title, context)
+    d.exec_()

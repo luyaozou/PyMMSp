@@ -17,48 +17,84 @@ from PyMMSp.ui import ui_dialog
 from PyMMSp.ui import ui_shared
 
 
+NUM_MONITORS = 6        # number of monitors
+
+
 class MainUI(QtWidgets.QWidget):
     """ Main UI Widget """
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.synStatus = SynStatus(self)
-        self.liaStatus = LiaStatus(self)
-        self.scopeStatus = ScopeStatus(self)
         self.synPanel = SynPanel(self)
-        self.lockinPanel = LockinPanel(self)
-        self.oscilloPanel = OscilloPanel(self)
-        self.motorPanel = MotorPanel(self)
-        self.scopeMonitor = ScopeMonitor(self)
-        self.liaMonitor = LockinMonitor(self)
-        self.specMonitor = SpectrumMonitor(self)
+        # self.lockinPanel = LockinPanel(self)
+        # self.oscilloPanel = OscilloPanel(self)
+        # self.awgPanel = AWGPanel(self)
+        # self.powerPanel = PowerSupplyPanel(self)
+        # self.flowPanel = FlowCtrlPanel(self)
+        # self.gaugePanel = GaugePanel(self)
+        # self.motorPanel = MotorPanel(self)
+        self.lockinPanel = GeneralCtrlPanel('Lock-in Control', parent=self)
+        self.oscilloPanel = GeneralCtrlPanel('Oscilloscope Control', parent=self)
+        self.awgPanel = GeneralCtrlPanel('AWG Control', parent=self)
+        self.dcPanel = GeneralCtrlPanel('Power Supply Control', parent=self)
+        self.flowPanel = GeneralCtrlPanel('Gas Flow Control', parent=self)
+        self.gaugePanel = GeneralCtrlPanel('Gauge Control', parent=self)
+        self.motorPanel = GeneralCtrlPanel('Motor Control', parent=self)
 
-        self.mainLayout = QtWidgets.QGridLayout()
-        self.mainLayout.setSpacing(6)
-        self.mainLayout.addWidget(self.synStatus, 0, 0, 3, 2)
-        self.mainLayout.addWidget(self.liaStatus, 3, 0, 3, 2)
-        self.mainLayout.addWidget(self.scopeStatus, 6, 0, 1, 2)
-        # self.mainLayout.addWidget(self.testModeSignLabel, 7, 0, 1, 2)
-        self.mainLayout.addWidget(self.synPanel, 0, 2, 3, 3)
-        self.mainLayout.addWidget(self.lockinPanel, 3, 2, 2, 3)
-        self.mainLayout.addWidget(self.oscilloPanel, 5, 2, 2, 3)
-        self.mainLayout.addWidget(self.motorPanel, 7, 2, 1, 3)
-        self.mainLayout.addWidget(self.liaMonitor, 0, 5, 4, 4)
-        self.mainLayout.addWidget(self.scopeMonitor, 4, 5, 2, 4)
-        self.mainLayout.addWidget(self.specMonitor, 6, 5, 2, 4)
-        self.setLayout(self.mainLayout)
+        self._monitors = tuple(Monitor(self) for _ in range(NUM_MONITORS))
+
+        panelLayout = QtWidgets.QVBoxLayout()
+        panelLayout.setSpacing(3)
+        panelLayout.addWidget(self.synPanel)
+        panelLayout.addWidget(self.lockinPanel)
+        panelLayout.addWidget(self.oscilloPanel)
+        panelLayout.addWidget(self.awgPanel)
+        panelLayout.addWidget(self.dcPanel)
+        panelLayout.addWidget(self.flowPanel)
+        panelLayout.addWidget(self.gaugePanel)
+        panelLayout.addWidget(self.motorPanel)
+
+        canvasLayout = QtWidgets.QGridLayout()
+        canvasLayout.setSpacing(3)
+        canvasLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        for i, monitor in enumerate(self._monitors):
+            canvasLayout.addWidget(monitor, i // 2, i % 2)
+
+        mainLayout = QtWidgets.QHBoxLayout()
+        mainLayout.setSpacing(6)
+        mainLayout.addLayout(panelLayout)
+        mainLayout.addLayout(canvasLayout)
+
+        self.setLayout(mainLayout)
 
         self.msgErr = ui_shared.MsgError(self, 'Error')
         self.msgWarn = ui_shared.MsgWarning(self, 'Warning')
         self.msgInfo = ui_shared.MsgInfo(self, 'Info')
 
-        self.selInstDialog = ui_dialog.SelInstDialog(self)
-        self.synInfoDialog = ui_dialog.SynInfoDialog(self)
-        self.liaInfoDialog = ui_dialog.LockinInfoDialog(self)
-        self.oscilloDialog = ui_dialog.OscilloscopeDialog(self)
-        self.closeSelInstDialog = ui_dialog.CloseSelInstDialog(self)
-        self.gaugeDialog = ui_dialog.GaugeDialog(self)
+        self.dConnInst = ui_dialog.DialogConnInst(self)
+        self.dSyn = ui_dialog.DialogSyn(self)
+        self.dLockin = ui_dialog.DialogLockin(self)
+        self.dOscillo = ui_dialog.DialogOscillo(self)
+        self.dGauge = ui_dialog.DialogGauge(self)
+        self.dFlow = ui_dialog.DialogFlow(self)
+        self.dGCF = ui_dialog.DialogGCF(self)
+        self.dAWG = ui_dialog.DialogAWG(self)
+        self.dPowerSupp = ui_dialog.DialogPowerSupp(self)
+        self.dCloseInst = ui_dialog.DialogCloseInst(self)
+
+        self.synPanel.btnConfig.clicked.connect(self.dSyn.show)
+        self.lockinPanel.btnConfig.clicked.connect(self.dLockin.show)
+        self.oscilloPanel.btnConfig.clicked.connect(self.dOscillo.show)
+        self.awgPanel.btnConfig.clicked.connect(self.dAWG.show)
+        self.dcPanel.btnConfig.clicked.connect(self.dPowerSupp.show)
+        self.flowPanel.btnConfig.clicked.connect(self.dFlow.show)
+        self.gaugePanel.btnConfig.clicked.connect(self.dGauge.show)
+
+
+    def get_monitor(self, i):
+        # return the i-th monitor
+        return self._monitors[i]
 
 
 class SynStatus(QtWidgets.QGroupBox):
@@ -281,26 +317,58 @@ class SynPanel(QtWidgets.QGroupBox):
 
         self.setTitle('Synthesizer Control')
         self.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)  # align left
-        self.setCheckable(True)
-        self.setChecked(False)
+
+        self.inpHarm = ui_shared.create_int_spin_box(1, 1, 108)
+        self.inpFreq = ui_shared.create_double_spin_box(1e5, 0, dec=3)
+        self.lblRFFreq = QtWidgets.QLabel()
+
+        # -- Set up basic synthesizer info layout --
+        synLayout = QtWidgets.QGridLayout()
+        synLayout.addWidget(QtWidgets.QLabel('Harmonics'), 0, 0)
+        synLayout.addWidget(self.inpHarm, 0, 1, 1, 2)
+        synLayout.addWidget(QtWidgets.QLabel('Frequency'), 1, 0)
+        synLayout.addWidget(self.inpFreq, 1, 1, 1, 2)
+        synLayout.addWidget(QtWidgets.QLabel('RF Freq'), 2, 0)
+        synLayout.addWidget(self.lblRFFreq, 2, 1, 1, 2)
+
+        # -- Define synthesizer power switch --
+        self.synPowerSwitchBtn = QtWidgets.QPushButton('OFF')
+        self.synPowerSwitchBtn.setCheckable(True)
+        self.synPowerManualInput = QtWidgets.QPushButton('Set Power')
+
+        synPowerLayout = QtWidgets.QHBoxLayout()
+        synPowerLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+        synPowerLayout.addWidget(self.synPowerManualInput)
+        synPowerLayout.addWidget(QtWidgets.QLabel('RF Switch'))
+        synPowerLayout.addWidget(self.synPowerSwitchBtn)
+
+        # -- Define buttons --
+        self.statusBulb = ui_shared.CommStatusBulb()
+        self.btnConfig = QtWidgets.QPushButton('Configure')
+        self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(list(f'Monitor {i+1}' for i in range(NUM_MONITORS)))
+        btnLayout = QtWidgets.QHBoxLayout()
+        btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        btnLayout.addWidget(self.statusBulb)
+        btnLayout.addWidget(QtWidgets.QLabel('Connect to '))
+        btnLayout.addWidget(self.comboMonitor)
+        btnLayout.addWidget(self.btnConfig)
+
+        # -- Set up main layout
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        thisLayout.addLayout(synPowerLayout)
+        thisLayout.addLayout(synLayout)
+        thisLayout.addLayout(btnLayout)
+        self.setLayout(thisLayout)
+
+        ## -- depreciate codes below ---
 
         ## -- Define synthesizer control elements --
-        self.synFreqLabel = QtWidgets.QLabel('{:.9f}'.format(30000))
         self.probFreqFill = QtWidgets.QLineEdit()
         self.probFreqFill.setText('180000')
         self.bandSel = QtWidgets.QComboBox()
         self.bandSel.addItems(list(txt for txt in api_syn.yield_band_str()))
-
-        ## -- Set up synthesizer control layout --
-        synLayout = QtWidgets.QGridLayout()
-        synLayout.addWidget(QtWidgets.QLabel('Synthesizer Frequency'), 0, 0)
-        synLayout.addWidget(self.synFreqLabel, 0, 1)
-        synLayout.addWidget(QtWidgets.QLabel('MHz'), 0, 2)
-        synLayout.addWidget(QtWidgets.QLabel('Probing Frequency'), 1, 0)
-        synLayout.addWidget(self.probFreqFill, 1, 1)
-        synLayout.addWidget(QtWidgets.QLabel('MHz'), 1, 2)
-        synLayout.addWidget(QtWidgets.QLabel('VDI Band'), 2, 0)
-        synLayout.addWidget(self.bandSel, 2, 1, 1, 3)
 
         # Set up modulation child widget
         modGBox = QtWidgets.QGroupBox()
@@ -366,25 +434,6 @@ class SynPanel(QtWidgets.QGroupBox):
         self.modAmp.hide()
         self.lfVol.hide()
 
-        ## -- Define synthesizer power switch
-        self.synPowerSwitchBtn = QtWidgets.QPushButton('OFF')
-        self.synPowerSwitchBtn.setCheckable(True)
-        self.synPowerManualInput = QtWidgets.QPushButton('Set Power')
-
-        synPowerLayout = QtWidgets.QHBoxLayout()
-        synPowerLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
-        synPowerLayout.addWidget(self.synPowerManualInput)
-        synPowerLayout.addWidget(QtWidgets.QLabel('RF Switch'))
-        synPowerLayout.addWidget(self.synPowerSwitchBtn)
-
-        ## -- Set up main layout
-        mainLayout = QtWidgets.QVBoxLayout()
-        mainLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
-        mainLayout.addLayout(synPowerLayout)
-        mainLayout.addLayout(synLayout)
-        mainLayout.addWidget(modGBox)
-        self.setLayout(mainLayout)
-
     def print_info(self, info):
         self.synPowerSwitchBtn.setChecked(info.rf_toggle)
         self.probFreqFill.setText(f'{info.freq * 1e-6:.9f}')
@@ -409,6 +458,30 @@ class SynPanel(QtWidgets.QGroupBox):
         self.lfVolFill.setText(f'{info.lf_vol:.3f}')
 
 
+class GeneralCtrlPanel(QtWidgets.QGroupBox):
+
+    def __init__(self, title, parent=None):
+        super().__init__(parent)
+
+        self.setTitle(title)
+        self.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)  # align left
+
+        self.statusBulb = ui_shared.CommStatusBulb()
+        self.btnConfig = QtWidgets.QPushButton('Configure')
+        self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(list(f'Monitor {i + 1}' for i in range(NUM_MONITORS)))
+        btnLayout = QtWidgets.QHBoxLayout()
+        btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        btnLayout.addWidget(self.statusBulb)
+        btnLayout.addWidget(QtWidgets.QLabel('Connect to '))
+        btnLayout.addWidget(self.comboMonitor)
+        btnLayout.addWidget(self.btnConfig)
+
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.addLayout(btnLayout)
+        self.setLayout(thisLayout)
+
+
 class LockinPanel(QtWidgets.QGroupBox):
 
     def __init__(self, parent=None):
@@ -419,15 +492,37 @@ class LockinPanel(QtWidgets.QGroupBox):
         self.setCheckable(True)
         self.setChecked(False)
 
+        self.comboSens = QtWidgets.QComboBox()
+        self.comboSens.addItems(api_lia.SENS_STR)
+        self.comboTau = QtWidgets.QComboBox()
+        self.comboTau.addItems(api_lia.TAU_STR)
+        widgetLayout = QtWidgets.QHBoxLayout()
+        widgetLayout.addWidget(QtWidgets.QLabel('Sensitivity'))
+        widgetLayout.addWidget(self.comboSens)
+        widgetLayout.addWidget(QtWidgets.QLabel('Time Const'))
+        widgetLayout.addWidget(self.comboTau)
+
+        # -- Define buttons --
+        self.btnConfig = QtWidgets.QPushButton('Configure')
+        self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(list(f'Monitor {i + 1}' for i in range(NUM_MONITORS)))
+        btnLayout = QtWidgets.QHBoxLayout()
+        btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        btnLayout.addWidget(QtWidgets.QLabel('Connect to '))
+        btnLayout.addWidget(self.comboMonitor)
+        btnLayout.addWidget(self.btnConfig)
+
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.addLayout(widgetLayout)
+        thisLayout.addLayout(btnLayout)
+        self.setLayout(thisLayout)
+
+        # depreciate codes below
         ## -- Define layout elements --
         self.harmSel = QtWidgets.QComboBox()
         self.harmSel.addItems(['1', '2', '3', '4'])
         self.harmSel.setCurrentIndex(0)
         self.phaseFill = QtWidgets.QLineEdit('0')
-        self.sensSel = QtWidgets.QComboBox()
-        self.sensSel.addItems(api_lia.SENS_STR)
-        self.tauSel = QtWidgets.QComboBox()
-        self.tauSel.addItems(api_lia.TAU_STR)
         self.coupleSel = QtWidgets.QComboBox()
         self.coupleSel.addItems(list(api_lia.COUPLE))
         self.coupleSel.setCurrentIndex(1)
@@ -443,29 +538,6 @@ class LockinPanel(QtWidgets.QGroupBox):
         self.autoPhaseBtn = QtWidgets.QPushButton('Auto Phase')
         self.resetBtn = QtWidgets.QPushButton('Reset')
 
-        ## -- Set up main layout --
-        mainLayout = QtWidgets.QGridLayout()
-        mainLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
-        mainLayout.addWidget(QtWidgets.QLabel('Harmonics'), 0, 0)
-        mainLayout.addWidget(self.harmSel, 0, 1)
-        mainLayout.addWidget(QtWidgets.QLabel('Phase'), 1, 0)
-        mainLayout.addWidget(self.phaseFill, 1, 1)
-        mainLayout.addWidget(QtWidgets.QLabel('Sensitivity'), 2, 0)
-        mainLayout.addWidget(self.sensSel, 2, 1)
-        mainLayout.addWidget(QtWidgets.QLabel('Time Const'), 3, 0)
-        mainLayout.addWidget(self.tauSel, 3, 1)
-        mainLayout.addWidget(QtWidgets.QLabel('Couple'), 0, 2)
-        mainLayout.addWidget(self.coupleSel, 0, 3)
-        mainLayout.addWidget(QtWidgets.QLabel('Reserve'), 1, 2)
-        mainLayout.addWidget(self.reserveSel, 1, 3)
-        mainLayout.addWidget(QtWidgets.QLabel('Grouding'), 2, 2)
-        mainLayout.addWidget(self.groundingSel, 2, 3)
-        mainLayout.addWidget(QtWidgets.QLabel('Input Filter'), 3, 2)
-        mainLayout.addWidget(self.filterSel, 3, 3)
-        mainLayout.addWidget(self.autoPhaseBtn, 4, 2)
-        mainLayout.addWidget(self.resetBtn, 4, 3)
-        self.setLayout(mainLayout)
-
 
 class OscilloPanel(QtWidgets.QGroupBox):
 
@@ -477,24 +549,29 @@ class OscilloPanel(QtWidgets.QGroupBox):
         self.setCheckable(True)
         self.setChecked(False)
 
-        ## -- Define layout elements --
-        self.srateFill = QtWidgets.QLineEdit()
-        self.slenFill = QtWidgets.QLineEdit()
-        self.sensSel = QtWidgets.QComboBox()
-        self.sensSel.addItems(list(api_oscillo.SENS_STR))
-        self.avgFill = QtWidgets.QLineEdit()
+        self.comboSens = QtWidgets.QComboBox()
+        self.comboSens.addItems(api_lia.SENS_STR)
+        self.inpRate = ui_shared.create_double_spin_box(1, dec=3, suffix=' kHz')
+        widgetLayout = QtWidgets.QHBoxLayout()
+        widgetLayout.addWidget(QtWidgets.QLabel('Sensitivity'))
+        widgetLayout.addWidget(self.comboSens)
+        widgetLayout.addWidget(QtWidgets.QLabel('Sample Rate'))
+        widgetLayout.addWidget(self.inpRate)
 
-        ## -- Set up main layout --
-        mainLayout = QtWidgets.QFormLayout()
-        mainLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
-        mainLayout.addRow(QtWidgets.QLabel('Sample Rate (MHz)'), self.srateFill)
-        mainLayout.addRow(QtWidgets.QLabel('Sample Length'), self.slenFill)
-        mainLayout.addRow(QtWidgets.QLabel('Sensitivity'), self.sensSel)
-        mainLayout.addRow(QtWidgets.QLabel('Oscilloscope Average'), self.avgFill)
-        self.setLayout(mainLayout)
+        # -- Define buttons --
+        self.btnConfig = QtWidgets.QPushButton('Configure')
+        self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(list(f'Monitor {i + 1}' for i in range(NUM_MONITORS)))
+        btnLayout = QtWidgets.QHBoxLayout()
+        btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        btnLayout.addWidget(QtWidgets.QLabel('Connect to '))
+        btnLayout.addWidget(self.comboMonitor)
+        btnLayout.addWidget(self.btnConfig)
 
-    def print_info(self, info):
-        pass
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.addLayout(widgetLayout)
+        thisLayout.addLayout(btnLayout)
+        self.setLayout(thisLayout)
 
 
 class MotorPanel(QtWidgets.QGroupBox):
@@ -502,97 +579,168 @@ class MotorPanel(QtWidgets.QGroupBox):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setTitle('Cavity Control')
+        self.setTitle('Motor Control')
         self.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
         self.setCheckable(True)
         self.setChecked(False)
 
-        self.tuneButton = QtWidgets.QPushButton('Tune Cavity')
-        mainLayout = QtWidgets.QHBoxLayout()
-        mainLayout.addWidget(self.tuneButton)
-        self.setLayout(mainLayout)
+        thisLayout = QtWidgets.QHBoxLayout()
+        self.setLayout(thisLayout)
 
 
-class ScopeMonitor(QtWidgets.QWidget):
+class AWGPanel(QtWidgets.QGroupBox):
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.pgPlot = pg.PlotWidget(title='Oscilloscope Monitor')
-        mainLayout = QtWidgets.QGridLayout()
-        mainLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
-        mainLayout.addWidget(self.pgPlot, 0, 0)
-        self.setLayout(mainLayout)
+        self.setTitle('AWG Control')
+        self.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+        self.setCheckable(True)
+        self.setChecked(False)
 
-    def plot(self):
-        pass
+        widgetLayout = QtWidgets.QHBoxLayout()
+
+        # -- Define buttons --
+        self.btnConfig = QtWidgets.QPushButton('Configure')
+        self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(list(f'Monitor {i + 1}' for i in range(NUM_MONITORS)))
+        btnLayout = QtWidgets.QHBoxLayout()
+        btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        btnLayout.addWidget(QtWidgets.QLabel('Connect to '))
+        btnLayout.addWidget(self.comboMonitor)
+        btnLayout.addWidget(self.btnConfig)
+
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.addLayout(widgetLayout)
+        thisLayout.addLayout(btnLayout)
+        self.setLayout(thisLayout)
 
 
-class LockinMonitor(QtWidgets.QWidget):
+class PowerSupplyPanel(QtWidgets.QGroupBox):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.counter = 0  # data points counter
 
-        self.slenFill = QtWidgets.QLineEdit()
-        self.slenFill.setText('100')
-        self.slenFill.setStyleSheet(f'border: 1px solid {ui_shared.msg_color(2)}')
-        self.yMaxSel = QtWidgets.QComboBox()
-        self.yMaxSel.addItems(['1 V', '100 mV', '10 mV', '1 mV', '100 uV', '10 uV', '1 uV', '100 nV', '10 nV'])
-        self.updateRate = QtWidgets.QComboBox()
-        self.updateRate.addItems(['10 Hz', '5 Hz', '2 Hz', '1 Hz',
-                                  '0.5 Hz', '0.2 Hz', '0.1 Hz', 'Auto'])
-        self.updateRate.setCurrentIndex(2)  # default update rate 0.5s
-        self.startButton = QtWidgets.QPushButton('Start')
-        self.startButton.setCheckable(True)
-        self.restartButton = QtWidgets.QPushButton('Restart')
-        self.stopButton = QtWidgets.QPushButton('Stop')
-        panelLayout = QtWidgets.QHBoxLayout()
-        panelLayout.addWidget(QtWidgets.QLabel('Y Max'))
-        panelLayout.addWidget(self.yMaxSel)
-        panelLayout.addWidget(QtWidgets.QLabel('Length'))
-        panelLayout.addWidget(self.slenFill)
-        panelLayout.addWidget(QtWidgets.QLabel('Rate'))
-        panelLayout.addWidget(self.updateRate)
-        panelLayout.addWidget(self.startButton)
-        panelLayout.addWidget(self.restartButton)
-        panelLayout.addWidget(self.stopButton)
-        settingPanel = QtWidgets.QWidget()
-        settingPanel.setLayout(panelLayout)
+        self.setTitle('Power Supply Control')
+        self.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+        self.setCheckable(True)
+        self.setChecked(False)
 
-        self.pgPlot = pg.PlotWidget(title='Lockin Monitor')
-        self.pgPlot.setLabel('left', text='Lockin Signal', units='V')
-        self.pgPlot.setYRange(0, 1)
+        widgetLayout = QtWidgets.QHBoxLayout()
+
+        # -- Define buttons --
+        self.btnConfig = QtWidgets.QPushButton('Configure')
+        self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(list(f'Monitor {i + 1}' for i in range(NUM_MONITORS)))
+        btnLayout = QtWidgets.QHBoxLayout()
+        btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        btnLayout.addWidget(QtWidgets.QLabel('Connect to '))
+        btnLayout.addWidget(self.comboMonitor)
+        btnLayout.addWidget(self.btnConfig)
+
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.addLayout(widgetLayout)
+        thisLayout.addLayout(btnLayout)
+        self.setLayout(thisLayout)
+
+
+class FlowCtrlPanel(QtWidgets.QGroupBox):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setTitle('Flow Control')
+        self.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+        self.setCheckable(True)
+        self.setChecked(False)
+
+        widgetLayout = QtWidgets.QHBoxLayout()
+
+        # -- Define buttons --
+        self.btnConfig = QtWidgets.QPushButton('Configure')
+        self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(list(f'Monitor {i + 1}' for i in range(NUM_MONITORS)))
+        btnLayout = QtWidgets.QHBoxLayout()
+        btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        btnLayout.addWidget(QtWidgets.QLabel('Connect to '))
+        btnLayout.addWidget(self.comboMonitor)
+        btnLayout.addWidget(self.btnConfig)
+
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.addLayout(widgetLayout)
+        thisLayout.addLayout(btnLayout)
+        self.setLayout(thisLayout)
+
+
+class GaugePanel(QtWidgets.QGroupBox):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setTitle('Gauge Control')
+        self.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+        self.setCheckable(True)
+        self.setChecked(False)
+
+        widgetLayout = QtWidgets.QHBoxLayout()
+
+        # -- Define buttons --
+        self.btnConfig = QtWidgets.QPushButton('Configure')
+        self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(list(f'Monitor {i + 1}' for i in range(NUM_MONITORS)))
+        btnLayout = QtWidgets.QHBoxLayout()
+        btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        btnLayout.addWidget(QtWidgets.QLabel('Connect to '))
+        btnLayout.addWidget(self.comboMonitor)
+        btnLayout.addWidget(self.btnConfig)
+
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.addLayout(widgetLayout)
+        thisLayout.addLayout(btnLayout)
+        self.setLayout(thisLayout)
+
+
+class Monitor(QtWidgets.QGroupBox):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.pgPlot = pg.PlotWidget()
         self.curve = pg.PlotCurveItem()
         self.pgPlot.addItem(self.curve)
-        mainLayout = QtWidgets.QVBoxLayout()
-        mainLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
-        mainLayout.addWidget(self.pgPlot)
-        mainLayout.addWidget(settingPanel)
-        self.setLayout(mainLayout)
 
-        # trigger settings
-        self.yMaxSel.currentIndexChanged.connect(self.rescale)
+        self.comboXRange = QtWidgets.QComboBox()
+        self.comboXRange.addItems(['Auto', 'Fix'])
+        self.comboYRange = QtWidgets.QComboBox()
+        self.comboYRange.addItems(['Auto', 'Fix'])
+        self.comboRate = QtWidgets.QComboBox()
+        self.comboRate.addItems(['10 Hz', '5 Hz', '2 Hz', '1 Hz', '0.5 Hz', '0.2 Hz', '0.1 Hz'])
+        self.comboRate.setCurrentIndex(3)
+        self.inpXLen = ui_shared.create_int_spin_box(100, minimum=1)
+        self.inpXLen.setFixedWidth(200)
+        self.btnStart = QtWidgets.QPushButton('Start')
+        self.btnStart.setCheckable(True)
+        self.btnRestart = QtWidgets.QPushButton('Restart')
+        self.btnStop = QtWidgets.QPushButton('Stop')
+        panelLayout1 = QtWidgets.QHBoxLayout()
+        panelLayout1.addWidget(QtWidgets.QLabel('X Range'))
+        panelLayout1.addWidget(self.comboXRange)
+        panelLayout1.addWidget(QtWidgets.QLabel('Y Range'))
+        panelLayout1.addWidget(self.comboYRange)
+        panelLayout1.addWidget(QtWidgets.QLabel('X Points'))
+        panelLayout1.addWidget(self.inpXLen)
+        panelLayout2 = QtWidgets.QHBoxLayout()
+        panelLayout2.addWidget(QtWidgets.QLabel('Refresh Rate'))
+        panelLayout2.addWidget(self.comboRate)
+        panelLayout2.addWidget(self.btnStart)
+        panelLayout2.addWidget(self.btnRestart)
+        panelLayout2.addWidget(self.btnStop)
 
-    def rescale(self, idx):
-
-        self.pgPlot.setYRange(0, 10 ** (-idx))
+        thisLayout = QtWidgets.QVBoxLayout()
+        thisLayout.addWidget(self.pgPlot)
+        thisLayout.addLayout(panelLayout1)
+        thisLayout.addLayout(panelLayout2)
+        self.setLayout(thisLayout)
 
     def update_plot(self, data):
         self.curve.setData(data)
-
-
-class SpectrumMonitor(QtWidgets.QWidget):
-
-    def __init__(self, parent):
-        QtWidgets.QWidget.__init__(self, parent)
-        self.parent = parent
-
-        self.pgPlot = pg.PlotWidget(title='Spectrum Monitor')
-        mainLayout = QtWidgets.QGridLayout()
-        mainLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
-        mainLayout.addWidget(self.pgPlot, 0, 0)
-        self.setLayout(mainLayout)
-
-    def plot(self):
-        pass

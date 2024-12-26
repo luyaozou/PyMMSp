@@ -18,31 +18,31 @@ class CtrlSyn(QtWidgets.QWidget):
         self.handle = handle
 
         # Trigger frequency refresh and communication
-        self.ui.synPanel.probFreqFill.textChanged.connect(self.tune_freq)
-        self.ui.synPanel.bandSel.currentIndexChanged.connect(self.tune_freq)
+        self.ui.synPanel.inpFreq.valueChanged.connect(self.tune_freq)
+        self.ui.synPanel.inpHarm.valueChanged.connect(self.tune_freq)
 
         # Trigger modulation status refresh and communication
-        self.ui.synPanel.modModeSel.currentIndexChanged[int].connect(self.switch_modu_widgets)
-        self.ui.synPanel.modFreqFill.textChanged.connect(self.tune_mod_parameter)
-        self.ui.synPanel.modFreqUnitSel.currentIndexChanged.connect(self.tune_mod_parameter)
-        self.ui.synPanel.modAmpFill.textChanged.connect(self.tune_mod_parameter)
-        self.ui.synPanel.modAmpAMUnitSel.currentIndexChanged.connect(self.tune_mod_parameter)
-        self.ui.synPanel.modAmpFMUnitSel.currentIndexChanged.connect(self.tune_mod_parameter)
-        self.ui.synPanel.modSwitchBtn.clicked.connect(self.switch_modulation)
-        self.ui.synPanel.lfSwitchBtn.clicked.connect(self.switch_lf)
-        self.ui.synPanel.lfVolFill.textChanged.connect(self.tune_lf)
+        #self.ui.synPanel.modModeSel.currentIndexChanged[int].connect(self.switch_modu_widgets)
+        #self.ui.synPanel.modFreqFill.textChanged.connect(self.tune_mod_parameter)
+        #self.ui.synPanel.modFreqUnitSel.currentIndexChanged.connect(self.tune_mod_parameter)
+        #self.ui.synPanel.modAmpFill.textChanged.connect(self.tune_mod_parameter)
+        #self.ui.synPanel.modAmpAMUnitSel.currentIndexChanged.connect(self.tune_mod_parameter)
+        #self.ui.synPanel.modAmpFMUnitSel.currentIndexChanged.connect(self.tune_mod_parameter)
+        #self.ui.synPanel.modSwitchBtn.clicked.connect(self.switch_modulation)
+        #self.ui.synPanel.lfSwitchBtn.clicked.connect(self.switch_lf)
+        #self.ui.synPanel.lfVolFill.textChanged.connect(self.tune_lf)
 
         # Trigger synthesizer power toggle and communication
         self.ui.synPanel.synPowerSwitchBtn.toggled.connect(self.set_syn_power_switch_btn_label)
 
         # Trigger groupbox check_state
-        self.ui.synPanel.clicked.connect(self.check)
-        self.ui.synStatus.clicked.connect(self.check)
+        # self.ui.synPanel.clicked.connect(self.check)
+        # self.ui.synStatus.clicked.connect(self.check)
         ## -- Trigger status updates
-        self.ui.synStatus.refreshButton.clicked.connect(self.refresh)
-        self.ui.synStatus.moreInfoButton.clicked.connect(self.refresh)
-        self.ui.synStatus.moreInfoButton.clicked.connect(self.ui.synInfoDialog.exec)
-        self.ui.synStatus.errMsgBtn.clicked.connect(self.pop_err_msg)
+        # self.ui.synStatus.refreshButton.clicked.connect(self.refresh)
+        # self.ui.synStatus.moreInfoButton.clicked.connect(self.refresh)
+        # self.ui.synStatus.moreInfoButton.clicked.connect(self.ui.synInfoDialog.exec)
+        # self.ui.synStatus.errMsgBtn.clicked.connect(self.pop_err_msg)
 
         self.ui.synPanel.synPowerSwitchBtn.toggled.connect(self.set_syn_power_switch_btn_label)
 
@@ -80,7 +80,7 @@ class CtrlSyn(QtWidgets.QWidget):
             api_syn.full_info_query_(self.info, self.handle)
             self.ui.synPanel.print_info(self.info)
             self.ui.synStatus.print_info(self.info)
-            self.ui.synInfoDialog.print_info(self.info)
+            self.ui.dSyn.print_info(self.info)
 
     def pop_err_msg(self):
         """ Pop error message """
@@ -119,7 +119,7 @@ class CtrlSyn(QtWidgets.QWidget):
                 msg.exec()
             # refresh synthesizer status
             self.ui.synStatus.print_info(self.info)
-            self.ui.synPanel.synFreqLabel.setText('{:.9f}'.format(synfreq * 1e-6))
+            self.ui.synPanel.lblRFFreq.setText('{:.9f}'.format(synfreq * 1e-6))
         else:  # else ignore change
             pass
 
