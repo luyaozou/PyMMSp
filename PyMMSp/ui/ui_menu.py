@@ -14,20 +14,11 @@ class MenuBar(QMenuBar):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-
         # Set menu bar actions
-        self.exitAction = QAction('Exit', self)
-        self.exitAction.setShortcuts(['Ctrl+Q', 'Esc'])
-        self.exitAction.setStatusTip('Exit program')
-
         # instrument actions
         self.instSelAction = QAction('Select Instrument', self)
         self.instSelAction.setShortcut('Ctrl+Shift+I')
         self.instSelAction.setStatusTip('Select instrument')
-
-        self.instStatViewAction = QAction('View Instrument Status', self)
-        self.instStatViewAction.setShortcut('Ctrl+Shift+V')
-        self.instStatViewAction.setStatusTip('View status of currently connected instrument')
 
         self.instCloseAction = QAction('Close Instrument', self)
         self.instCloseAction.setStatusTip('Close individual instrument')
@@ -37,17 +28,17 @@ class MenuBar(QMenuBar):
         self.scanJPLAction.setShortcut('Ctrl+Shift+J')
         self.scanJPLAction.setStatusTip('Use the scanning style of the JPL scanning routine')
 
-        self.viewOscilloAction = QAction('View Oscilloscope', self)
-        self.viewOscilloAction.setShortcut('Ctrl+Shift+S')
-        self.viewOscilloAction.setStatusTip("View the oscilloscope")
+        self.scanCPAction = QAction('Chirp', self)
+        self.scanCPAction.setShortcut('Ctrl+Shift+P')
+        self.scanCPAction.setStatusTip('Chirped-pulse mode')
 
-        self.scanCavityAction = QAction('Cavity Enhanced', self)
-        self.scanCavityAction.setShortcut('Ctrl+Shift+C')
-        self.scanCavityAction.setStatusTip('Use cavity enhanced spectroscopy')
+        self.scanCEAction = QAction('Cavity Enhanced', self)
+        self.scanCEAction.setShortcut('Ctrl+Shift+E')
+        self.scanCEAction.setStatusTip('Cavity enhanced spectroscopy mode')
 
-        self.gaugeAction = QAction('Pressure Gauge', self)
-        self.gaugeAction.setShortcut('Ctrl+Shift+P')
-        self.gaugeAction.setStatusTip('Open pressure gauge controller')
+        self.scanCRDSAction = QAction('Cavity-Ringdown',self)
+        self.scanCRDSAction.setShortcut('Ctrl+Shift+R')
+        self.scanCRDSAction.setStatusTip('Cavity ringdown spectroscopy mode')
 
         # data process actions
         self.lwaParserAction = QAction('.lwa preview and export', self)
@@ -59,17 +50,14 @@ class MenuBar(QMenuBar):
         self.testModeAction.setWhatsThis(
             'Toggle the test mode to bypass all instrument communication for GUI development.')
 
-        menuFile = self.addMenu('&File')
-        menuFile.addAction(self.exitAction)
         menuInst = self.addMenu('&Instrument')
         menuInst.addAction(self.instSelAction)
-        menuInst.addAction(self.instStatViewAction)
         menuInst.addAction(self.instCloseAction)
         menuScan = self.addMenu('&Scan')
         menuScan.addAction(self.scanJPLAction)
-        menuScan.addAction(self.viewOscilloAction)
-        menuScan.addAction(self.scanCavityAction)
-        menuScan.addAction(self.gaugeAction)
+        menuScan.addAction(self.scanCPAction)
+        menuScan.addAction(self.scanCEAction)
+        menuScan.addAction(self.scanCRDSAction)
         menuData = self.addMenu('&Data')
         menuData.addAction(self.lwaParserAction)
         menuTest = self.addMenu('&Test')

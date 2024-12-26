@@ -54,7 +54,6 @@ class MainUI(QtWidgets.QWidget):
         self.msgInfo = ui_shared.MsgInfo(self, 'Info')
 
         self.selInstDialog = ui_dialog.SelInstDialog(self)
-        self.viewInstDialog = ui_dialog.ViewInstDialog(self)
         self.synInfoDialog = ui_dialog.SynInfoDialog(self)
         self.liaInfoDialog = ui_dialog.LockinInfoDialog(self)
         self.oscilloDialog = ui_dialog.OscilloscopeDialog(self)

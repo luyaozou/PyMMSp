@@ -305,7 +305,7 @@ class TestAgilent(BaseTest):
         self.h = Handles()
         try:
             self.h.connect('Synthesizer', 'GPIB VISA', 'GPIB0::19::INSTR', 'Agilent E8257D')
-            self.api = DynamicSynAPI(files('PyMMSp.inst').joinpath('API_MAP_Agilent_E8257D.json'))
+            self.api = DynamicSynAPI(files('PyMMSp.inst').joinpath('API_MAP_Agilent_E8257D.yaml'))
         except ValueError:
             self.skipTest('Agilent synthesizer not found')
 
@@ -320,7 +320,7 @@ class TestSimAgilent(BaseTest):
         self.h = Handles()
         self.h.connect('Synthesizer', 'GPIB VISA', 'GPIB0::19::INSTR', 'Agilent E8257D',
                        is_sim=True)
-        self.api = DynamicSynAPI(files('PyMMSp.inst').joinpath('API_MAP_Agilent_E8257D.json'))
+        self.api = DynamicSynAPI(files('PyMMSp.inst').joinpath('API_MAP_Agilent_E8257D.yaml'))
 
     def tearDown(self):
         self.h.close_all()

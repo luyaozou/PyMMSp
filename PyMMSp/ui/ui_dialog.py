@@ -141,62 +141,8 @@ class SelInstDialog(QtWidgets.QDialog):
         thisLayout.addLayout(btnLayout)
         self.setLayout(thisLayout)
 
-#        refreshButton.clicked.connect(self.refresh)
-#        cancelButton.clicked.connect(self.reject)
-#        acceptButton.clicked.connect(self.accept)
-
-    def refresh(self):
-        """ Refresh instrument list """
-
-        # refresh avaiable instrument list
-        instList, instStr = api_gen.list_visa_inst()
-        self.availableInst.setText(instStr)
-
-        # refresh QComboBoxes
-        item_count = self.btnSyn.count()
-        # remove all items but the first one
-        for i in range(item_count-1):
-            # Because Qt automatically update the index, this loop needs to
-            # keep deleting the 'second' item, whose index is 1
-            self.btnSyn.removeItem(1)
-            self.btnLockin.removeItem(1)
-            self.btnOscillo.removeItem(1)
-            self.selMotor.removeItem(1)
-            self.selPressure.removeItem(1)
-        self.btnSyn.addItems(instList)
-        self.btnLockin.addItems(instList)
-        self.btnOscillo.addItems(instList)
-        self.selMotor.addItems(instList)
-        self.selPressure.addItems(instList)
-
-    def accept(self):
-
-        # close old instrument handles
-        api_gen.close_inst(self.parent.synHandle,
-                           self.parent.liaHandle,
-                           self.parent.pciHandle,
-                           self.parent.motorHandle,
-                           self.parent.pressureHandle)
-
-        # open new instrument handles
-        self.parent.synHandle = api_gen.open_inst(self.btnSyn.currentText())
-        self.parent.liaHandle = api_gen.open_inst(self.btnLockin.currentText())
-        self.parent.pciHandle = api_gen.open_inst(self.btnOscillo.currentText())
-        self.parent.motorHandle = api_gen.open_inst(self.selMotor.currentText())
-        self.parent.pressureHandle = api_gen.open_inst(self.selPressure.currentText())
-
-        self.done(True)
-
-
-class ViewInstDialog(QtWidgets.QDialog):
-    """ Dialog window for instrument status view """
-
-    def __init__(self, parent):
-        QtWidgets.QDialog.__init__(self, parent)
-
-        self.setMinimumWidth(400)
-        self.setMinimumHeight(400)
-        self.setWindowTitle('View Instrument Status')
+        cancelButton.clicked.connect(self.reject)
+        acceptButton.clicked.connect(self.accept)
 
 
 class OscilloscopeDialog(QtWidgets.QDialog):

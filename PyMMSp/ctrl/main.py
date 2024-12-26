@@ -65,25 +65,11 @@ class MainWindow(QtWidgets.QMainWindow):
             config.from_json_(self.prefs, f)
         self.setGeometry(QtCore.QRect(*self.prefs.geometry))
 
-        # Initiate pyvisa instrument objects
-        self.syn_handle = None
-        self.lockin_handle = None
-        self.oscillo_handle = None
-        self.motor_handle = None
-        self.gauge_handle = None
-
         # Set menu bar
         self.menuBar = ui_menu.MenuBar(self)
         self.setMenuBar(self.menuBar)
         self.statusBar = ui_menu.StatusBar(self)
         self.setStatusBar(self.statusBar)
-
-        # Set classes to store all instrument info
-        self.syn_info = api_syn.Syn_Info()
-        self.lockin_info = api_lia.Lockin_Info()
-        self.oscillo_info = api_oscillo.Oscilloscope_Info()
-        self.motor_info = api_motor.Motor_Info()
-        self.gauge_info = api_gauge.Gauge_Info()
 
         # Set main window widgets
         self.ui = ui_main.MainUI(self)
@@ -92,30 +78,23 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ctrl_insts = ctrl_insts.CtrlInsts(
             self.prefs, self.ui, self.inst_handles, parent=self)
         self.ctrl_syn = ctrl_syn.CtrlSyn(
-            self.prefs, self.ui, self.syn_info, self.syn_handle, parent=self)
+            self.prefs, self.ui, self.inst_handles.info_syn, self.inst_handles.h_syn, parent=self)
         self.ctrl_syn_pow = ctrl_syn.CtrlSynPower(
-            self.prefs, self.ui, self.syn_info, self.syn_handle, parent=self)
+            self.prefs, self.ui, self.inst_handles.info_syn, self.inst_handles.h_syn, parent=self)
         self.ctrl_lockin = ctrl_lockin.CtrlLockin(
-            self.prefs, self.ui, self.lockin_info, self.lockin_handle, parent=self)
+            self.prefs, self.ui, self.inst_handles.info_lockin, self.inst_handles.h_lockin, parent=self)
         self.ctrl_oscillo = ctrl_oscillo.CtrlOscillo(
-            self.prefs, self.ui, self.oscillo_info, self.oscillo_handle, parent=self)
-        self.ctrl_motor = ctrl_motor.CtrlMotor(
-            self.prefs, self.ui, self.motor_info, self.motor_handle, parent=self)
+            self.prefs, self.ui, self.inst_handles.info_oscillo, self.inst_handles.h_oscillo, parent=self)
+        #self.ctrl_motor = ctrl_motor.CtrlMotor(
+        #    self.prefs, self.ui, self.inst_handles.info_mo, self.motor_handle, parent=self)
         self.ctrl_gauge = ctrl_gauge.CtrlGauge(
-            self.prefs, self.ui, self.gauge_info, self.gauge_handle, parent=self)
-        self.ctrl_insts = ctrl_insts.CtrlInsts(
-            self.prefs, self.ui, self.inst_infos, self.inst_handles, parent=self)
-        self.refresh_inst()
+            self.prefs, self.ui, self.inst_handles.info_gauge1, self.inst_handles.h_gauge1, parent=self)
 
         # connect menubar signals
-        self.menuBar.exitAction.triggered.connect(self.on_exit)
         self.menuBar.instSelAction.triggered.connect(self.on_sel_inst)
-        self.menuBar.instStatViewAction.triggered.connect(self.ui.viewInstDialog.show)
         self.menuBar.instCloseAction.triggered.connect(self.on_close_sel_inst)
         self.menuBar.scanJPLAction.triggered.connect(self.on_scan_jpl)
-        self.menuBar.viewOscilloAction.triggered.connect(self.ui.oscilloDialog.exec)
-        self.menuBar.scanCavityAction.triggered.connect(self.on_scan_cavity)
-        self.menuBar.gaugeAction.triggered.connect(self.ui.gaugeDialog.show)
+        self.menuBar.scanCEAction.triggered.connect(self.on_scan_cavity)
         self.menuBar.lwaParserAction.triggered.connect(self.on_lwa_parser)
         self.menuBar.testModeAction.toggled.connect(self.refresh_inst)
 
@@ -150,15 +129,15 @@ class MainWindow(QtWidgets.QMainWindow):
         result = self.ui.selInstDialog.exec()
         if result:
             # simply uncheck main to prevent the warning dialog
-            if self.syn_handle:
-                api_syn.init_syn(self.syn_handle)
+            if self.inst_handles.h_syn:
+                api_syn.init_syn(self.inst_handles.h_syn)
                 # check RF toggle state
-                toggle_state = api_syn.read_power_toggle(self.syn_handle)
+                toggle_state = api_syn.read_power_toggle(self.inst_handles.h_syn)
                 self.ui.synPanel.synPowerSwitchBtn.setChecked(toggle_state)
             else:
                 pass
-            if self.lockin_handle:
-                api_lia.init_lia(self.lockin_handle)
+            if self.inst_handles.h_lockin:
+                api_lia.init_lia(self.inst_handles.h_lockin)
             else:
                 pass
             self.refresh_inst()
@@ -231,32 +210,17 @@ class MainWindow(QtWidgets.QMainWindow):
         d = ui_dialog.LWAParserDialog(self, filename)
         d.exec()
 
-    def closeEvent(self, event):
+    def closeEvent(self, ev):
         q = QtWidgets.QMessageBox.question(
             self, 'Quit?', 'Are you sure to quit?',
             QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
             QtWidgets.QMessageBox.StandardButton.Yes)
         if q == QtWidgets.QMessageBox.StandardButton.Yes:
             # save settings
-            self.prefs.geometry = (self.x(), self.y(), self.width(), self.height())
-            f = abs_path('PyMMSp.config', 'prefs.json')
+            self.prefs.geometry = self.geometry().getRect()
+            f = files('PyMMSp.config').joinpath('prefs.json')
             config.to_json(self.prefs, f)
-            status = api_gen.close_inst(self.syn_handle, self.lockin_handle,
-                                        self.oscillo_handle, self.motor_handle)
-            if not status:  # safe to close
-                self.close()
-            else:
-                qq = QtWidgets.QMessageBox.question(
-                    self, 'Error', 'Error in disconnecting instruments. Are you sure to force quit?',
-                    QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
-                    QtWidgets.QMessageBox.StandardButton.No)
-                if qq == QtWidgets.QMessageBox.StandardButton.Yes:
-                    self.close()
-                else:
-                    event.ignore()
+            self.inst_handles.close_all()
         else:
-            event.ignore()
-
-    def on_exit(self):
-        self.close()
+            ev.ignore()
 

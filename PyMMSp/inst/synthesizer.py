@@ -1,7 +1,8 @@
 #! encoding = utf-8
 from dataclasses import dataclass, fields
 from abc import ABC
-import json
+import yaml
+
 
 SYN_MODELS = (
     'Rohde & Schwarz SMF100A',
@@ -284,9 +285,10 @@ class DynamicSynAPI(_SynAPI):
 def create_functions(api_map_file):
     """ Create functions from the API_MAP file """
     with open(api_map_file, 'r') as f:
-        api_map = json.load(f)
+        api_map = yaml.safe_load(''.join(f.readlines()))
+    print(api_map)
     functions = {}
-    for item in api_map['functions']:
+    for item in api_map:
         name = item['name']
         args = item['args']
         kwargs = item['kwargs']
