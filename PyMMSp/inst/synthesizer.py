@@ -2,6 +2,7 @@
 from dataclasses import dataclass, fields
 from abc import ABC
 import yaml
+from PyMMSp.inst.base import BaseSimDecoder
 
 
 SYN_MODELS = (
@@ -67,6 +68,7 @@ class Syn_Info:
     inst_interface: str = ''
     inst_interface_num: int = 0
     inst_remote_disp: bool = False
+    inst_stat = False
     conn_status: bool = False  # connection status
     rf_toggle: bool = False
     syn_power: float = -20.
@@ -286,7 +288,6 @@ def create_functions(api_map_file):
     """ Create functions from the API_MAP file """
     with open(api_map_file, 'r') as f:
         api_map = yaml.safe_load(''.join(f.readlines()))
-    print(api_map)
     functions = {}
     for item in api_map:
         name = item['name']
@@ -308,6 +309,132 @@ def create_functions(api_map_file):
                 pass
         functions[name] = func
     return functions
+
+
+class SynSimDecoder(BaseSimDecoder):
+
+    def __init__(self, api_map_file, enc='ASCII'):
+        super().__init__()
+        with open(api_map_file, 'r') as f:
+            self._api_map = yaml.safe_load(''.join(f.readlines()))
+        self._info = Syn_Info()
+        self._enc = enc
+
+    def interpret(self, cmd_queue):
+        """ Interpret code and return its value """
+        # determine the nature of the command:
+        # multiple commands may be separated by ;
+        # - action without return (like ':INIT')
+        # - setting value   (like ':POW -10DBM')
+        # - getting value   (like ':POW?')
+        for cmd in cmd_queue.split(';'):
+            cmd = cmd.strip()
+            if cmd.endswith('?'):
+                self._interpret_get(cmd)
+            elif ' ' in cmd:
+                self._interpret_set(cmd)
+            else:
+                self._interpret_action(cmd)
+
+    def _interpret_get(self, cmd):
+        """ Interpret get value command """
+        # the exact command should be registered in the API_MAP.
+        # try to find it
+        for item in self._api_map:
+            if self._match_code_multilevel(item['cmd'], cmd):
+                v = getattr(self._info, item['attribute'])
+                self.str_in(str(v))
+                self.byte_in(str(v).encode(self._enc))
+            else:
+                pass
+
+    def _interpret_set(self, cmd):
+        """ Interpret set value command """
+        # the command code and value are separated by blank space.
+        # the command code should be registered in the API_MAP.
+        code_str, value_str = cmd.split(' ')
+        for item in self._api_map:
+            if (not item['cmd'].endswith('?') and
+                    self._match_code_multilevel(item['cmd'], code_str)):
+                # check if there is unit specified
+                if 'unit' in item:
+                    # check if there is unit prefixes
+                    if 'prefix' in item['unit']:
+                        is_found = False
+                        # find the prefix used in the value_str
+                        base = item['unit']['base']
+                        for pre in item['unit']['prefix'].keys():
+                            if value_str.endswith(pre+base):
+                                # strip the unit in value
+                                value = value_str.strip(pre+base)
+                                factor = item['unit']['prefix'][pre]
+                                is_found = True
+                                break
+                        if not is_found:
+                            raise ValueError('Unit prefix not found')
+                    else:
+                        # strip the unit in value
+                        value = value_str.strip(item['unit']['base'])
+                        factor = 1
+                else:
+                    value = item['value']
+                    factor = 1
+                if item['dtype'] == 'str':
+                    setattr(self._info, item['attribute'], value)
+                elif item['dtype'] == 'float':
+                    setattr(self._info, item['attribute'], float(value * factor))
+                elif item['dtype'] == 'int':
+                    setattr(self._info, item['attribute'], int(value * factor))
+                elif item['dtype'] == 'bool':
+                    setattr(self._info, item['attribute'], bool(value))
+            else:
+                pass
+
+    def _interpret_action(self, cmd):
+        """ Interpret action command
+        Currently no direct action command is defined """
+        pass
+
+    @staticmethod
+    def _match_code_multilevel(code_api, code_usr):
+        """ Match multi-level code
+        Arguments
+            code1: str, code from API_MAP, string formatter
+            code2: str, code from user (each level may contain channel integers
+        Returns
+            stat: bool
+        """
+        list_code1 = _replace_colon_in_curly_brace(code_api, '-').split(':')
+        list_code2 = code_usr.split(':')
+        if len(list_code1) != len(list_code2):
+            return False
+        else:
+            for code1, code2 in zip(list_code1, list_code2):
+                for char1, char2 in zip(code1, code2):
+                    # match each character until the appearance of {
+                    if char1 != '{':
+                        if char1 != char2:
+                            return False
+                        else:
+                            pass
+                    else:
+                        pass
+            return True
+
+
+def _replace_colon_in_curly_brace(str_in, rep):
+    """ Replace colon in curly brace with channel number """
+    new = []
+    in_brace = False
+    for char in str_in:
+        if char == '{':
+            in_brace = True
+        elif char == '}':
+            in_brace = False
+        elif char == ':' and in_brace:
+            char = rep
+        new.append(char)
+    return ''.join(new)
 
 
 def ramp_up(start, stop):

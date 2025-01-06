@@ -368,7 +368,7 @@ class _SimCOMHandle(_COMHandle):
     We only need to override certain methods & properties
     """
 
-    def __init__(self, addr, model, timeout=1, baudrate=57600, line_ending='\n', encoding='ASCII', terminal_code=None):
+    def __init__(self, addr, model, timeout=1, baudrate=57600, line_ending='\n', encoding='ASCII', terminal_code=None, decoder=None):
         try:
             super().__init__(addr, model, timeout=1, baudrate=57600, line_ending='\n', encoding='ASCII', terminal_code=None)
             self._handle.close()
@@ -381,6 +381,7 @@ class _SimCOMHandle(_COMHandle):
         self._term = terminal_code
         self._model = model
         self._buffer = bytearray()
+        self._decoder = decoder
         self.msg = ''
 
     def send(self, code):
@@ -533,6 +534,36 @@ class _SimVISAHanlde(_VISAHandle):
     def is_active(self):
         """ Override _VISAHandle is_active property. It is always active """
         return True
+
+
+class BaseSimDecoder:
+    """ Basic simulator decoder class
+    It provides an internal buffer to stack any code sent to the simulator,
+    and pop the buffer on query request.
+    Other specific instrument simulators can inherit this parent class
+    and override the decoding method.
+    """
+
+    def __init__(self):
+        self._buffer = []
+        self._buffer_byte = bytearray()
+
+    def str_in(self, code):
+        """ Send code to simulator """
+        self._buffer.append(code)
+
+    def str_out(self):
+        return self._buffer.pop()
+
+    def byte_in(self, byte):
+        """ Send byte to simulator """
+        self._buffer_byte.extend(byte)
+
+    def byte_out(self, byte, skip=0):
+        """ Pop byte from simulator """
+        data = self._buffer_byte[skip:byte + skip]
+        self._buffer_byte = self._buffer_byte[byte + skip:]
+        return data
 
 
 def list_visa_inst():
