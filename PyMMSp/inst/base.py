@@ -3,15 +3,19 @@
 import pyvisa
 import serial
 import socket
+from importlib.resources import files
 from time import sleep, time
 import os.path
-from PyMMSp.inst.synthesizer import Syn_Info, SYN_MODELS, get_syn_info
-from PyMMSp.inst.lockin import Lockin_Info, LOCKIN_MODELS, get_lockin_info
-from PyMMSp.inst.awg import AWG_Info, AWG_MODELS, get_awg_info
-from PyMMSp.inst.oscillo import Oscilloscope_Info, OSCILLO_MODELS, get_oscillo_info
-from PyMMSp.inst.power_supp import Power_Supp_Info, POWER_SUPP_MODELS, get_power_supp_info
-from PyMMSp.inst.flow import Flow_Info, FLOW_CTRL_MODELS, get_flow_info
-from PyMMSp.inst.gauge import Gauge_Info, GAUGE_CTRL_MODELS, get_gauge_info
+import yaml
+from PyMMSp.inst.synthesizer import Syn_Info, SYN_MODELS, SynAPI, SynSimDecoder, get_syn_info
+from PyMMSp.inst.lockin import Lockin_Info, LOCKIN_MODELS, LockinAPI, LockinSimDecoder, get_lockin_info
+from PyMMSp.inst.awg import AWG_Info, AWG_MODELS, AWGAPI, AWGSimDecoder, get_awg_info
+from PyMMSp.inst.oscillo import Oscilloscope_Info, OSCILLO_MODELS, OscilloAPI, OscilloSimDecoder, get_oscillo_info
+from PyMMSp.inst.power_supp import Power_Supp_Info, POWER_SUPP_MODELS, PowerSuppAPI, PowerSuppSimDecoder, get_power_supp_info
+from PyMMSp.inst.flow import Flow_Info, FLOW_CTRL_MODELS, FlowAPI, FlowSimDecoder, get_flow_info
+from PyMMSp.inst.gauge import Gauge_Info, GAUGE_CTRL_MODELS, GaugeAPI, GaugeSimDecoder, get_gauge_info
+from PyMMSp.inst.base_simulator import SimHandle
+
 
 INST_TYPES = (
     'Synthesizer',
@@ -41,6 +45,7 @@ CONNECTION_TYPES = (
     'GPIB VISA',
 )
 
+
 class Handles:
     """ Holder for instrument handles.
     This insures the handles can be updated in the GUI,
@@ -50,20 +55,28 @@ class Handles:
     def __init__(self):
 
         self.h_syn = None
+        self.api_syn = None
         self.info_syn = Syn_Info()
         self.h_lockin = None
+        self.api_lockin = None
         self.info_lockin = Lockin_Info()
         self.h_awg = None
+        self.api_awg = None
         self.info_awg = AWG_Info()
         self.h_oscillo = None
+        self.api_oscillo = None
         self.info_oscillo = Oscilloscope_Info()
         self.h_uca = None
+        self.api_uca = None
         self.info_uca = Power_Supp_Info()
         self.h_flow = None
+        self.api_flow = None
         self.info_flow = Flow_Info()
         self.h_gauge1 = None
+        self.api_gauge1 = None
         self.info_gauge1 = Gauge_Info()
         self.h_gauge2 = None
+        self.api_gauge2 = None
         self.info_gauge2 = Gauge_Info()
 
     def close_all(self):
@@ -73,47 +86,74 @@ class Handles:
                 if value and value.is_active:
                     value.close()
 
-    def connect(self, inst_type, connection_type, inst_addr, inst_model, is_sim=False):
+    def connect(self, inst_type: str, connection_type: str, inst_addr: str,
+                inst_model: str, is_sim=False):
 
         if is_sim:
             if connection_type == 'Ethernet':
                 # split the IP address and port
                 ip, port = inst_addr.split(':')
-                conn = _SimSocketHandle(ip, port, inst_model)
+                conn = SimHandle()
             elif connection_type == 'COM':
-                conn = _SimCOMHandle(inst_addr, inst_model)
+                conn = SimHandle()
             elif connection_type == 'GPIB VISA':
-                conn = _SimVISAHanlde(inst_addr, inst_model)
+                conn = SimHandle()
             else:
                 raise ConnectionError('Connection type not supported.')
         else:
             if connection_type == 'Ethernet':
                 # split the IP address and port
                 ip, port = inst_addr.split(':')
-                conn = _SocketHandle(ip, port, inst_model)
+                conn = _SocketHandle(ip, port)
             elif connection_type == 'COM':
-                conn = _COMHandle(inst_addr, inst_model)
+                conn = _COMHandle(inst_addr)
             elif connection_type == 'GPIB VISA':
-                conn = _VISAHandle(inst_addr, inst_model)
+                conn = _VISAHandle(inst_addr)
             else:
                 raise ConnectionError('Connection type not supported.')
 
         if inst_type == 'Synthesizer':
             self.h_syn = conn
+            self.api_syn = DynamicSynAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
+            if is_sim:
+                self.h_syn.set_decoder(SynSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
         elif inst_type == 'Lock-in':
-            self.lockin = conn
+            self.h_lockin = conn
+            self.api_lockin = DynamicLockinAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
+            if is_sim:
+                self.h_lockin.set_decoder(LockinSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
         elif inst_type == 'AWG':
             self.h_awg = conn
+            self.api_awg = DynamicAWGAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
+            if is_sim:
+                self.h_awg.set_decoder(AWGSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
         elif inst_type == 'Oscilloscope':
             self.h_oscillo = conn
+            self.api_oscillo = DynamicOscilloAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
+            if is_sim:
+                self.h_oscillo.set_decoder(OscilloSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
         elif inst_type == 'Power Supply':
             self.h_uca = conn
+            self.api_uca = DynamicPowerSuppAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
+            if is_sim:
+                self.h_uca.set_decoder(PowerSuppSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
         elif inst_type == 'Flow Controller':
             self.h_flow = conn
+            self.api_flow = DynamicFlowAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
+            if is_sim:
+                self.h_flow.set_decoder(FlowSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
         elif inst_type == 'Gauge Controller 1':
             self.h_gauge1 = conn
+            self.api_gauge1 = DynamicGaugeAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
+            if is_sim:
+                self.h_gauge1.set_decoder(GaugeSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
         elif inst_type == 'Gauge Controller 2':
             self.h_gauge2 = conn
+            self.api_gauge2 = DynamicGaugeAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
+            if is_sim:
+                self.h_gauge2.set_decoder(GaugeSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
+        else:
+            raise ValueError('Instrument type not supported.')
 
     def refresh(self, inst_type):
         if inst_type == 'Synthesizer':
@@ -132,24 +172,6 @@ class Handles:
             get_gauge_info(self.h_gauge1, self.info_gauge1)
         elif inst_type == 'Gauge Controller 2':
             get_gauge_info(self.h_gauge2, self.info_gauge2)
-
-
-class Infos:
-    """ Holder for instrument information.
-    This insures the information can be updated in the GUI,
-    because each info object is immutable.
-    """
-
-    def __init__(self):
-
-        self.syn = Syn_Info()
-        self.lockin = Lockin_Info()
-        self.awg = AWG_Info()
-        self.oscillo = Oscilloscope_Info()
-        self.uca = Power_Supp_Info()
-        self.flow = Flow_Info()
-        self.gauge1 = Gauge_Info()
-        self.gauge2 = Gauge_Info()
 
 
 class _BadHandle:
@@ -176,7 +198,7 @@ class _BadHandle:
 class _SocketHandle:
     """ Ethernet socket connection. """
 
-    def __init__(self, ip, port, model, timeout=1, line_ending='\n', encoding='ASCII', terminal_code=None):
+    def __init__(self, ip, port, timeout=1, line_ending='\n', encoding='ASCII', terminal_code=None):
 
         self._handle = socket.create_connection((ip, port), timeout=timeout)
         self._le = line_ending
@@ -184,7 +206,6 @@ class _SocketHandle:
         self._term = terminal_code
         self._ip = ip
         self._port = port
-        self._model = model
         self.msg = ''
 
     def query(self, code=None, byte=64, skip=0):
@@ -222,7 +243,6 @@ class _SocketHandle:
 
         code_str = code + self._le
         self._handle.send(code_str.encode(self._enc))
-        return None
 
     def recv(self, byte, skip=0):
         return self._handle.recv(byte)[skip:].decode(self._enc).strip()
@@ -241,6 +261,7 @@ class _SocketHandle:
     @property
     def ip(self):
         return self._ip
+
     @property
     def is_sim(self):
         return False
@@ -250,67 +271,19 @@ class _SocketHandle:
         # fileno() returns -1 for closed socket object
         return self._handle.fileno() != -1
 
-
-class _SimSocketHandle(_SocketHandle):
-    """ Ethernet socket connection simulator
-    Make the simulator a child class of the real socket handle to ensure same behavior and less code duplication.
-    We only need to override certain methods & properties
-    """
-
-    def __init__(self, ip, port, model, timeout=1, line_ending='\n', encoding='ASCII', terminal_code=None):
-        try:    # we catch the connection exception because the simulator is used without real connection
-            super().__init__(ip, port, model, timeout=1, line_ending='\n', encoding='ASCII', terminal_code=None)
-            # if there exists a real connection, close it
-            self._handle.close()
-        except:
-            pass
-        self._handle = None
-        self._le = line_ending
-        self._enc = encoding
-        self._term = terminal_code
-        self._ip = ip
-        self._port = port
-        self._model = model
-        self._buffer = bytearray()  # this is the new stuff for simulator, a buffer to store all commands
-        self.msg = ''
-
-    def send(self, code):
-        """ Override _SocketHandle send method. Send the code to internal buffer """
-
-        code_str = code + self._le
-        self._buffer.extend(code_str.encode(self._enc))
-        return None
-
-    def recv(self, byte, skip=0):
-        """ Override _SocketHandle recv method. Read from internal buffer """
-        data = self._buffer[skip:byte+skip]
-        self._buffer = self._buffer[byte+skip:]
-        return data.decode(self._enc).strip()
-
-    def close(self):
-        """ Override _SocketHandle close method. Do nothing """
+    def set_decoder(self, decoder):
+        # real instrument handle does not need decoder
         pass
-
-    @property
-    def is_sim(self):
-        """ Override _SocketHandle is_sim property. It is a simulator """
-        return True
-
-    @property
-    def is_active(self):
-        """ Override _SocketHandle is_active property. It is always active """
-        return True
 
 
 class _COMHandle:
     """ pyserial.Serial handle for COM ports """
-    def __init__(self, addr, model, timeout=1, baudrate=57600, line_ending='\n', encoding='ASCII', terminal_code=None):
+    def __init__(self, addr, timeout=1, baudrate=57600, line_ending='\n', encoding='ASCII', terminal_code=None):
         self._handle = serial.Serial(port=addr, timeout=timeout, baudrate=baudrate)
         self._addr = addr
         self._le = line_ending
         self._enc = encoding
         self._term = terminal_code
-        self._model = model
         self.msg = ''
 
     def query(self, code=None, byte=64, skip=0):
@@ -348,7 +321,6 @@ class _COMHandle:
 
         code_str = code + self._le
         self._handle.write(code_str.encode(self._enc))
-        return None
 
     def recv(self, byte, skip=0):
         return self._handle.read(byte)[skip:].decode(self._enc).strip()
@@ -361,51 +333,9 @@ class _COMHandle:
     def is_active(self):
         return self._handle.is_open
 
-
-class _SimCOMHandle(_COMHandle):
-    """ Serial connection simulator
-    Make the simulator a child class of the real serial handle to ensure same behavior and less code duplication.
-    We only need to override certain methods & properties
-    """
-
-    def __init__(self, addr, model, timeout=1, baudrate=57600, line_ending='\n', encoding='ASCII', terminal_code=None, decoder=None):
-        try:
-            super().__init__(addr, model, timeout=1, baudrate=57600, line_ending='\n', encoding='ASCII', terminal_code=None)
-            self._handle.close()
-        except:
-            pass
-        self._handle = None
-        self._addr = addr
-        self._le = line_ending
-        self._enc = encoding
-        self._term = terminal_code
-        self._model = model
-        self._buffer = bytearray()
-        self._decoder = decoder
-        self.msg = ''
-
-    def send(self, code):
-        """ Override _COMHandle send method. Send the code to internal buffer """
-
-        code_str = code + self._le
-        self._buffer.extend(code_str.encode(self._enc))
-        return None
-
-    def recv(self, byte, skip=0):
-        """ Override _COMHandle recv method. Read from internal buffer """
-        data = self._buffer[skip:byte+skip]
-        self._buffer = self._buffer[byte+skip:]
-        return data.decode(self._enc).strip()
-
-    @property
-    def is_sim(self):
-        """ Override _COMHandle is_sim property. It is a simulator """
-        return True
-
-    @property
-    def is_active(self):
-        """ Override _COMHandle is_active property. It is always active """
-        return True
+    def set_decoder(self, decoder):
+        # real instrument handle does not need decoder
+        pass
 
 
 class _VISAHandle:
@@ -427,14 +357,13 @@ class _VISAHandle:
 
     """
 
-    def __init__(self, addr, model, timeout=1, line_ending='\n', encoding='ASCII', terminal_code=None):
+    def __init__(self, addr, timeout=1, line_ending='\n', encoding='ASCII', terminal_code=None):
         self._rm = pyvisa.highlevel.ResourceManager()
         self._handle = self._rm.open_resource(addr, open_timeout=timeout, read_termination=line_ending)
         self._addr = addr
         self._le = line_ending
         self._enc = encoding
         self._term = terminal_code
-        self._model = model
         self.msg = ''
 
     def query(self, code=None, byte=64, skip=0):
@@ -450,7 +379,6 @@ class _VISAHandle:
             self.send(code)
         else:
             pass
-        stat = True
 
         if self._term:  # loop until get terminal char
             ml = []
@@ -464,14 +392,13 @@ class _VISAHandle:
             return ''.join(ml)
         else:
             msg = self.recv(byte, skip=skip)
-            return stat, msg
+            return msg
 
     def send(self, code):
         """ Send only """
 
         code_str = code + self._le
-        num, vcode = self._handle.write(code_str.encode(self._enc))
-        return vcode
+        _ = self._handle.write(code_str.encode(self._enc))
 
     def recv(self, byte, skip=0):
         return self._handle.read(byte)[skip:].decode(self._enc).strip()
@@ -487,160 +414,95 @@ class _VISAHandle:
     def is_active(self):
         return self._handle.is_open
 
-
-class _SimVISAHanlde(_VISAHandle):
-    """ VISA connection simulator
-    Make the simulator a child class of the real VISA handle to ensure same behavior and less code duplication.
-    We only need to override certain methods & properties
-    """
-
-    def __init__(self, addr, model, timeout=1, line_ending='\n', encoding='ASCII', terminal_code=None):
-        try:
-            super().__init__(addr, model, timeout=1, line_ending='\n', encoding='ASCII', terminal_code=None)
-            self._handle.close()
-        except:
-            pass
-        self._rm = None
-        self._handle = None
-        self._addr = addr
-        self._le = line_ending
-        self._enc = encoding
-        self._term = terminal_code
-        self._model = model
-        self._buffer = bytearray()
-        self.msg = ''
-
-    def send(self, code):
-        """ Override _VISAHandle send method. Send the code to internal buffer """
-
-        code_str = code + self._le
-        self._buffer.extend(code_str.encode(self._enc))
-        return 1
-
-    def recv(self, byte, skip=0):
-        """ Override _VISAHandle recv method. Read from internal buffer """
-        data = self._buffer[skip:byte + skip]
-        self._buffer = self._buffer[byte + skip:]
-        return data.decode(self._enc).strip()
-
-    def close(self):
+    def set_decoder(self, decoder):
+        # real instrument handle does not need decoder
         pass
-    @property
-    def is_sim(self):
-        """ Override _VISAHandle is_sim property. It is a simulator """
-        return True
-
-    @property
-    def is_active(self):
-        """ Override _VISAHandle is_active property. It is always active """
-        return True
 
 
-class BaseSimDecoder:
-    """ Basic simulator decoder class
-    It provides an internal buffer to stack any code sent to the simulator,
-    and pop the buffer on query request.
-    Other specific instrument simulators can inherit this parent class
-    and override the decoding method.
-    """
+class DynamicSynAPI(SynAPI):
+    """ Dynamic API loading API_MAP file to create real functions """
 
-    def __init__(self):
-        self._buffer = []
-        self._buffer_byte = bytearray()
-
-    def str_in(self, code):
-        """ Send code to simulator """
-        self._buffer.append(code)
-
-    def str_out(self):
-        return self._buffer.pop()
-
-    def byte_in(self, byte):
-        """ Send byte to simulator """
-        self._buffer_byte.extend(byte)
-
-    def byte_out(self, byte, skip=0):
-        """ Pop byte from simulator """
-        data = self._buffer_byte[skip:byte + skip]
-        self._buffer_byte = self._buffer_byte[byte + skip:]
-        return data
+    def __init__(self, api_map_file):
+        functions = _create_funcs(api_map_file)
+        for name, func in functions.items():
+            setattr(self, name, func)
 
 
-def list_visa_inst():
-    """
-        List current available instruments.
-        Returns
-            inst_list: a sorted list of available instrument addresses, list
-            inst_str: formated text for GUI display, str
-    """
+class DynamicLockinAPI(LockinAPI):
+    """ Dynamic API loading API_MAP file to create real functions """
 
-    # open pyvisa resource manager
-    try:
-        rm = pyvisa.highlevel.ResourceManager()
-    except (OSError, ValueError):
-        return [], 'Cannot open VISA library!'
-    # get available instrument address list
-    inst_list = list(rm.list_resources())
-    inst_list.sort()
-    inst_dict = {}
-    for inst in inst_list:
-        try:
-            # open each instrument and get instrument information
-            temp = rm.open_resource(inst, read_termination='\r\n')
-            # If the instrument is GPIB, query for the instrument name
-            if int(temp.interface_type) == 1:
-                text = temp.query('*IDN?')
-                inst_dict[inst] = text.strip()
-            else:
-                inst_dict[inst] = inst
-            # close instrument right way in case of unexpected crashes
-            temp.close()
-        except:
-            inst_dict[inst] = 'Visa IO Error'
-
-    inst_str = 'Detected Instrument:\n'
-    if inst_dict:
-        for inst in inst_list:
-            inst_str = inst_str + '{:s}\t{:s}\n'.format(inst, inst_dict[inst])
-    else:
-        inst_str = 'No instrument available. Check your connection/driver.'
-
-    return inst_list, inst_str
+    def __init__(self, api_map_file):
+        functions = _create_funcs(api_map_file)
+        for name, func in functions.items():
+            setattr(self, name, func)
 
 
-def open_inst(inst_address):
-    """
-        Open single instrument by its address.
-        Returns
-            inst_handle: pyvisa object for the instrument
-            None:        if cannot open the instrument
-    """
+class DynamicAWGAPI(AWGAPI):
+    """ Dynamic API loading API_MAP file to create real functions """
 
-    if inst_address == 'N.A.':
-        return None
-    else:
-        try:
-            rm = pyvisa.highlevel.ResourceManager()
-            inst_handle = rm.open_resource(inst_address)
-            return inst_handle
-        except:
-            return None
+    def __init__(self, api_map_file):
+        functions = _create_funcs(api_map_file)
+        for name, func in functions.items():
+            setattr(self, name, func)
 
 
-def close_inst(*inst_handle):
-    """
-        Close all connecting instruments
-    """
+class DynamicOscilloAPI(OscilloAPI):
+    """ Dynamic API loading API_MAP file to create real functions """
 
-    status = False
+    def __init__(self, api_map_file):
+        functions = _create_funcs(api_map_file)
+        for name, func in functions.items():
+            setattr(self, name, func)
 
-    for inst in inst_handle:
-        if inst:
-            try:
-                inst.close()
-            except:
-                status = True
+
+class DynamicPowerSuppAPI(PowerSuppAPI):
+    """ Dynamic API loading API_MAP file to create real functions """
+
+    def __init__(self, api_map_file):
+        functions = _create_funcs(api_map_file)
+        for name, func in functions.items():
+            setattr(self, name, func)
+
+
+class DynamicFlowAPI(FlowAPI):
+    """ Dynamic API loading API_MAP file to create real functions """
+
+    def __init__(self, api_map_file):
+        functions = _create_funcs(api_map_file)
+        for name, func in functions.items():
+            setattr(self, name, func)
+
+
+class DynamicGaugeAPI(GaugeAPI):
+    """ Dynamic API loading API_MAP file to create real functions """
+
+    def __init__(self, api_map_file):
+        functions = _create_funcs(api_map_file)
+        for name, func in functions.items():
+            setattr(self, name, func)
+
+
+def _create_funcs(api_map_file):
+    """ Create functions from the API_MAP file """
+    with open(api_map_file, 'r') as f:
+        api_map = yaml.safe_load(''.join(f.readlines()))
+    functions = {}
+    for item in api_map['functions']:
+        name = item['name']
+        args = item['args']
+        kwargs = item['kwargs']
+        cmd = item['cmd']
+        if name.startswith('set_'):
+            def func(handle, *args, cmd=cmd, **kwargs):
+                code = cmd.format(*args, **kwargs)
+                handle.send(code)
+        elif name.startswith('get_'):
+            def func(handle, *args, cmd=cmd, **kwargs):
+                code = cmd.format(*args, **kwargs)
+                value = handle.query(code)
+                return value
         else:
-            pass
-
-    return status
+            def func(handle, *args, **kwargs):
+                pass
+        functions[name] = func
+    return functions

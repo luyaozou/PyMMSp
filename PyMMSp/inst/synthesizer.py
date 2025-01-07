@@ -1,8 +1,9 @@
 #! encoding = utf-8
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, field
 from abc import ABC
 import yaml
-from PyMMSp.inst.base import BaseSimDecoder
+import re
+from PyMMSp.inst.base_simulator import BaseSimDecoder
 
 
 SYN_MODELS = (
@@ -70,55 +71,39 @@ class Syn_Info:
     inst_remote_disp: bool = False
     inst_stat = False
     conn_status: bool = False  # connection status
-    rf_toggle: bool = False
-    syn_power: float = -20.
-    syn_freq: float = 3e10  # Hz
-    band_idx: int = 4
-    freq: float = 12e10  # Hz
-    modu_toggle: bool = False
+    pow_stat: bool = False
+    pow: float = -20.
+    harm: int = 1   # harmonics
+    freq_cw: float = 12e10  # Hz
+    modu_stat: bool = False
     modu_mode_idx: int = 0
     modu_freq: float = 0  # update according to modMode
     modu_amp: float = 0  # update according to modMode
-    am1_toggle: bool = False
-    am1_freq: float = 0  # Hz
-    am1_depth_pct: float = 1.  # float, percent
-    am1_depth_db: float = -20.  # db
-    am1_src: str = ''
-    am1_wave: str = 'SINE'  # ['SINE', 'SQU', 'TRI', 'RAMP']
-    am2_toggle: bool = False
-    am2_freq: float = 0  # Hz
-    am2_depth_pct: float = 1.  # float, percent
-    am2_depth_db: float = -20.  # db
-    am2_src: str = ''
-    am2_wave: str = 'SINE'  # ['SINE', 'SQU', 'TRI', 'RAMP']
-    fm1_toggle: bool = False
-    fm1_freq: float = 0.  # Hz
-    fm1_dev: float = 0  # Hz
-    fm1_src: str = ''
-    fm1_wave: str = 'SINE'  # ['SINE', 'SQU', 'TRI', 'RAMP']
-    fm2_toggle: bool = False
-    fm2_freq: float = 0.  # Hz
-    fm2_dev: float = 0  # Hz
-    fm2_src: str = ''
-    fm2_wave: str = 'SINE'  # ['SINE', 'SQU', 'TRI', 'RAMP']
-    pm1_toggle: bool = False
-    pm1_freq: float = 0.  # Hz
-    pm1_dev: float = 0  # Hz
-    pm1_src: str = ''
-    pm1_wave: str = 'SINE'  # ['SINE', 'SQU', 'TRI', 'RAMP']
-    pm2_toggle: bool = False
-    pm2_freq: float = 0.  # Hz
-    pm2_dev: float = 0  # Hz
-    pm2_src: str = ''
-    pm2_wave: str = 'SINE'  # ['SINE', 'SQU', 'TRI', 'RAMP']
-    lf_toggle: bool = False
-    lf_vol: float = 0.
-    lf_src: str = ''
+    am_stat: list[bool] = field(default_factory=lambda: [False,])
+    am_freq: list[float] = field(default_factory=lambda: [0., ])  # Hz
+    am_depth_pct: list[float] = field(default_factory=lambda: [1., ])  # float, percent
+    am_depth_db: list[float] = field(default_factory=lambda: [-20., ])  # db
+    am_src: list[str] = field(default_factory=lambda: ['', ])
+    am_waveform: list[str] = field(default_factory=lambda: ['', ])  # ['SINE', 'SQU', 'TRI', 'RAMP']
+    fm_stat: list[bool] = field(default_factory=lambda: [False,])
+    fm_freq: list[float] = field(default_factory=lambda: [0., ])  # Hz
+    fm_dev: list[float] = field(default_factory=lambda: [0., ])  # Hz
+    fm_src: list[str] = field(default_factory=lambda: ['', ])
+    fm_waveform: list[str] = field(default_factory=lambda: ['', ])  # ['SINE', 'SQU', 'TRI', 'RAMP']
+    pm_stat: list[bool] = field(default_factory=lambda: [False, ])
+    pm_freq: list[float] = field(default_factory=lambda: [0., ])  # Hz
+    pm_dev: list[float] = field(default_factory=lambda: [0., ])  # Hz
+    pm_src: list[str] = field(default_factory=lambda: ['', ])
+    pm_waveform: list[str] = field(default_factory=lambda: ['', ])  # ['SINE', 'SQU', 'TRI', 'RAMP']
+    lfo_stat: bool = False
+    lfo_volt: float = 0.
+    lfo_src_idx: list[int] = field(default_factory=lambda: [0, ])
     err_msg: str = ''
+    remote_disp_stat: bool = False
 
     def reset(self):
-        for field in fields(self):
-            setattr(self, field.name, field.default)
+        for f in fields(self):
+            setattr(self, f.name, f.default)
 
     @property
     def band_multi(self):
@@ -128,13 +113,18 @@ class Syn_Info:
     def modu_mode_txt(self):
         return MODU_MODE[self.modu_mode_idx]
 
+    @property
+    def freq_mm(self):
+        """ Return output millimeter wave frequency """
+        return self.freq_cw * self.harm
+
 
 def get_syn_info(handle, info):
     """ Get synthesizer information """
     pass
 
 
-class _SynAPI(ABC):
+class SynAPI(ABC):
     """ Base API with method stubs in order to enable IDE features
     Contains all functions need to be defined in the API_MAP file
 
@@ -196,13 +186,16 @@ class _SynAPI(ABC):
     def set_am_freq(self, handle, chan: int, freq: float, unit: str) -> bool:
         pass
 
-    def get_am_depth(self, handle, chan: int) -> (bool, float):
+    def get_am_depth_pct(self, handle, chan: int) -> (bool, float):
         pass
 
     def get_am_depth_db(self, handle, chan: int) -> (bool, float):
         pass
 
-    def set_am_depth(self, handle, chan: int, depth: float) -> bool:
+    def set_am_depth_pct(self, handle, chan: int, depth: float) -> bool:
+        pass
+
+    def set_am_depth_db(self, handle, chan: int, depth: float) -> bool:
         pass
 
     def get_fm_stat(self, handle, chan: int) -> (bool, bool):
@@ -275,50 +268,23 @@ class _SynAPI(ABC):
         pass
 
 
-class DynamicSynAPI(_SynAPI):
-    """ Dynamic API loading API_MAP file to create real functions """
-
-    def __init__(self, api_map_file):
-        functions = create_functions(api_map_file)
-        for name, func in functions.items():
-            setattr(self, name, func)
-
-
-def create_functions(api_map_file):
-    """ Create functions from the API_MAP file """
-    with open(api_map_file, 'r') as f:
-        api_map = yaml.safe_load(''.join(f.readlines()))
-    functions = {}
-    for item in api_map:
-        name = item['name']
-        args = item['args']
-        kwargs = item['kwargs']
-        cmd = item['cmd']
-        if name.startswith('set_'):
-            def func(handle, *args, cmd=cmd, **kwargs):
-                code = cmd.format(*args, **kwargs)
-                stat = handle.send(code)
-                return stat
-        elif name.startswith('get_'):
-            def func(handle, *args, cmd=cmd, **kwargs):
-                code = cmd.format(*args, **kwargs)
-                stat, value = handle.query(code)
-                return stat, value
-        else:
-            def func(handle, *args, **kwargs):
-                pass
-        functions[name] = func
-    return functions
-
-
 class SynSimDecoder(BaseSimDecoder):
 
-    def __init__(self, api_map_file, enc='ASCII'):
+    def __init__(self, api_map_file, enc='ASCII', sep_cmd=';', sep_level=':'):
+        """ Initialize synthesizer simulator decoder
+        Arguments
+            api_map_file: str, path to the API_MAP file
+            enc: str, encoding used in the simulator (pass to bytebuffer. Default is ASCII)
+            sep_cmd: str, separator of multiple commands in the command queue, default is ;
+            sep_level: str, separator of multiple levels in one command, default is :
+        """
         super().__init__()
         with open(api_map_file, 'r') as f:
             self._api_map = yaml.safe_load(''.join(f.readlines()))
         self._info = Syn_Info()
         self._enc = enc
+        self._sep_cmd = sep_cmd
+        self._sep_level = sep_level
 
     def interpret(self, cmd_queue):
         """ Interpret code and return its value """
@@ -327,7 +293,7 @@ class SynSimDecoder(BaseSimDecoder):
         # - action without return (like ':INIT')
         # - setting value   (like ':POW -10DBM')
         # - getting value   (like ':POW?')
-        for cmd in cmd_queue.split(';'):
+        for cmd in cmd_queue.split(self._sep_cmd):
             cmd = cmd.strip()
             if cmd.endswith('?'):
                 self._interpret_get(cmd)
@@ -337,23 +303,34 @@ class SynSimDecoder(BaseSimDecoder):
                 self._interpret_action(cmd)
 
     def _interpret_get(self, cmd):
-        """ Interpret get value command """
+        """ Interpret get value command
+        Push the response to internal buffer
+        """
         # the exact command should be registered in the API_MAP.
         # try to find it
-        for item in self._api_map:
+        for item in self._api_map['functions']:
             if self._match_code_multilevel(item['cmd'], cmd):
-                v = getattr(self._info, item['attribute'])
+                if item['channel']:
+                    # if this attribute has channel number, pick the correct one
+                    # note that the channel number starts from 1
+                    chan = self._get_chan(cmd, self._sep_level)
+                    v = getattr(self._info, item['attribute'])[chan - 1]
+                else:
+                    v = getattr(self._info, item['attribute'])
                 self.str_in(str(v))
                 self.byte_in(str(v).encode(self._enc))
             else:
                 pass
 
     def _interpret_set(self, cmd):
-        """ Interpret set value command """
+        """ Interpret set value command
+        Register the value to the internal Info class
+        """
         # the command code and value are separated by blank space.
         # the command code should be registered in the API_MAP.
         code_str, value_str = cmd.split(' ')
-        for item in self._api_map:
+        factor = 1  # default scaling factor
+        for item in self._api_map['functions']:
             if (not item['cmd'].endswith('?') and
                     self._match_code_multilevel(item['cmd'], code_str)):
                 # check if there is unit specified
@@ -366,27 +343,54 @@ class SynSimDecoder(BaseSimDecoder):
                         for pre in item['unit']['prefix'].keys():
                             if value_str.endswith(pre+base):
                                 # strip the unit in value
-                                value = value_str.strip(pre+base)
-                                factor = item['unit']['prefix'][pre]
+                                value_str = value_str.strip(pre+base)
+                                factor = float(item['unit']['prefix'][pre])
                                 is_found = True
                                 break
                         if not is_found:
                             raise ValueError('Unit prefix not found')
                     else:
                         # strip the unit in value
-                        value = value_str.strip(item['unit']['base'])
-                        factor = 1
+                        value_str = value_str.strip(item['unit']['base'])
+                else:   # nothing to do
+                    pass
+                if item['channel']:
+                    # if this attribute has channel number, pick the correct one
+                    chan = self._get_chan(code_str, self._sep_level)
+                    # note that the channel number starts from 1
+                    # check the current channel number
+                    current_attr = getattr(self._info, item['attribute'])
+                    n = len(current_attr)
+                    # assign the value to the correct channel
+                    if item['dtype'] == 'str':
+                        # if the channel number is out of range, append the list to the correct length
+                        if chan > n:
+                            current_attr.extend(['',] * (chan - n))
+                        setattr(self._info, item['attribute'][chan - 1], value_str)
+                    elif item['dtype'] == 'float':
+                        # if the channel number is out of range, append the list to the correct length
+                        if chan > n:
+                            current_attr.extend([0., ] * (chan - n))
+                        setattr(self._info, item['attribute'][chan - 1], float(value_str) * factor)
+                    elif item['dtype'] == 'int':
+                        # if the channel number is out of range, append the list to the correct length
+                        if chan > n:
+                            current_attr.extend([0, ] * (chan - n))
+                        setattr(self._info, item['attribute'][chan - 1], int(int(value_str) * factor))
+                    elif item['dtype'] == 'bool':
+                        # if the channel number is out of range, append the list to the correct length
+                        if chan > n:
+                            current_attr.extend([False, ] * (chan - n))
+                        setattr(self._info, item['attribute'][chan - 1], bool(value_str))
                 else:
-                    value = item['value']
-                    factor = 1
-                if item['dtype'] == 'str':
-                    setattr(self._info, item['attribute'], value)
-                elif item['dtype'] == 'float':
-                    setattr(self._info, item['attribute'], float(value * factor))
-                elif item['dtype'] == 'int':
-                    setattr(self._info, item['attribute'], int(value * factor))
-                elif item['dtype'] == 'bool':
-                    setattr(self._info, item['attribute'], bool(value))
+                    if item['dtype'] == 'str':
+                        setattr(self._info, item['attribute'], value_str)
+                    elif item['dtype'] == 'float':
+                        setattr(self._info, item['attribute'], float(value_str) * factor)
+                    elif item['dtype'] == 'int':
+                        setattr(self._info, item['attribute'], int(int(value_str) * factor))
+                    elif item['dtype'] == 'bool':
+                        setattr(self._info, item['attribute'], bool(value_str))
             else:
                 pass
 
@@ -395,8 +399,7 @@ class SynSimDecoder(BaseSimDecoder):
         Currently no direct action command is defined """
         pass
 
-    @staticmethod
-    def _match_code_multilevel(code_api, code_usr):
+    def _match_code_multilevel(self, code_api, code_usr):
         """ Match multi-level code
         Arguments
             code1: str, code from API_MAP, string formatter
@@ -404,8 +407,14 @@ class SynSimDecoder(BaseSimDecoder):
         Returns
             stat: bool
         """
-        list_code1 = _replace_colon_in_curly_brace(code_api, '-').split(':')
-        list_code2 = code_usr.split(':')
+        # define the replace char of : in curly brace (which is the : used in python string formatter)
+        # it needs to be different from self._sep_level
+        if self._sep_level == '-':
+            rep_char = '*'
+        else:
+            rep_char = '-'
+        list_code1 = self._replace_colon_in_curly_brace(code_api, rep_char).split(self._sep_level)
+        list_code2 = code_usr.split(self._sep_level)
         if len(list_code1) != len(list_code2):
             return False
         else:
@@ -421,20 +430,36 @@ class SynSimDecoder(BaseSimDecoder):
                         pass
             return True
 
+    @staticmethod
+    def _replace_colon_in_curly_brace(str_in, rep_char):
+        """ Replace colon in curly brace with channel number
+        Arguments:
+            str_in: str, input string
+            rep_char: str, replacement character
+        """
+        new = []
+        in_brace = False
+        for char in str_in:
+            if char == '{':
+                in_brace = True
+            elif char == '}':
+                in_brace = False
+            elif char == ':' and in_brace:
+                char = rep_char
+            new.append(char)
+        return ''.join(new)
 
-def _replace_colon_in_curly_brace(str_in, rep):
-    """ Replace colon in curly brace with channel number """
-    new = []
-    in_brace = False
-    for char in str_in:
-        if char == '{':
-            in_brace = True
-        elif char == '}':
-            in_brace = False
-        elif char == ':' and in_brace:
-            char = rep
-        new.append(char)
-    return ''.join(new)
+    @staticmethod
+    def _get_chan(cmd, sep):
+        """ Get channel number from the command string
+        The channel number is the integer of the first level of the command
+        """
+        cmd_list = cmd.strip(sep).split(sep)
+        match = re.search(r'\d+', cmd_list[0])
+        if match:
+            return int(match.group())
+        else:
+            raise ValueError('Channel number not found')
 
 
 def ramp_up(start, stop):
@@ -1029,7 +1054,7 @@ def full_info_query_(info, handle):
         info.inst_interface = str(handle.interface_type)
         info.inst_interface_num = handle.interface_number
         info.inst_remote_disp = read_remote_disp(handle)
-        info.rf_toggle = read_power_toggle(handle)
+        info.pow_stat = read_power_toggle(handle)
         info.syn_power = read_syn_power(handle)
         info.syn_freq = read_syn_freq(handle)
         info.freq = info.syn_freq * info.band_multi
@@ -1066,7 +1091,7 @@ def full_info_query_(info, handle):
         info.pm2_wave = read_pm_waveform(handle, 2)
         info.lf_toggle = read_lf_toggle(handle)
         info.lf_vol = read_lf_voltage(handle)
-        info.lf_src = read_lf_source(handle)
+        info.lfo_src = read_lf_source(handle)
         info.err_msg = ''
     else:
         info.reset()

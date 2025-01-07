@@ -182,7 +182,7 @@ class SynStatus(QtWidgets.QGroupBox):
         """ Print instrument information in this panel """
 
         self.addressText.setText(syn_info.inst_name)
-        self.synRF.setText('On' if syn_info.rf_toggle else 'Off')
+        self.synRF.setText('On' if syn_info.pow_stat else 'Off')
         self.synPower.setText('{:.1f} dbm'.format(syn_info.syn_power))
         self.synFreq.setText(pg.siFormat(syn_info.syn_freq, suffix='Hz', precision=12))
         self.synMod.setText('On' if syn_info.modu_toggle else 'Off')
@@ -435,7 +435,7 @@ class SynPanel(QtWidgets.QGroupBox):
         self.lfVol.hide()
 
     def print_info(self, info):
-        self.synPowerSwitchBtn.setChecked(info.rf_toggle)
+        self.synPowerSwitchBtn.setChecked(info.pow_stat)
         self.probFreqFill.setText(f'{info.freq * 1e-6:.9f}')
         self.modSwitchBtn.setChecked(info.modu_toggle)
         self.modSwitchBtn.setText('ON' if info.modu_toggle else 'OFF')
