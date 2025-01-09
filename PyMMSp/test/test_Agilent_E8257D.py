@@ -38,7 +38,7 @@ class BaseTest(unittest.TestCase):
         test_freq = 1e3
         self.h.api_syn.set_cw_freq(self.h.h_syn, test_freq, 'MHz')
         set_freq = self.h.api_syn.get_cw_freq(self.h.h_syn)
-        self.assertEqual(test_freq, set_freq*1e6)
+        self.assertEqual(test_freq*1e6, set_freq)
 
     def test_modu_stat(self):
         test_stat = True
@@ -53,12 +53,12 @@ class BaseTest(unittest.TestCase):
     def test_am_stat(self):
         test_stat = True
         self.h.api_syn.set_am_stat(self.h.h_syn, 1, test_stat)
-        state = self.h.api_syn.get_am_stat(self.h.h_syn, 1)
-        self.assertEqual(state, test_stat)
+        stat = self.h.api_syn.get_am_stat(self.h.h_syn, 1)
+        self.assertEqual(stat, test_stat)
         test_stat = False
         self.h.api_syn.set_am_stat(self.h.h_syn, 1, test_stat)
         stat = self.h.api_syn.get_am_stat(self.h.h_syn, 1)
-        self.assertEqual(state, test_stat)
+        self.assertEqual(stat, test_stat)
 
     def test_am_source(self):
         test_source = 'INT'
@@ -88,7 +88,7 @@ class BaseTest(unittest.TestCase):
         test_freq = 1e3
         self.h.api_syn.set_am_freq(self.h.h_syn, 1, test_freq, 'kHz')
         freq = self.h.api_syn.get_am_freq(self.h.h_syn, 1)
-        self.assertEqual(freq*1e3, test_freq)
+        self.assertEqual(freq, test_freq*1e3)
 
     def test_am_depth(self):
         test_depth = 0.1
@@ -116,7 +116,7 @@ class BaseTest(unittest.TestCase):
         test_freq = 1e3
         self.h.api_syn.set_fm_freq(self.h.h_syn, 1, test_freq, 'kHz')
         freq = self.h.api_syn.get_fm_freq(self.h.h_syn, 1)
-        self.assertEqual(freq*1e3, test_freq)
+        self.assertEqual(freq, test_freq*1e3)
 
     def test_fm_dev(self):
         test_dev = 1e3
@@ -126,7 +126,7 @@ class BaseTest(unittest.TestCase):
         test_dev = 1e3
         self.h.api_syn.set_fm_dev(self.h.h_syn, 1, test_dev, 'kHz')
         dev = self.h.api_syn.get_fm_dev(self.h.h_syn, 1)
-        self.assertEqual(dev*1e3, test_dev)
+        self.assertEqual(dev, test_dev*1e3)
 
     def test_fm_waveform(self):
         test_wave = 'SIN'
@@ -156,7 +156,7 @@ class BaseTest(unittest.TestCase):
         test_freq = 1e3
         self.h.api_syn.set_pm_freq(self.h.h_syn, 1, test_freq, 'kHz')
         freq = self.h.api_syn.get_pm_freq(self.h.h_syn, 1)
-        self.assertEqual(freq*1e3, test_freq)
+        self.assertEqual(freq, test_freq*1e3)
 
     def test_pm_dev(self):
         test_dev = 1e3
@@ -166,7 +166,7 @@ class BaseTest(unittest.TestCase):
         test_dev = 1e3
         self.h.api_syn.set_pm_dev(self.h.h_syn, 1, test_dev, 'kHz')
         dev = self.h.api_syn.get_pm_dev(self.h.h_syn, 1)
-        self.assertEqual(dev*1e3, test_dev)
+        self.assertEqual(dev, test_dev*1e3)
 
     def test_pm_waveform(self):
         test_wave = 'SIN'
@@ -200,13 +200,13 @@ class BaseTest(unittest.TestCase):
 
     def test_lfo_ampl(self):
         test_ampl = 1
-        self.h.api_syn.set_lfo_ampl(self.h.h_syn, test_ampl, 'V')
+        self.h.api_syn.set_lfo_ampl(self.h.h_syn, test_ampl, 'VP')
         ampl = self.h.api_syn.get_lfo_ampl(self.h.h_syn)
         self.assertEqual(ampl, test_ampl)
         test_ampl = 10
-        self.h.api_syn.set_lfo_ampl(self.h.h_syn, test_ampl, 'mV')
+        self.h.api_syn.set_lfo_ampl(self.h.h_syn, test_ampl, 'mVP')
         ampl = self.h.api_syn.get_lfo_ampl(self.h.h_syn)
-        self.assertEqual(ampl*1e2, test_ampl)
+        self.assertEqual(ampl, test_ampl*1e-3)
 
     def test_get_err(self):
         msg = self.h.api_syn.get_err(self.h.h_syn)

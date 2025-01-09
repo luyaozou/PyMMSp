@@ -7,6 +7,7 @@ from importlib.resources import files
 from time import sleep, time
 import os.path
 import yaml
+import inspect
 from PyMMSp.inst.synthesizer import Syn_Info, SYN_MODELS, SynAPI, SynSimDecoder, get_syn_info
 from PyMMSp.inst.lockin import Lockin_Info, LOCKIN_MODELS, LockinAPI, LockinSimDecoder, get_lockin_info
 from PyMMSp.inst.awg import AWG_Info, AWG_MODELS, AWGAPI, AWGSimDecoder, get_awg_info
@@ -116,42 +117,50 @@ class Handles:
             self.h_syn = conn
             self.api_syn = DynamicSynAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
             if is_sim:
-                self.h_syn.set_decoder(SynSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
+                self.h_syn.set_decoder(SynSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'),
+                                                     inst_model))
         elif inst_type == 'Lock-in':
             self.h_lockin = conn
             self.api_lockin = DynamicLockinAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
             if is_sim:
-                self.h_lockin.set_decoder(LockinSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
+                self.h_lockin.set_decoder(LockinSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'),
+                                                           inst_model))
         elif inst_type == 'AWG':
             self.h_awg = conn
             self.api_awg = DynamicAWGAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
             if is_sim:
-                self.h_awg.set_decoder(AWGSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
+                self.h_awg.set_decoder(AWGSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'),
+                                                     inst_model))
         elif inst_type == 'Oscilloscope':
             self.h_oscillo = conn
             self.api_oscillo = DynamicOscilloAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
             if is_sim:
-                self.h_oscillo.set_decoder(OscilloSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
+                self.h_oscillo.set_decoder(OscilloSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'),
+                                                             inst_model))
         elif inst_type == 'Power Supply':
             self.h_uca = conn
             self.api_uca = DynamicPowerSuppAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
             if is_sim:
-                self.h_uca.set_decoder(PowerSuppSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
+                self.h_uca.set_decoder(PowerSuppSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'),
+                                                           inst_model))
         elif inst_type == 'Flow Controller':
             self.h_flow = conn
             self.api_flow = DynamicFlowAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
             if is_sim:
-                self.h_flow.set_decoder(FlowSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
+                self.h_flow.set_decoder(FlowSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'),
+                                                       inst_model))
         elif inst_type == 'Gauge Controller 1':
             self.h_gauge1 = conn
             self.api_gauge1 = DynamicGaugeAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
             if is_sim:
-                self.h_gauge1.set_decoder(GaugeSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
+                self.h_gauge1.set_decoder(GaugeSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'),
+                                                          inst_model))
         elif inst_type == 'Gauge Controller 2':
             self.h_gauge2 = conn
             self.api_gauge2 = DynamicGaugeAPI(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'))
             if is_sim:
-                self.h_gauge2.set_decoder(GaugeSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml')))
+                self.h_gauge2.set_decoder(GaugeSimDecoder(files('PyMMSp.inst').joinpath(f'API_MAP_{inst_model:s}.yaml'),
+                                                          inst_model))
         else:
             raise ValueError('Instrument type not supported.')
 
@@ -488,21 +497,90 @@ def _create_funcs(api_map_file):
         api_map = yaml.safe_load(''.join(f.readlines()))
     functions = {}
     for item in api_map['functions']:
-        name = item['name']
-        args = item['args']
-        kwargs = item['kwargs']
+        func_name = item['name']
+        arg_names = item['args']
+        kwarg_names = item['kwargs']
         cmd = item['cmd']
-        if name.startswith('set_'):
-            def func(handle, *args, cmd=cmd, **kwargs):
-                code = cmd.format(*args, **kwargs)
-                handle.send(code)
-        elif name.startswith('get_'):
-            def func(handle, *args, cmd=cmd, **kwargs):
-                code = cmd.format(*args, **kwargs)
-                value = handle.query(code)
-                return value
+        if func_name.startswith('set_'):
+            # check if there is linked presets to call
+            if 'link_preset' in item:
+                # we need to find which argument(s) matches the linked
+                # preset, and replace the input value with the preset dict value
+                arg_indices = []
+                for i, arg in enumerate(arg_names):
+                    if arg == item['link_preset']:
+                        preset_dict = api_map['presets'][arg]
+                        arg_indices.append(i)
+                kwarg_indices = []
+                for i, kwarg in enumerate(kwarg_names):
+                    if kwarg == item['link_preset']:
+                        preset_dict = api_map['presets'][kwarg]
+                        kwarg_indices.append(i)
+                def func(handle, *args, **kwargs):
+                    new_args = []
+                    new_kwargs = {}
+                    for i, arg in enumerate(args):
+                        if i in arg_indices:
+                            new_args.append(preset_dict[arg])
+                        else:
+                            new_args.append(arg)
+                    for i, kwarg in enumerate(kwargs):
+                        if kwarg in kwarg_indices:
+                            new_kwargs[kwarg] = preset_dict[kwarg]
+                        else:
+                            new_kwargs[kwarg] = kwargs[kwarg]
+                    code = cmd.format(*new_args, **new_kwargs)
+                    handle.send(code)
+            else:
+                def func(handle, *args, **kwargs):
+                    code = cmd.format(*args, **kwargs)
+                    handle.send(code)
+        elif func_name.startswith('get_'):
+            # The data type choice must be done outside the function
+            # declaration. Otherwise, each function will go through the
+            # conditional statements and fail to match the correct data type.
+            # check if there is linked presets to call
+            if 'link_preset' in item:
+                # we need to find which argument(s) matches the linked
+                # preset, and replace the input value with the preset dict value
+                preset_name = item['link_preset']
+                def func(handle, *args, **kwargs):
+                    print('Inside:', cmd)
+                    code = cmd.format(*args, **kwargs)
+                    value_str = handle.query(code)
+                    print(value_str)
+                    # find the corresponding key in preset
+                    is_found = False
+                    for key, value in api_map['presets'][preset_name].items():
+                        if str(value) == value_str:
+                            return key
+                    if not is_found:
+                        raise ValueError('Returned value not found in preset.')
+            else:
+                if item['dtype'] == 'float':
+                    def func(handle, *args, **kwargs):
+                        code = cmd.format(*args, **kwargs)
+                        value_str = handle.query(code)
+                        return float(value_str)
+                elif item['dtype'] == 'int':
+                    def func(handle, *args, **kwargs):
+                        code = cmd.format(*args, **kwargs)
+                        value_str = handle.query(code)
+                        return int(value_str)
+                elif item['dtype'] == 'bool':
+                    def func(handle, *args, **kwargs):
+                        code = cmd.format(*args, **kwargs)
+                        value_str = handle.query(code)
+                        return bool(int(value_str))
+                elif item['dtype'] == 'str':
+                    def func(handle, *args, **kwargs):
+                        code = cmd.format(*args, **kwargs)
+                        value_str = handle.query(code)
+                        return value_str
+                else:
+                    raise ValueError('Data type not supported.')
         else:
             def func(handle, *args, **kwargs):
                 pass
-        functions[name] = func
+        functions[func_name] = func
     return functions

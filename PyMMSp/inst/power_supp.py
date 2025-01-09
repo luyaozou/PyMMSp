@@ -32,7 +32,7 @@ class PowerSuppAPI(ABC):
 
 class PowerSuppSimDecoder(BaseSimDecoder):
 
-    def __init__(self, api_map_file, enc='ASCII', sep_cmd=';', sep_level=':'):
+    def __init__(self, api_map_file, inst_name, enc='ASCII', sep_cmd=';', sep_level=':'):
         """ Initialize synthesizer simulator decoder
         Arguments
             api_map_file: str, path to the API_MAP file
@@ -43,7 +43,7 @@ class PowerSuppSimDecoder(BaseSimDecoder):
         super().__init__()
         with open(api_map_file, 'r') as f:
             self._api_map = yaml.safe_load(''.join(f.readlines()))
-        self._info = Power_Supp_Info()
+        self._info = Power_Supp_Info(inst_name=inst_name)
         self._enc = enc
         self._sep_cmd = sep_cmd
         self._sep_level = sep_level
@@ -52,4 +52,3 @@ class PowerSuppSimDecoder(BaseSimDecoder):
 def get_power_supp_info(handle, info):
     """ Get power supply information """
     pass
-

@@ -1,13 +1,12 @@
 presets:
-  - waveform:
-      - "SIN": 0
-      - "SQU": 1
-      - "TRI": 2
-      - "RAMP": 3
-      - "NOIS": 4
-  - source:
-      - "INT": 0
-      - "EXT": 1
+  waveform:
+    "SIN": 0
+    "SQU": 1
+    "TRI": 2
+    "RAMP": 3
+  source:
+    "INT": 0
+    "EXT": 1
 functions:
   - name: get_inst_name
     args: []
@@ -110,7 +109,7 @@ functions:
   - name: set_am_source
     args: ["chan", "source"]
     kwargs: []
-    cmd: ":AM{0:d}:SOUR {1:s}"
+    cmd: ":AM{0:d}:SOUR {1:d}"
     channel: True
     attribute: am_src
     dtype: str
@@ -119,7 +118,7 @@ functions:
     kwargs: []
     cmd: ":AM{0:d}:INT{0:d}:FUNC:SHAP?"
     channel: True
-    attribute: am_wave
+    attribute: am_waveform
     dtype: str
   - name: set_am_waveform
     args: ["chan", "wave"]
@@ -172,7 +171,7 @@ functions:
   - name: set_am_depth_db
     args: ["chan", "depth"]
     kwargs: []
-    cmd: "AM{0:d}:DEPT {1:.2f}DB"
+    cmd: "AM{0:d}:DEPT:EXP {1:.2f}"
     channel: True
     attribute: am_depth_db
     dtype: float
@@ -222,6 +221,7 @@ functions:
     kwargs: []
     cmd: "FM{0:d}:DEV {1:.3f}{2:s}"
     channel: True
+    attribute: fm_dev
     dtype: float
     unit:
         base: "HZ"
@@ -289,6 +289,7 @@ functions:
     kwargs: []
     cmd: "PM{0:d}:DEV {1:.3f}{2:s}"
     channel: True
+    attribute: pm_dev
     dtype: float
     unit:
         base: "HZ"
@@ -330,7 +331,16 @@ functions:
     cmd: ":LFO:SOUR?"
     channel: False
     attribute: lfo_src
-    dtype: int
+    dtype: str
+    link_preset: source
+  - name: set_lfo_source
+    args: ["source"]
+    kwargs: []
+    cmd: ":LFO:SOUR {0:d}"
+    channel: False
+    attribute: lfo_src
+    dtype: str
+    link_preset: source
   - name: get_lfo_ampl
     args: []
     kwargs: []
@@ -339,14 +349,16 @@ functions:
     attribute: lfo_volt
     dtype: float
   - name: set_lfo_ampl
-    args: ["ampl"]
+    args: ["ampl", "unit"]
     kwargs: []
-    cmd: ":LFO:AMPL {0:.3f}VP"
+    cmd: ":LFO:AMPL {0:.3f}{1:s}"
     channel: False
     attribute: lfo_volt
     dtype: float
     unit:
         base: "VP"
+        prefix:
+            M: 1e-3
   - name: get_err
     args: []
     kwargs: []

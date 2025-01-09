@@ -7,7 +7,8 @@ from PyMMSp.inst.base_simulator import BaseSimDecoder
 
 
 SYN_MODELS = (
-    'Rohde & Schwarz SMF100A',
+    'Agilent_E8257D',
+    'Rohde_Schwarz_SMF100A',
 )
 
 # VDI band information.
@@ -79,18 +80,18 @@ class Syn_Info:
     modu_mode_idx: int = 0
     modu_freq: float = 0  # update according to modMode
     modu_amp: float = 0  # update according to modMode
-    am_stat: list[bool] = field(default_factory=lambda: [False,])
+    am_stat: list[int] = field(default_factory=lambda: [0,])
     am_freq: list[float] = field(default_factory=lambda: [0., ])  # Hz
     am_depth_pct: list[float] = field(default_factory=lambda: [1., ])  # float, percent
     am_depth_db: list[float] = field(default_factory=lambda: [-20., ])  # db
     am_src: list[str] = field(default_factory=lambda: ['', ])
     am_waveform: list[str] = field(default_factory=lambda: ['', ])  # ['SINE', 'SQU', 'TRI', 'RAMP']
-    fm_stat: list[bool] = field(default_factory=lambda: [False,])
+    fm_stat: list[int] = field(default_factory=lambda: [0,])
     fm_freq: list[float] = field(default_factory=lambda: [0., ])  # Hz
     fm_dev: list[float] = field(default_factory=lambda: [0., ])  # Hz
     fm_src: list[str] = field(default_factory=lambda: ['', ])
     fm_waveform: list[str] = field(default_factory=lambda: ['', ])  # ['SINE', 'SQU', 'TRI', 'RAMP']
-    pm_stat: list[bool] = field(default_factory=lambda: [False, ])
+    pm_stat: list[int] = field(default_factory=lambda: [0, ])
     pm_freq: list[float] = field(default_factory=lambda: [0., ])  # Hz
     pm_dev: list[float] = field(default_factory=lambda: [0., ])  # Hz
     pm_src: list[str] = field(default_factory=lambda: ['', ])
@@ -258,7 +259,7 @@ class SynAPI(ABC):
     def get_lfo_ampl(self, handle) -> (bool, float):
         pass
 
-    def set_lfo_ampl(self, handle, ampl: float) -> bool:
+    def set_lfo_ampl(self, handle, ampl: float, unit: str) -> bool:
         pass
 
     def get_err(self, handle) -> (bool, str):
@@ -270,7 +271,7 @@ class SynAPI(ABC):
 
 class SynSimDecoder(BaseSimDecoder):
 
-    def __init__(self, api_map_file, enc='ASCII', sep_cmd=';', sep_level=':'):
+    def __init__(self, api_map_file, inst_name, enc='ASCII', sep_cmd=';', sep_level=':'):
         """ Initialize synthesizer simulator decoder
         Arguments
             api_map_file: str, path to the API_MAP file
@@ -281,7 +282,7 @@ class SynSimDecoder(BaseSimDecoder):
         super().__init__()
         with open(api_map_file, 'r') as f:
             self._api_map = yaml.safe_load(''.join(f.readlines()))
-        self._info = Syn_Info()
+        self._info = Syn_Info(inst_name=inst_name)
         self._enc = enc
         self._sep_cmd = sep_cmd
         self._sep_level = sep_level
@@ -328,7 +329,7 @@ class SynSimDecoder(BaseSimDecoder):
         """
         # the command code and value are separated by blank space.
         # the command code should be registered in the API_MAP.
-        code_str, value_str = cmd.split(' ')
+        code_str, value_str = cmd.upper().split(' ')
         factor = 1  # default scaling factor
         for item in self._api_map['functions']:
             if (not item['cmd'].endswith('?') and
@@ -348,7 +349,8 @@ class SynSimDecoder(BaseSimDecoder):
                                 is_found = True
                                 break
                         if not is_found:
-                            raise ValueError('Unit prefix not found')
+                            value_str = value_str.strip(base)
+                            factor = 1
                     else:
                         # strip the unit in value
                         value_str = value_str.strip(item['unit']['base'])
@@ -358,31 +360,35 @@ class SynSimDecoder(BaseSimDecoder):
                     # if this attribute has channel number, pick the correct one
                     chan = self._get_chan(code_str, self._sep_level)
                     # note that the channel number starts from 1
-                    # check the current channel number
-                    current_attr = getattr(self._info, item['attribute'])
-                    n = len(current_attr)
+                    # and since there is channel, the attribute should be a list
+                    # we can directly assign the value to the correct list element
+                    current_attr_list = getattr(self._info, item['attribute'])
+                    n = len(current_attr_list)
                     # assign the value to the correct channel
                     if item['dtype'] == 'str':
                         # if the channel number is out of range, append the list to the correct length
                         if chan > n:
-                            current_attr.extend(['',] * (chan - n))
-                        setattr(self._info, item['attribute'][chan - 1], value_str)
+                            current_attr_list.extend(['',] * (chan - n))
+                        current_attr_list[chan - 1] = value_str
                     elif item['dtype'] == 'float':
                         # if the channel number is out of range, append the list to the correct length
                         if chan > n:
-                            current_attr.extend([0., ] * (chan - n))
-                        setattr(self._info, item['attribute'][chan - 1], float(value_str) * factor)
+                            current_attr_list.extend([0., ] * (chan - n))
+                        current_attr_list[chan - 1] = float(value_str) * factor
                     elif item['dtype'] == 'int':
                         # if the channel number is out of range, append the list to the correct length
                         if chan > n:
-                            current_attr.extend([0, ] * (chan - n))
-                        setattr(self._info, item['attribute'][chan - 1], int(int(value_str) * factor))
+                            current_attr_list.extend([0, ] * (chan - n))
+                        current_attr_list[chan - 1] = int(int(value_str) * factor)
                     elif item['dtype'] == 'bool':
                         # if the channel number is out of range, append the list to the correct length
                         if chan > n:
-                            current_attr.extend([False, ] * (chan - n))
-                        setattr(self._info, item['attribute'][chan - 1], bool(value_str))
+                            current_attr_list.extend([0, ] * (chan - n))
+                        # in the instrument boolean value is still represented as integer
+                        current_attr_list[chan - 1] = int(value_str)
                 else:
+                    # attribute is not a list (therefore immutable)
+                    # use the setattr to assign new value to the attribute
                     if item['dtype'] == 'str':
                         setattr(self._info, item['attribute'], value_str)
                     elif item['dtype'] == 'float':
@@ -390,7 +396,8 @@ class SynSimDecoder(BaseSimDecoder):
                     elif item['dtype'] == 'int':
                         setattr(self._info, item['attribute'], int(int(value_str) * factor))
                     elif item['dtype'] == 'bool':
-                        setattr(self._info, item['attribute'], bool(value_str))
+                        # in the instrument boolean value is still represented as integer
+                        setattr(self._info, item['attribute'], int(value_str))
             else:
                 pass
 
