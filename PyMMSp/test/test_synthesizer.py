@@ -213,11 +213,15 @@ class BaseTest(unittest.TestCase):
         self.assertIsInstance(msg, str)
 
     def test_get_remote_disp_stat(self):
+        self.h.api_syn.set_remote_disp_stat(self.h.h_syn, False)
+        stat = self.h.api_syn.get_remote_disp_stat(self.h.h_syn)
+        self.assertFalse(stat)
+        self.h.api_syn.set_remote_disp_stat(self.h.h_syn, True)
         stat = self.h.api_syn.get_remote_disp_stat(self.h.h_syn)
         self.assertTrue(stat)
 
 
-class TestReal(BaseTest):
+class TestReal_Agilent_E8257D(BaseTest):
 
     def setUp(self):
 
@@ -231,7 +235,7 @@ class TestReal(BaseTest):
         self.h.close_all()
 
 
-class TestSim(BaseTest):
+class TestSim_Agilent_E8257D(BaseTest):
 
     def setUp(self):
 
@@ -243,9 +247,9 @@ class TestSim(BaseTest):
         self.h.close_all()
 
 
-def load_tests(loader):
+def load_tests(loader, tests, pattern):
     suite = unittest.TestSuite()
-    for test_class in [TestReal, TestSim]:
+    for test_class in [TestReal_Agilent_E8257D, TestSim_Agilent_E8257D]:
         tests = loader.loadTestsFromTestCase(test_class)
         suite.addTests(tests)
     return suite

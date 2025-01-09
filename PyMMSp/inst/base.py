@@ -516,23 +516,27 @@ def _create_funcs(api_map_file):
                     if kwarg == item['link_preset']:
                         preset_dict = api_map['presets'][kwarg]
                         kwarg_indices.append(i)
-                def func(handle, *args, **kwargs):
+                # to define the function, 'cmd=cmd' is essential.
+                # without this, the cmd will always be the last cmd in the item['cmd'] list
+                # instead of the correct one
+                def func(handle, *args, cmd=cmd, arg_indices=arg_indices, preset_dict=preset_dict,
+                         **kwargs):
                     new_args = []
                     new_kwargs = {}
                     for i, arg in enumerate(args):
                         if i in arg_indices:
-                            new_args.append(preset_dict[arg])
+                            new_args.append(preset_dict[args[i]])
                         else:
                             new_args.append(arg)
                     for i, kwarg in enumerate(kwargs):
                         if kwarg in kwarg_indices:
-                            new_kwargs[kwarg] = preset_dict[kwarg]
+                            new_kwargs[kwarg] = preset_dict[kwarg[i]]
                         else:
                             new_kwargs[kwarg] = kwargs[kwarg]
                     code = cmd.format(*new_args, **new_kwargs)
                     handle.send(code)
             else:
-                def func(handle, *args, **kwargs):
+                def func(handle, *args, cmd=cmd, **kwargs):
                     code = cmd.format(*args, **kwargs)
                     handle.send(code)
         elif func_name.startswith('get_'):
@@ -543,12 +547,9 @@ def _create_funcs(api_map_file):
             if 'link_preset' in item:
                 # we need to find which argument(s) matches the linked
                 # preset, and replace the input value with the preset dict value
-                preset_name = item['link_preset']
-                def func(handle, *args, **kwargs):
-                    print('Inside:', cmd)
+                def func(handle, *args, cmd=cmd, preset_name=item['link_preset'], **kwargs):
                     code = cmd.format(*args, **kwargs)
                     value_str = handle.query(code)
-                    print(value_str)
                     # find the corresponding key in preset
                     is_found = False
                     for key, value in api_map['presets'][preset_name].items():
@@ -558,29 +559,39 @@ def _create_funcs(api_map_file):
                         raise ValueError('Returned value not found in preset.')
             else:
                 if item['dtype'] == 'float':
-                    def func(handle, *args, **kwargs):
+                    def func(handle, *args, cmd=cmd, **kwargs):
                         code = cmd.format(*args, **kwargs)
                         value_str = handle.query(code)
                         return float(value_str)
                 elif item['dtype'] == 'int':
-                    def func(handle, *args, **kwargs):
+                    def func(handle, *args, cmd=cmd, **kwargs):
                         code = cmd.format(*args, **kwargs)
                         value_str = handle.query(code)
                         return int(value_str)
                 elif item['dtype'] == 'bool':
-                    def func(handle, *args, **kwargs):
+                    def func(handle, *args, cmd=cmd, **kwargs):
                         code = cmd.format(*args, **kwargs)
                         value_str = handle.query(code)
-                        return bool(int(value_str))
+                        # for boolean values, there are two possibilities
+                        # either the string is integer 0 or 1
+                        try:
+                            return bool(int(value_str))
+                        except ValueError:  # value_str is not an integer
+                            if value_str.upper() in ('ON', 'TRUE'):
+                                return True
+                            elif value_str.upper() in ('OFF', 'FALSE'):
+                                return False
+                            else:
+                                raise ValueError('Returned value not recognized.')
                 elif item['dtype'] == 'str':
-                    def func(handle, *args, **kwargs):
+                    def func(handle, *args, cmd=cmd, **kwargs):
                         code = cmd.format(*args, **kwargs)
                         value_str = handle.query(code)
                         return value_str
                 else:
                     raise ValueError('Data type not supported.')
         else:
-            def func(handle, *args, **kwargs):
+            def func(handle, *args, cmd=cmd, **kwargs):
                 pass
         functions[func_name] = func
     return functions

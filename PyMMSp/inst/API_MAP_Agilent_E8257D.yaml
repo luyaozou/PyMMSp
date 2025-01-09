@@ -106,6 +106,7 @@ functions:
     channel: True
     attribute: am_src
     dtype: str
+    link_preset: source
   - name: set_am_source
     args: ["chan", "source"]
     kwargs: []
@@ -113,6 +114,7 @@ functions:
     channel: True
     attribute: am_src
     dtype: str
+    link_preset: source
   - name: get_am_waveform
     args: ["chan"]
     kwargs: []
@@ -120,13 +122,15 @@ functions:
     channel: True
     attribute: am_waveform
     dtype: str
+    link_preset: waveform
   - name: set_am_waveform
-    args: ["chan", "wave"]
+    args: ["chan", "waveform"]
     kwargs: []
-    cmd: ":AM{0:d}:INT{0:d}:FUNC:SHAP {1:s}"
+    cmd: ":AM{0:d}:INT{0:d}:FUNC:SHAP {1:d}"
     channel: True
     attribute: am_waveform
     dtype: str
+    link_preset: waveform
   - name: get_am_freq
     args: ["chan"]
     kwargs: []
@@ -236,13 +240,15 @@ functions:
     channel: True
     attribute: fm_waveform
     dtype: str
+    link_preset: waveform
   - name: set_fm_waveform
-    args: ["chan", "wave"]
+    args: ["chan", "waveform"]
     kwargs: []
-    cmd: "FM{0:d}:INT{0:d}:FUNC:SHAP {1:s}"
+    cmd: "FM{0:d}:INT{0:d}:FUNC:SHAP {1:d}"
     channel: True
     attribute: fm_waveform
     dtype: str
+    link_preset: waveform
   - name: get_pm_stat
     args: ["chan"]
     kwargs: []
@@ -304,13 +310,15 @@ functions:
     channel: True
     attribute: pm_waveform
     dtype: str
+    link_preset: waveform
   - name: set_pm_waveform
-    args: ["chan", "wave"]
+    args: ["chan", "waveform"]
     kwargs: []
-    cmd: "PM{0:d}:INT{0:d}:FUNC:SHAP {1:s}"
+    cmd: "PM{0:d}:INT{0:d}:FUNC:SHAP {1:d}"
     channel: True
     attribute: pm_waveform
     dtype: str
+    link_preset: waveform
   - name: get_lfo_stat
     args: []
     kwargs: []
@@ -370,6 +378,13 @@ functions:
     args: []
     kwargs: []
     cmd: "DISP:REM?"
+    channel: False
+    attribute: remote_disp_stat
+    dtype: bool
+  - name: set_remote_disp_stat
+    args: []
+    kwargs: []
+    cmd: "DISP:REM {0:d}"
     channel: False
     attribute: remote_disp_stat
     dtype: bool
