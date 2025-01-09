@@ -133,139 +133,142 @@ class SynAPI(ABC):
     Set functions always returns a boolean value indicating the success of the operation
     """
 
-    def get_inst_name(self, handle) -> (bool, str):
+    def get_inst_name(self, handle) -> str:
         pass
 
-    def init_syn(self, handle) -> None:
+    def init_syn(self, handle):
         pass
 
-    def get_power_stat(self, handle) -> (bool, bool):
+    def get_power_stat(self, handle) -> bool:
         pass
 
-    def set_power_stat(self, handle, stat: bool) -> bool:
+    def set_power_stat(self, handle, stat: bool):
         pass
 
-    def get_power_level(self, handle) -> (bool, float):
+    def get_power_level(self, handle) -> float:
         pass
 
-    def set_power_level(self, handle, power: float) -> bool:
+    def set_power_level(self, handle, power: float):
         pass
 
-    def get_cw_freq(self, handle) -> (bool, float):
+    def get_cw_freq(self, handle) -> float:
         pass
 
-    def set_cw_freq(self, handle, freq: float, unit: str) -> bool:
+    def set_cw_freq(self, handle, freq: float, unit: str):
         pass
 
-    def get_modu_stat(self, handle) -> (bool, bool):
+    def get_modu_stat(self, handle) -> bool:
         pass
 
-    def set_modu_stat(self, handle, stat: bool) -> bool:
+    def set_modu_stat(self, handle, stat: bool):
         pass
 
-    def get_am_stat(self, handle, chan: int) -> (bool, bool):
+    def get_am_stat(self, handle, chan: int) -> bool:
         pass
 
-    def set_am_stat(self, handle, chan: int, stat: bool) -> bool:
+    def set_am_stat(self, handle, chan: int, stat: bool):
         pass
 
-    def get_am_source(self, handle, chan: int) -> (bool, str):
+    def get_am_source(self, handle, chan: int) -> str:
         pass
 
-    def set_am_source(self, handle, chan: int, source: str) -> bool:
+    def set_am_source(self, handle, chan: int, source: str):
         pass
 
-    def get_am_waveform(self, handle, chan: int) -> (bool, str):
+    def get_am_waveform(self, handle, chan: int) -> str:
         pass
 
-    def set_am_waveform(self, handle, chan: int, wave: str) -> bool:
+    def set_am_waveform(self, handle, chan: int, wave: str):
         pass
 
-    def get_am_freq(self, handle, chan: int) -> (bool, float):
+    def get_am_freq(self, handle, chan: int) -> float:
         pass
 
-    def set_am_freq(self, handle, chan: int, freq: float, unit: str) -> bool:
+    def set_am_freq(self, handle, chan: int, freq: float, unit: str):
         pass
 
-    def get_am_depth_pct(self, handle, chan: int) -> (bool, float):
+    def get_am_depth_pct(self, handle, chan: int) -> float:
         pass
 
-    def get_am_depth_db(self, handle, chan: int) -> (bool, float):
+    def get_am_depth_db(self, handle, chan: int) -> float:
         pass
 
-    def set_am_depth_pct(self, handle, chan: int, depth: float) -> bool:
+    def set_am_depth_pct(self, handle, chan: int, depth: float):
         pass
 
-    def set_am_depth_db(self, handle, chan: int, depth: float) -> bool:
+    def set_am_depth_db(self, handle, chan: int, depth: float):
         pass
 
-    def get_fm_stat(self, handle, chan: int) -> (bool, bool):
+    def get_fm_stat(self, handle, chan: int) -> bool:
         pass
 
-    def set_fm_stat(self, handle, chan: int, stat: bool) -> bool:
+    def set_fm_stat(self, handle, chan: int, stat: bool):
         pass
 
-    def get_fm_freq(self, handle, chan: int) -> (bool, float):
+    def get_fm_freq(self, handle, chan: int) -> float:
         pass
 
-    def set_fm_freq(self, handle, chan: int, freq: float, unit: str) -> bool:
+    def set_fm_freq(self, handle, chan: int, freq: float, unit: str):
         pass
 
-    def get_fm_dev(self, handle, chan: int) -> (bool, float):
+    def get_fm_dev(self, handle, chan: int) -> float:
         pass
 
-    def set_fm_dev(self, handle, chan: int, dev: float, unit: str) -> bool:
+    def set_fm_dev(self, handle, chan: int, dev: float, unit: str):
         pass
 
-    def get_fm_waveform(self, handle, chan: int) -> (bool, str):
+    def get_fm_waveform(self, handle, chan: int) -> str:
         pass
 
-    def set_fm_waveform(self, handle, chan: int, wave: str) -> bool:
+    def set_fm_waveform(self, handle, chan: int, wave: str):
         pass
 
-    def get_pm_stat(self, handle, chan: int) -> (bool, bool):
+    def get_pm_stat(self, handle, chan: int) -> bool:
         pass
 
-    def set_pm_stat(self, handle, chan: int, stat: bool) -> bool:
+    def set_pm_stat(self, handle, chan: int, stat: bool):
         pass
 
-    def get_pm_freq(self, handle, chan: int) -> (bool, float):
+    def get_pm_freq(self, handle, chan: int) -> float:
         pass
 
-    def set_pm_freq(self, handle, chan: int, freq: float, unit: str) -> bool:
+    def set_pm_freq(self, handle, chan: int, freq: float, unit: str):
         pass
 
-    def get_pm_dev(self, handle, chan: int) -> (bool, float):
+    def get_pm_dev(self, handle, chan: int) -> float:
         pass
 
-    def set_pm_dev(self, handle, chan: int, dev: float, unit: str) -> bool:
+    def set_pm_dev(self, handle, chan: int, dev: float, unit: str):
         pass
 
-    def get_pm_waveform(self, handle, chan: int) -> (bool, str):
+    def get_pm_waveform(self, handle, chan: int) -> str:
         pass
 
-    def set_pm_waveform(self, handle, chan: int, wave: str) -> bool:
+    def set_pm_waveform(self, handle, chan: int, wave: str):
         pass
 
-    def get_lfo_stat(self, handle) -> (bool, bool):
+    def get_lfo_stat(self, handle) -> bool:
         pass
 
-    def set_lfo_stat(self, handle, stat: bool) -> bool:
+    def set_lfo_stat(self, handle, stat: bool):
         pass
 
-    def get_lfo_source(self, handle) -> (bool, float):
+    def get_lfo_source(self, handle) -> float:
         pass
 
-    def get_lfo_ampl(self, handle) -> (bool, float):
+    def get_lfo_ampl(self, handle) -> float:
         pass
 
-    def set_lfo_ampl(self, handle, ampl: float, unit: str) -> bool:
+    def set_lfo_ampl(self, handle, ampl: float, unit: str):
         pass
 
-    def get_err(self, handle) -> (bool, str):
+    def get_err(self, handle) -> str:
         pass
 
-    def get_remote_disp_stat(self, handle) -> (bool, bool):
+    def get_remote_disp_stat(self, handle) -> bool:
+        pass
+
+    def set_remote_disp_stat(self, handle, stat: bool):
         pass
 
 
