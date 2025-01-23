@@ -1,4 +1,3 @@
-
 presets:
   waveform:
     "SIN": 0
@@ -16,20 +15,20 @@ functions:
     channel: False
     attribute: inst_name
     dtype: str
-  - name: init_syn
+  - name: init_syn #THIS
     args: []
     kwargs: []
-    cmd: ":AM1:SOUR INT1; :AM1:STAT 0; :FM1:SOUR INT1; :FM1:STAT 0; :OUTP:MOD 0; :LFO:SOUR INT1; :LFO:AMPL 0VP; :POW:MODE FIX; :FREQ:MODE CW; :DISP:REM 0"
+    cmd: ":AM:SOUR INT; :AM:STAT OFF; :FM:SOUR INT; :FM:STAT OFF; :OUTP:MOD 0; :LFO:SOUR INT1; :LFO:AMPL 0VP; :POW:MODE FIX; :FREQ:MODE CW; :DISP:REM 0"
     attribute: inst_stat
     dtype: bool
-  - name: get_power_stat
+  - name: get_power_stat #THIS
     args: []
     kwargs: []
     cmd: ":OUTP?"
     channel: False
     attribute: pow_stat
     dtype: bool
-  - name: set_power_stat
+  - name: set_power_stat #THIS
     args: ["stat"]
     kwargs: []
     cmd: ":OUTP {0:d}"
