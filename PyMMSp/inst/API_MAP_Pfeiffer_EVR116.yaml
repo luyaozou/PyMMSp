@@ -1,0 +1,96 @@
+presets:
+  hexa_value:
+    "MIN": "0200"
+    "MAX": "1A68"
+    "ABSOLUTE_MIN": "100"
+    "ABSOLUTE_MAX": "D34"  
+    "INCR": "0001"          
+  data_transmission:
+    "baud_rate": 300
+    "data_bits": 7
+    "stop_bits": 2
+functions:
+  - name: get_vers
+    args: []
+    kwargs: []
+    cmd: "v?"
+    attribute: valve_vers
+    dtype: str
+  - name: get_stat
+    args: []
+    kwargs : []
+    cmd: "s?"
+    attribute: valve_stat
+    dtype: str
+  - name: get_temp
+    args: []
+    kwargs: []
+    cmd: "t?"
+    attribute: valve_temp
+    dtype: str
+  - name: get_output_mode
+    args: []
+    kwargs : []
+    cmd: "h?"
+    attribute: valve_mode
+    dtype: str
+  - name: set_output_mode
+    args: []
+    kwargs: []
+    cmd: "h02"       
+    attribute: valve_mode
+    dtype: int
+  - name: get_pos
+    args: []
+    kwargs: []
+    cmd: "p?"
+    attribute: valve_pos
+    dtype: str
+  - name: set_abs_pos
+    args: []
+    kwargs: []
+    cmd: "g{0:d}"    
+    attribute: valve_pos
+    dtype: str
+  - name: set_incr_pos
+    args: ["position"]
+    kwargs: []
+    cmd: "g+{0:d}"       
+    attribute: valve_pos
+    dtype: str
+  - name: set_decr_pos
+    args: ["position"]
+    kwargs: []
+    cmd: "g-{0:d}"   
+    attribute: valve_pos
+    dtpye: str
+  - name: set_open
+    args: []
+    kwargs: []
+    cmd: "y"
+    attribute: valve_pos
+    dtype: str
+  - name: set_close
+    args: []
+    kwargs: []
+    cmd: "x"
+    attribute: valve_pos
+    dtype: str
+  - name: set_stop_mov
+    args: []
+    kwargs: []
+    cmd: "z"
+    attribute: valve_pos
+    dtype: str
+  - name: set_open_red_spd
+    args: []
+    kwargs: []
+    cmd: "i"
+    attribute: valve_spd
+    dtype: str
+  - name: set_close_red_spd
+    args: []
+    kwargs: []
+    cmd: "j"
+    attribute: valve_spd
+    dtype: str
