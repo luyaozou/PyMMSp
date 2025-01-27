@@ -3,7 +3,7 @@ presets:
     "SIN": 0
     "SQU": 1
     "TRI": 2
-    "TRAP": 3 #pour TRAPeze, RAMP n'existe pas ici
+    "TRAP": 3
   source:
     "INT": 0
     "EXT": 1
@@ -23,7 +23,7 @@ functions:
   - name: init_syn 
     args: ["chan"]
     kwargs: []
-    cmd: ":AM{0:d}:SOUR INT; :AM{0:d}:STAT OFF; :FM{0:d}:SOUR INT; :FM{0:d}:STAT OFF; :OUTP:MOD 0; :LFO{0:d}:SOUR LF1; :LFO{0:d}:VOLT 0VP; :POW:MODE FIX; :FREQ:MODE CW; :DISP:DIAL:CLOS:ALL" #:DISP:REM 0 -> :DISP:DIAL:CLOS:ALL
+    cmd: ":AM{0:d}:SOUR INT; :AM{0:d}:STAT OFF; :FM{0:d}:SOUR INT; :FM{0:d}:STAT OFF; :OUTP:MOD 0; :LFO{0:d}:SOUR LF1; :LFO{0:d}:VOLT 0VP; :POW:MODE FIX; :FREQ:MODE CW; :DISP:DIAL:CLOS:ALL" 
     attribute: inst_stat
     dtype: bool
   - name: get_power_stat 
@@ -40,14 +40,14 @@ functions:
     channel: False
     attribute: pow_stat
     dtype: bool
-  - name: get_power_level #ok, :POW? -> :POW:POW?
+  - name: get_power_level 
     args: []
     kwargs: []
     cmd: ":POW:POW?"
     channel: False
     attribute: pow
     dtype: float
-  - name: set_power_level #ok, idem 
+  - name: set_power_level 
     args: ["level"]
     kwargs: []
     cmd: ":POW:POW {0:g}dBm"
@@ -76,7 +76,7 @@ functions:
           K: 1e3
           M: 1e6
           G: 1e9
-  - name: get_modu_stat #ok, :OUTP:MOD? -> :MOD:STAT
+  - name: get_modu_stat 
     args: []
     kwargs: []
     cmd: ":MOD:STAT?"
@@ -156,7 +156,7 @@ functions:
           K: 1e3
           M: 1e6
           G: 1e9
-  - name: get_am_depth_pct #ok, par contre impossible d'ajuster la profondeur en dB dans ce modèle de synthé
+  - name: get_am_depth_pct 
     args: ["chan"]
     kwargs: []
     cmd: "AM{0:d}:DEPT?"
@@ -191,7 +191,7 @@ functions:
     channel: True
     attribute: am_freq
     dtype: float
-  - name: set_lf_freq #idem
+  - name: set_lf_freq
     args: ["chan", "freq", "unit"]
     kwargs: []
     cmd: "LFO{0:d}:FREQ {1:.3f}{2:s}"
@@ -204,7 +204,7 @@ functions:
           K: 1e3
           M: 1e6
           G: 1e9
-  - name: get_lf_waveform #idem
+  - name: get_lf_waveform 
     args: ["chan"]
     kwargs: []
     cmd: "LFO{0:d}:SHAP?"
@@ -212,7 +212,7 @@ functions:
     attribute: lf_waveform
     dtype: str
     link_preset: waveform
-  - name: set_lf_waveform #idem
+  - name: set_lf_waveform 
     args: ["chan", "waveform"]
     kwargs: []
     cmd: "LFO{0:d}:SHAP {1:d}"
@@ -226,7 +226,7 @@ functions:
     channel: True
     attribute: fm_stat
     dtype: bool
-  - name: set_fm_stat #ok
+  - name: set_fm_stat
     args: ["chan", "stat"]
     kwargs: []
     cmd: ":FM{0:d}:STAT {1:d}"
@@ -253,14 +253,14 @@ functions:
             K: 1e3
             M: 1e6
             G: 1e9
-  - name: get_fm_dev #ok
+  - name: get_fm_dev 
     args: ["chan"]
     kwargs: []
     cmd: "FM{0:d}:DEV?"
     channel: True
     attribute: fm_dev
     dtype: float
-  - name: set_fm_dev #ok
+  - name: set_fm_dev 
     args: ["chan", "freq", "unit"]
     kwargs: []
     cmd: "FM{0:d}:DEV {1:.3f}{2:s}"
@@ -359,21 +359,21 @@ functions:
     attribute: pm_waveform
     dtype: str
     link_preset: waveform
-  - name: get_lfo_stat #ok, {0:d} ajouté pour préciser l'output channel 
+  - name: get_lfo_stat 
     args: ["chan"]
     kwargs: []
     cmd: ":LFO{0:d}:STAT?"
     channel: False
     attribute: lfo_stat
     dtype: bool
-  - name: set_lfo_stat #idem
+  - name: set_lfo_stat 
     args: ["chan", "stat"]
     kwargs: []
     cmd: ":LFO{0:d}:STAT {1:d}"
     channel: False
     attribute: lfo_stat
     dtype: bool
-  - name: get_lfo_source #idem
+  - name: get_lfo_source 
     args: ["chan"]
     kwargs: []
     cmd: ":LFO{0:d}:SOUR?"
@@ -381,7 +381,7 @@ functions:
     attribute: lfo_src
     dtype: str
     link_preset: source
-  - name: set_lfo_source #ok, idem
+  - name: set_lfo_source 
     args: ["chan", "source"]
     kwargs: []
     cmd: ":LFO{0:d}:SOUR {1:d}" 
@@ -389,14 +389,14 @@ functions:
     attribute: lfo_src
     dtype: str
     link_preset: source
-  - name: get_lfo_ampl #ok, :LFO:AMPL? -> :LFO1:VOLT?
+  - name: get_lfo_ampl 
     args: ["chan"]
     kwargs: []
     cmd: ":LFO{0:d}:VOLT?"
     channel: False
     attribute: lfo_volt
     dtype: float
-  - name: set_lfo_ampl #idem
+  - name: set_lfo_ampl 
     args: ["chan", "ampl", "unit"]
     kwargs: []
     cmd: ":LFO{0:d}:VOLT {1:.3f}{2:s}"
@@ -407,21 +407,21 @@ functions:
         base: "VP"
         prefix:
             M: 1e-3
-  - name: get_err #ok, ajout de :ALL pour observer toutes les erreurs depuis la dernière lecture ("SYST:ERR?" seul n'existe pas)
+  - name: get_err 
     args: []
     kwargs: []
     cmd: "SYST:ERR:ALL?"
     channel: False
     attribute: err_msg
     dtype: str
-  - name: get_remote_disp_stat #DISP:REM? -> DISP:DIAL:ID?
+  - name: get_remote_disp_stat
     args: []
     kwargs: []
     cmd: "DISP:DIAL:ID?"
     channel: False
     attribute: remote_disp_stat
     dtype: bool
-  - name: set_remote_disp_stat #DISP:REM -> DISP:DIAL:OPEN
+  - name: set_remote_disp_stat
     args: ["chan"]
     kwargs: []
     cmd: "DISP:DIAL:OPEN {0:d}" 
