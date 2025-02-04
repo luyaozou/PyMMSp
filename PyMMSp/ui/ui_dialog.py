@@ -1130,7 +1130,7 @@ class LWAParserDialog(QtWidgets.QDialog):
             self.exportLWAButtonGroup.setExclusive(False)
             # set up the batch list area
             self.batchListWidget = QtWidgets.QWidget()
-            batchArea = QtGui.QScrollArea()
+            batchArea = QtWidgets.QScrollArea()
             batchArea.setWidgetResizable(True)
             batchArea.setWidget(self.batchListWidget)
 

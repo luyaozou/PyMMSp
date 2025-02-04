@@ -149,7 +149,13 @@ class LockinAPI(ABC):
     Set functions always returns a boolean value indicating the success of the operation
     """
 
-    def get_inst_name(self, handle) -> (bool, str):
+    def get_inst_name(self, handle) -> str:
+        pass
+
+    def get_err_msg(self, handle) -> str:
+        pass
+
+    def get_buffer(self, handle, byte) -> str:
         pass
 
 
@@ -170,6 +176,10 @@ class LockinSimDecoder(BaseSimDecoder):
         self._enc = enc
         self._sep_cmd = sep_cmd
         self._sep_level = sep_level
+
+    def interpret(self, cmd_queue):
+        """  Interpret code and return its value """
+        pass
 
 
 def get_lockin_info(handle, info):

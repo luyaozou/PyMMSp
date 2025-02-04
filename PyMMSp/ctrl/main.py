@@ -7,11 +7,14 @@ from os.path import isfile
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt
 from importlib.resources import files
+
+import PyMMSp.ui.ui_daq
+from PyMMSp.ui import ui_daq
 from PyMMSp.ui import ui_main
 from PyMMSp.ui import ui_dialog
 from PyMMSp.ui import ui_menu
 from PyMMSp.ui import ui_shared
-from PyMMSp.daq import JPLScan
+from PyMMSp.daq import abs
 from PyMMSp.inst.base import Handles
 from PyMMSp.inst import lockin as api_lia
 from PyMMSp.inst import base as api_gen
@@ -27,6 +30,8 @@ from PyMMSp.ctrl import (ctrl_syn,
                          ctrl_insts,
                          ctrl_flow,
                          )
+from PyMMSp.daq import (abs,
+                        )
 from PyMMSp.config import config
 
 
@@ -74,6 +79,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui = ui_main.MainUI(self)
         self.setCentralWidget(self.ui)
 
+        # controller of instruments
         self.ctrl_insts = ctrl_insts.CtrlInsts(
             self.prefs, self.ui, self.inst_handles, parent=self)
         self.ctrl_syn = ctrl_syn.CtrlSyn(
@@ -90,11 +96,15 @@ class MainWindow(QtWidgets.QMainWindow):
             self.prefs, self.ui, self.inst_handles.info_gauge1, self.inst_handles.h_gauge1, parent=self)
         self.ctrl_flow = ctrl_flow.CtrlFlow(
             self.prefs, self.ui, self.inst_handles.h_flow, parent=self)
+        # controller of scanning routines
+        self.ctrl_abs_bb = abs.CtrlAbsBBScan(self.prefs, self.ui, self.inst_handles, parent=self)
 
         # connect menubar signals
         self.menuBar.instSelAction.triggered.connect(self.on_sel_inst)
         self.menuBar.instCloseAction.triggered.connect(self.on_close_sel_inst)
-        self.menuBar.scanJPLAction.triggered.connect(self.on_scan_jpl)
+        self.menuBar.scanConfigAction.triggered.connect(self.ui.dAbsConfig.exec)
+        self.menuBar.scanAbsBBAction.triggered.connect(self.ui.dAbsBBScan.exec)
+        self.menuBar.scanAbsSearchAction.triggered.connect(self.ui.dAbsSearchScan.exec)
         self.menuBar.scanCEAction.triggered.connect(self.on_scan_cavity)
         self.menuBar.lwaParserAction.triggered.connect(self.on_lwa_parser)
         self.menuBar.testModeAction.toggled.connect(self.refresh_inst)
@@ -159,50 +169,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.dCloseInst.exec()
         # simply uncheck main to prevent the warning dialog
         self.refresh_inst()
-
-    def on_scan_jpl(self):
-
-        # when invoke this dialog, pause live lockin monitor in the main panel
-        self.ui.liaMonitor.stop()
-
-        # if it is test mode, or real-run mode with instrument correctly connected
-        if self.menuBar.testModeAction.isChecked() or (self.syn_handle and self.lockin_handle):
-            dconfig = JPLScan.JPLScanConfig(main=self)
-            entry_settings = None
-            dconfig_result = dconfig.exec()
-        else:
-            # instrument handle is None, pop up error
-            msg = ui_shared.MsgError(self, 'Instrument Offline!',
-                                  'Connect to the synthesizer and lockin first before proceed.')
-            msg.exec()
-            return None
-
-        # this loop makes sure the config dialog does not disappear
-        # unless the settings are all valid / or user hits cancel
-        while dconfig_result:  # if dialog accepted
-            entry_settings, filename = dconfig.get_settings()
-            if entry_settings:
-                total_time = ui_shared.jpl_scan_time(entry_settings)
-                now = datetime.datetime.today()
-                length = datetime.timedelta(seconds=total_time)
-                then = now + length
-                text = 'This batch job is estimated to take {:s}.\nIt is expected to finish at {:s}.'.format(
-                    str(length), then.strftime('%I:%M %p, %m-%d-%Y (%a)'))
-                q = ui_shared.MsgInfo(self, 'Time Estimation', text)
-                q.addButton(QtWidgets.QMessageBox.StandardButton.Cancel)
-                qres = q.exec()
-                if qres == QtWidgets.QMessageBox.StandardButton.Ok:
-                    break
-                else:
-                    dconfig_result = dconfig.exec()
-            else:
-                dconfig_result = dconfig.exec()
-
-        if entry_settings and dconfig_result:
-            dscan = JPLScan.JPLScanWindow(entry_settings, filename, main=self)
-            dscan.exec()
-        else:
-            pass
 
     def on_scan_pci(self):
         d = ui_dialog.DialogOscillo(self)

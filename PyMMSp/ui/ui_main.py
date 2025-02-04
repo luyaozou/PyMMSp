@@ -15,9 +15,10 @@ from PyMMSp.inst import validator as api_val
 # import shared ui widgets
 from PyMMSp.ui import ui_dialog
 from PyMMSp.ui import ui_shared
+from PyMMSp.ui import ui_daq
 
 
-NUM_MONITORS = 6        # number of monitors
+NUM_MONITORS = 6        # number of monitors. later this should be moved to config file
 
 
 class MainUI(QtWidgets.QWidget):
@@ -43,6 +44,10 @@ class MainUI(QtWidgets.QWidget):
         self.motorPanel = GeneralCtrlPanel('Motor Control', parent=self)
 
         self._monitors = tuple(Monitor(self) for _ in range(NUM_MONITORS))
+
+        self.dAbsBBScan = ui_daq.DialogAbsBBScan(self)
+        self.dAbsSearchScan = ui_daq.DialogAbsSearchScan(self)
+        self.dAbsConfig = ui_daq.DialogAbsConfig(self)
 
         panelLayout = QtWidgets.QVBoxLayout()
         panelLayout.setSpacing(3)
