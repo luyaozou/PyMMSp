@@ -1,0 +1,225 @@
+presets:   
+  data_transmission:
+    "data_bits": 8
+    "stop_bits": 1
+    "parity": None
+  gauge: 
+    "1": 1
+    "2": 2
+functions:
+  - name: get_answer
+    args: []
+    kwargs: []
+    cmd: "\x05"
+    attribute: get_answer
+    dtype: str
+  - name: get_soft_vers
+    args: []
+    kwargs: []
+    cmd: "PNR"
+    attribute: soft_id
+    dtype: str
+  - name: get_gauge_id
+    args: []
+    kwargs: []
+    cmd: "TID"
+    attribute: gauge_id
+    dtype: str
+  - name: get_press
+    args: []
+    kwargs: []
+    cmd: "PR{gauge}"
+    channel: False
+    attribute: gauge_press
+    dtype: int
+  - name: get_all_press
+    args: []
+    kwargs: []
+    cmd: "PRX"
+    attribute: gauge_press
+    dtype: str
+  - name: get_press_cont
+    args: ["interval"]
+    kwargs: []
+    cmd: "COM,{0;s}"
+    attribute: gauge_press
+    dtype: int
+    interval: 
+        100 ms: 0
+        1s: 1
+        1min: 2
+  - name: gauge_switch_onoff
+    args: ["state1", "state2"]
+    kwargs: []
+    cmd: "SEN[,{0;d},{1;d}]"
+    channel: False
+    attribute: gauge_switch
+    dtype: int
+    state1: 
+        no_change: 0
+        on: 1
+        off: 2
+    state2: 
+        no_change: 0
+        on: 1
+        off: 2
+  - name: set_display
+    args: []
+    kwargs: []
+    cmd: "SCT[,{gauge}]"
+    channel: False
+    attribute: set_display
+    dtype: int
+  - name: get_error
+    args: []
+    kwargs: []
+    cmd: "ERR"
+    attribute: get_error
+    dtype: str
+  - name: set_reset
+    args: []
+    kwargs: []
+    cmd: "RES[,1]"
+    attribute: set_reset
+    dtype: str
+  - name: get_comm_function_stat
+    args: []
+    kwargs: []
+    cmd: "SPS"
+    attribute: get_comm_function_stat
+    dtype: str
+  - name: set_comm_function_stat
+    args: ["function", "chan", "inf_lim", "sup_lim"]
+    kwargs: []
+    cmd: "SP{0;d}[,{1;d},{2;d},{3;d}]"
+    channel: False
+    attribute: set_comm_function_stat
+    dtype: float
+    commutation_function: 
+        function_1 : 1
+        function_2 : 2
+        function_3 : 3
+        function_4 : 4
+    measurement_channel:
+        chan_1 : 1
+        chan_2 : 2
+  - name: set_filter
+    args: ["spd1", "spd2"]
+    kwargs: []
+    cmd: "FIL[,{0;d},{1;d}]"
+    channel: False
+    attribute: set_filter
+    dtype: int
+    spd1:
+        fast: 0
+        normal: 1
+        slow: 2
+    spd2:
+        fast: 0
+        normal: 1
+        slow: 2
+  - name: set_corr_factor
+    args: ["log_value1", "log_value2"]
+    kwargs: []
+    cmd: "CAL[,{1;d},{1;s}]"
+    channel: False
+    attribute: set_corr_factor
+    dtype: str
+  - name: set_limit
+    args: ["limit1", "limit2"]
+    kwargs: []
+    cmd: "FSR[,{0;d},{1;d}]"
+    attribute: set_limit
+    channel: False
+    dtype: int
+    limit1:
+        0.01 mbar : 0
+        0.1 mbar : 1
+        1 mbar : 2
+        10 mbar : 3
+        100 mbar : 4
+        1000 mbar : 5
+        2 bar : 6
+        5 bar : 7
+        10 bar : 8
+        50 bar : 9
+    limit2:
+        0.01 mbar : 0
+        0.1 mbar : 1
+        1 mbar : 2
+        10 mbar : 3
+        100 mbar : 4
+        1000 mbar : 5
+        2 bar : 6
+        5 bar : 7
+        10 bar : 8
+        50 bar : 9
+  - name: set_offset
+    args: ["offset1", "offset2"]
+    kwargs: []
+    cmd: OFD[,{0;d},{1;d}]
+    channel: False
+    attribute: set_offset
+    dtype: float
+  - name: set_offset_corr
+    args: ["mode1", "mode2"]
+    kwargs: []
+    cmd: "OFC[,{0;d},{1;d}]"
+    channel: False
+    attribute: set_offset_corr
+    dtype: int
+    mode1: 
+        off : 0
+        on : 1
+        auto : 2
+    mode2: 
+        off : 0
+        on : 1
+        auto : 2
+  - name: set_unit
+    args: ["unit"]
+    kwargs: []
+    cmd: "UNI,{0;d}"
+    attribute: set_unit
+    dtype: int
+    unit: 
+        mbar : 0
+        Torr : 1
+        Pascal : 2
+  - name: set_baud
+    args: ["baud"]
+    kwargs: []
+    cmd: "BAU,{0;d}"
+    attribute: set_baud
+    dtype: int
+    baud:
+        9600 : 0
+        19200 : 1
+        38400 : 2
+  - name: set_res
+    args: ["resolution"]
+    kwargs: []
+    cmd: "DCD,{0;d}"
+    attribute: set_res
+    dtype: int
+    resolution:
+        2 decimals: 2
+        3 decimals: 3
+  - name: disp_test
+    args: ["mode"]
+    kwargs: []
+    cmd: "DIS,{0;d}"
+    attribute: disp_test
+    dtype: int
+    mode:
+        stop : 0
+        start : 1
+  - name: watchdog
+    args: [mode]
+    kwargs: []
+    cmd: "WDT;{0;d}"
+    attribute: watchdog
+    dtype: int
+    mode: 
+        manual : 0
+        auto : 1
