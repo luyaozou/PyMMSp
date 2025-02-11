@@ -4,7 +4,7 @@
 
 import json
 from dataclasses import dataclass
-from PyMMSp.libs.consts import VERSION
+from PyMMSp.libs.consts import VERSION, TEMP_DIR
 
 
 def to_json(obj, filename):
@@ -68,4 +68,20 @@ class Prefs:
     is_test: bool = False
 
 
+@dataclass
+class AbsScanSetting:
+    """ Absorption scan settings """
 
+    freq_start: float = 0
+    freq_stop: float = 0
+    freq_step: float = 0
+    avg: int = 1
+    sens_idx: int = 0
+    tau_idx: int = 0
+    dwell_time: float = 0
+    buffer_len: int = 0
+    mod_mode_idx: int = 0
+    mod_freq: float = 0
+    mod_depth: float = 0
+    press: float = 0
+    press_tol: float = 0

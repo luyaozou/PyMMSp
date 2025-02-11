@@ -24,17 +24,9 @@ class MenuBar(QMenuBar):
         self.instCloseAction.setStatusTip('Close individual instrument')
 
         # scan actions
-        self.scanConfigAction = QAction('Scan Configuration', self)
-        self.scanConfigAction.setShortcut('Ctrl+Shift+C')
-        self.scanConfigAction.setStatusTip('Configure scan parameters')
-
-        self.scanAbsBBAction = QAction('Absorption Scan - Broadband Mode', self)
-        self.scanAbsBBAction.setShortcut('Ctrl+Shift+B')
-        self.scanAbsBBAction.setStatusTip('Absorption broadband scan mode using lock-in amplifier')
-
-        self.scanAbsSearchAction = QAction('Absorption Scan - Search Mode', self)
-        self.scanAbsSearchAction.setShortcut('Ctrl+Shift+S')
-        self.scanAbsSearchAction.setStatusTip('Absorption targeted search mode using lock-in amplifier')
+        self.scanAbsAction = QAction('Absorption Scan - Broadband Mode', self)
+        self.scanAbsAction.setShortcut('Ctrl+Shift+B')
+        self.scanAbsAction.setStatusTip('Absorption broadband scan mode using lock-in amplifier')
 
         self.scanCPAction = QAction('Chirp', self)
         self.scanCPAction.setShortcut('Ctrl+Shift+P')
@@ -62,9 +54,7 @@ class MenuBar(QMenuBar):
         menuInst.addAction(self.instSelAction)
         menuInst.addAction(self.instCloseAction)
         menuScan = self.addMenu('&Scan')
-        menuScan.addAction(self.scanConfigAction)
-        menuScan.addAction(self.scanAbsBBAction)
-        menuScan.addAction(self.scanAbsSearchAction)
+        menuScan.addAction(self.scanAbsAction)
         menuScan.addAction(self.scanCPAction)
         menuScan.addAction(self.scanCEAction)
         menuScan.addAction(self.scanCRDSAction)

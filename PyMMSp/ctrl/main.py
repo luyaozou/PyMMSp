@@ -102,9 +102,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # connect menubar signals
         self.menuBar.instSelAction.triggered.connect(self.on_sel_inst)
         self.menuBar.instCloseAction.triggered.connect(self.on_close_sel_inst)
-        self.menuBar.scanConfigAction.triggered.connect(self.ui.dAbsConfig.exec)
-        self.menuBar.scanAbsBBAction.triggered.connect(self.ui.dAbsBBScan.exec)
-        self.menuBar.scanAbsSearchAction.triggered.connect(self.ui.dAbsSearchScan.exec)
+        self.menuBar.scanAbsAction.triggered.connect(self.ui.dAbsScan.exec)
         self.menuBar.scanCEAction.triggered.connect(self.on_scan_cavity)
         self.menuBar.lwaParserAction.triggered.connect(self.on_lwa_parser)
         self.menuBar.testModeAction.toggled.connect(self.refresh_inst)
@@ -187,18 +185,22 @@ class MainWindow(QtWidgets.QMainWindow):
         d.exec()
 
     def closeEvent(self, ev):
-        q = QtWidgets.QMessageBox.question(
-            self, 'Quit?', 'Are you sure to quit?',
-            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
-            QtWidgets.QMessageBox.StandardButton.Yes)
-        if q == QtWidgets.QMessageBox.StandardButton.Yes:
-            # save settings
-            self.prefs.geometry = self.geometry().getRect()
-            f = files('PyMMSp.config').joinpath('prefs.json')
-            config.to_json(self.prefs, f)
-            self.inst_handles.close_all()
-        else:
-            ev.ignore()
+        # q = QtWidgets.QMessageBox.question(
+        #     self, 'Quit?', 'Are you sure to quit?',
+        #     QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+        #     QtWidgets.QMessageBox.StandardButton.Yes)
+        # if q == QtWidgets.QMessageBox.StandardButton.Yes:
+        #     # save settings
+        #     self.prefs.geometry = self.geometry().getRect()
+        #     f = files('PyMMSp.config').joinpath('prefs.json')
+        #     config.to_json(self.prefs, f)
+        #     self.inst_handles.close_all()
+        # else:
+        #     ev.ignore()
+        self.prefs.geometry = self.geometry().getRect()
+        f = files('PyMMSp.config').joinpath('prefs.json')
+        config.to_json(self.prefs, f)
+        self.inst_handles.close_all()
 
     def connect2monitor_syn(self, id_):
         pass

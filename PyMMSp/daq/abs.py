@@ -7,6 +7,7 @@ from PyQt6 import QtCore, QtWidgets
 import numpy as np
 from math import ceil
 import datetime
+import os
 
 from PyMMSp.ui import ui_shared
 from PyMMSp.inst import lockin as api_lia
@@ -44,7 +45,7 @@ class CtrlAbsBBScan(QtWidgets.QWidget):
         self.wait_time = 60
         self.batch_time_taken = 0
         self.current_x_index = 0
-        self.entry_settings = []
+        self.list_settings = []
         self.x = np.array([])
         self.x_min = 0
         self.target_avg = 0
@@ -59,25 +60,35 @@ class CtrlAbsBBScan(QtWidgets.QWidget):
         self.waitTimer.setSingleShot(True)
         self.waitTimer.timeout.connect(self.query_lockin)
 
-        self.ui.dAbsBBScan.singleScan.pauseButton.clicked.connect(self.pause_current)
-        self.ui.dAbsBBScan.singleScan.redoButton.clicked.connect(self.redo_current)
-        self.ui.dAbsBBScan.singleScan.restartWinButton.clicked.connect(self.restart_avg)
-        self.ui.dAbsBBScan.singleScan.saveButton.clicked.connect(self.save_current)
-        self.ui.dAbsBBScan.singleScan.jumpButton.clicked.connect(self.jump)
-        self.ui.dAbsBBScan.singleScan.abortAllButton.clicked.connect(self.abort_all)
+        self.ui.dAbsScan.btnPause.clicked[bool].connect(self.pause_current)
+        self.ui.dAbsScan.btnBatchSetup.clicked.connect(self.ui.dAbsConfig.exec)
+        self.ui.dAbsScan.btnAccessData.clicked[bool].connect(self.open_data_folder)
+        #self.ui.dAbsBBScan.redoButton.clicked.connect(self.redo_current)
+        #self.ui.dAbsBBScan.restartWinButton.clicked.connect(self.restart_avg)
+        #self.ui.dAbsBBScan.saveButton.clicked.connect(self.save_current)
+        #self.ui.dAbsBBScan.btnSkip.clicked.connect(self.jump)
+        #self.ui.dAbsBBScan.abortAllButton.clicked.connect(self.abort_all)
 
-        self.ui.dAbsBBScan.rejected.connect(self.abort_scan)
-        self.ui.dAbsBBScan.singleScan.saveButton.clicked.connect(self.set_file_directory)
+        #self.ui.dAbsBBScan.rejected.connect(self.abort_scan)
+        #self.ui.dAbsBBScan.saveButton.clicked.connect(self.set_file_directory)
         #self.ui.dAbsBBScan.addBatchButton.clicked.connect(self.add_entry)
         #self.ui.dAbsBBScan.removeBatchButton.clicked.connect(self.remove_entry)
-        self.ui.dAbsConfig.accepted.connect(self.on_scan_jpl)
+        self.ui.dAbsConfig.accepted.connect(self.on_setup_accepted)
+
+    def on_setup_accepted(self):
+        self.list_settings = [item.get_setting() for item in self.ui.dAbsConfig.ListSetupItem]
+        self.ui.dAbsScan.batchListWidget.add_entries(self.list_settings)
+
+    def open_data_folder(self):
+        directory = self.ui.dAbsConfig.lblDir.text()
+        os.startfile(directory)
 
     def on_scan_jpl(self):
 
         # this loop makes sure the config dialog does not disappear
         # unless the settings are all valid / or user hits cancel
         entry_settings, filename = self.get_settings()
-        self.entry_settings = entry_settings
+        self.list_settings = entry_settings
         if entry_settings:
             total_time = ui_shared.jpl_scan_time(entry_settings)
             now = datetime.datetime.today()
@@ -98,16 +109,16 @@ class CtrlAbsBBScan(QtWidgets.QWidget):
         if entry_settings and dconfig_result:
             # Initiate progress bar
             total_time = ceil(ui_shared.jpl_scan_time(entry_settings))
-            self.ui.dAbsBBScan.totalProgBar.setRange(0, total_time)
-            self.ui.dAbsBBScan.totalProgBar.setValue(0)
+            self.ui.dAbsScan.totalProgBar.setRange(0, total_time)
+            self.ui.dAbsScan.totalProgBar.setValue(0)
             self.batch_time_taken = 0
 
             # Start scan
-            self.ui.dAbsBBScan.next_entry_signal.connect(self.next_entry)
+            self.ui.dAbsScan.next_entry_signal.connect(self.next_entry)
             # this makes sure batch starts at index 0
             self.current_entry_index = -1
-            self.ui.dAbsBBScan.next_entry_signal.emit()
-            self.ui.dAbsBBScan.exec()
+            self.ui.dAbsScan.next_entry_signal.emit()
+            self.ui.dAbsScan.exec()
         else:
             pass
 
@@ -115,7 +126,7 @@ class CtrlAbsBBScan(QtWidgets.QWidget):
 
         self.filename, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, 'Save Data', '', 'SMAP File (*.lwa)')
-        self.ui.dAbsBBScan.fileLabel.setText('Data save to: {:s}'.format(self.filename))
+        self.ui.dAbsScan.lblDir.setText('Data save to: {:s}'.format(self.filename))
 
     def get_settings(self):
         """ Read batch settings from entries and proceed.
@@ -132,7 +143,7 @@ class CtrlAbsBBScan(QtWidgets.QWidget):
             no_error = False
         else:
             # get settings from entry
-            for entry in self.ui.dAbsBBScan.entryWidgetList:
+            for entry in self.ui.dAbsScan.ListSetupItem:
                 # if all validation status in this entry are True
                 if not list(entry.status.values()).count(False):
                     no_error *= True
@@ -175,11 +186,11 @@ class CtrlAbsBBScan(QtWidgets.QWidget):
         self.current_comment = entry_setting[0]
         self.y = np.zeros_like(self.x)
         self.y_sum = np.zeros_like(self.x)
-        self.ui.dAbsBBScan.singleScan.ySumCurve.setData(self.x, self.y_sum)
+        self.ui.dAbsScan.ySumCurve.setData(self.x, self.y_sum)
         total_pts =  len(self.x) * self.target_avg
         self.pts_taken = 0
-        self.ui.dAbsBBScan.currentProgBar.setRange(0, ceil(total_pts * self.wait_time * 1e-3))
-        self.ui.dAbsBBScan.currentProgBar.setValue(ceil(self.pts_taken * self.wait_time * 1e-3))
+        self.ui.dAbsScan.currentProgBar.setRange(0, ceil(total_pts * self.wait_time * 1e-3))
+        self.ui.dAbsScan.currentProgBar.setValue(ceil(self.pts_taken * self.wait_time * 1e-3))
 
         # tune instrument
         self.tune_inst(entry_setting)
@@ -259,14 +270,14 @@ class CtrlAbsBBScan(QtWidgets.QWidget):
         else:
             self.y[self.current_x_index] = self.handles.api_lockin.query_single_x(self.handles.h_lockin)
         # update plot
-        self.ui.dAbsBBScan.singleScan.yCurve.setData(self.x, self.y)
+        self.ui.dAbsScan.yCurve.setData(self.x, self.y)
         # move to the next frequency, update freq index and average counter
         self.next_freq()
         # if done
         if self.acquired_avg == self.target_avg:
             self.save_data()
             self.batch_time_taken += ceil(len(self.x) * self.target_avg * self.wait_time * 1e-3)
-            self.ui.dAbsBBScan.next_entry_signal.emit()
+            self.ui.dAbsScan.next_entry_signal.emit()
         else:
             # tune syn to the next freq
             self.tune_syn_freq()
@@ -294,8 +305,8 @@ class CtrlAbsBBScan(QtWidgets.QWidget):
                 self.y = np.zeros_like(self.x)
 
         # update progress bar
-        self.ui.dAbsBBScan.currentProgBar.setValue(ceil(self.pts_taken * self.wait_time * 1e-3))
-        self.ui.dAbsBBScan.totalProgBar.setValue(
+        self.ui.dAbsScan.currentProgBar.setValue(ceil(self.pts_taken * self.wait_time * 1e-3))
+        self.ui.dAbsScan.totalProgBar.setValue(
             self.batch_time_taken + ceil(self.pts_taken * self.wait_time * 1e-3))
 
     def update_ysum(self):
@@ -304,13 +315,13 @@ class CtrlAbsBBScan(QtWidgets.QWidget):
         # add current y array to y_sum
         self.y_sum += self.y
         # update plot
-        self.ui.dAbsBBScan.ySumCurve.setData(self.x, self.y_sum)
+        self.ui.dAbsScan.ySumCurve.setData(self.x, self.y_sum)
 
     def save_data(self):
         """ Save data array """
 
         # Grab current comment (in case edited during the scan) before saving data
-        entry = self.ui.dAbsBBScan.batchListWidget.entryList[self.current_entry_index]
+        entry = self.ui.dAbsScan.batchListWidget.entryList[self.current_entry_index]
 
         if self.handles.info_syn.modModeIndex == 2:
             mod_amp = self.handles.info_syn.modAmp * 1e-3
@@ -339,12 +350,10 @@ class CtrlAbsBBScan(QtWidgets.QWidget):
         """ Pause/resume data acquisition """
 
         if btn_pressed:
-            self.ui.dAbsBBScan.singleScan.pauseButton.setText('Resume')
-            #print('pause')
+            self.ui.dAbsScan.btnPause.setText('Continue')
             self.waitTimer.stop()
         else:
-            self.ui.dAbsBBScan.singleScan.pauseButton.setText('Pause')
-            #print('resume')
+            self.ui.dAbsScan.btnPause.setText('Pause')
             self.waitTimer.start()
 
     def redo_current(self):
@@ -352,8 +361,8 @@ class CtrlAbsBBScan(QtWidgets.QWidget):
 
         #print('redo current')
         self.waitTimer.stop()
-        if self.ui.dAbsBBScan.singleScan.pauseButton.isChecked():
-            self.ui.dAbsBBScan.singleScan.pauseButton.click()
+        if self.ui.dAbsScan.btnPause.isChecked():
+            self.ui.dAbsScan.btnPause.click()
         else:
             pass
 
@@ -381,7 +390,7 @@ class CtrlAbsBBScan(QtWidgets.QWidget):
             self.current_x_index = 0
             self.y = np.zeros_like(self.x)
             self.y_sum = np.zeros_like(self.x)
-            self.ui.dAbsBBScan.ySumCurve.setData(self.x, self.y_sum)
+            self.ui.dAbsScan.ySumCurve.setData(self.x, self.y_sum)
             self.tune_syn_freq()
         else:
             pass
@@ -408,30 +417,30 @@ class CtrlAbsBBScan(QtWidgets.QWidget):
             self.waitTimer.stop()
             self.batch_time_taken += ceil(len(self.x) * self.target_avg * self.wait_time * 1e-3)
             self.save_data()
-            self.ui.dAbsBBScan.next_entry_signal.emit()
+            self.ui.dAbsScan.next_entry_signal.emit()
         elif q == QtWidgets.QMessageBox.StandardButton.No:
             #print('abort current')
             self.waitTimer.stop()
             self.batch_time_taken += ceil(len(self.x) * self.target_avg * self.wait_time * 1e-3)
-            self.ui.dAbsBBScan.next_entry_signal.emit()
+            self.ui.dAbsScan.next_entry_signal.emit()
         else:
             pass
 
     def next_entry(self):
 
         self.current_entry_index += 1
-        if self.current_entry_index < len(self.entry_settings):
+        if self.current_entry_index < len(self.list_settings):
             if self.current_entry_index:    # more than one entry
-                prev_entry = self.ui.dAbsBBScan.batchListWidget.entryList[self.current_entry_index - 1]
+                prev_entry = self.ui.dAbsScan.batchListWidget.entryList[self.current_entry_index - 1]
                 # make previous entry color grey and comment box read only
                 prev_entry.set_color_grey()
                 prev_entry.commentFill.setReadOnly(True)
                 prev_entry.commentFill.setStyleSheet('color: grey')
             else:
                 pass    # it's the first entry, no prev_entry
-            current_entry = self.ui.dAbsBBScan.batchListWidget.entryList[self.current_entry_index]
+            current_entry = self.ui.dAbsScan.batchListWidget.entryList[self.current_entry_index]
             current_entry.set_color_black()
-            self.ui.dAbsBBScan.singleScan.update_setting(self.entry_settings[self.current_entry_index])
+            self.ui.dAbsScan.singleScan.update_setting(self.list_settings[self.current_entry_index])
         else:
             self.finish()
 
@@ -442,14 +451,14 @@ class CtrlAbsBBScan(QtWidgets.QWidget):
 
     def finish(self):
 
-        self.ui.dAbsBBScan.currentProgBar.setValue(self.ui.dAbsBBScan.currentProgBar.maximum())
-        self.ui.dAbsBBScan.totalProgBar.setValue(self.ui.dAbsBBScan.totalProgBar.maximum())
+        self.ui.dAbsScan.currentProgBar.setValue(self.ui.dAbsScan.currentProgBar.maximum())
+        self.ui.dAbsScan.totalProgBar.setValue(self.ui.dAbsScan.totalProgBar.maximum())
 
         msg = ui_shared.MsgInfo(
             self, 'Job Finished!','Congratulations! Now it is time to grab some coffee.')
         msg.exec()
         self.stop_timers()
-        self.ui.dAbsBBScan.accept()
+        self.ui.dAbsScan.accept()
 
     def abort_scan(self):
 
@@ -463,10 +472,10 @@ class CtrlAbsBBScan(QtWidgets.QWidget):
 
         if q == QtWidgets.QMessageBox.StandardButton.Yes:
             self.stop_timers()
-            self.ui.dAbsBBScan.accept()
+            self.ui.dAbsScan.accept()
         else:
             pass
 
     def abort_all(self):
 
-        self.ui.dAbsBBScan.reject()
+        self.ui.dAbsScan.reject()

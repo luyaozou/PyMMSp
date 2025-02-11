@@ -45,8 +45,7 @@ class MainUI(QtWidgets.QWidget):
 
         self._monitors = tuple(Monitor(self) for _ in range(NUM_MONITORS))
 
-        self.dAbsBBScan = ui_daq.DialogAbsBBScan(self)
-        self.dAbsSearchScan = ui_daq.DialogAbsSearchScan(self)
+        self.dAbsScan = ui_daq.DialogAbsScan(self)
         self.dAbsConfig = ui_daq.DialogAbsConfig(self)
 
         panelLayout = QtWidgets.QVBoxLayout()
