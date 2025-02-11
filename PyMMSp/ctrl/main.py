@@ -15,7 +15,7 @@ from PyMMSp.ui import ui_dialog
 from PyMMSp.ui import ui_menu
 from PyMMSp.ui import ui_shared
 from PyMMSp.daq import abs
-from PyMMSp.inst.base import Handles
+from PyMMSp.inst.base import Handles, IOThreads
 from PyMMSp.inst import lockin as api_lia
 from PyMMSp.inst import base as api_gen
 from PyMMSp.inst import synthesizer as api_syn
@@ -49,6 +49,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.prefs = config.Prefs()
         # Initiate instrument objects
         self.inst_handles = Handles()
+        self.io_threads = IOThreads(self.inst_handles)
 
         # set default geometry
         screen = QtWidgets.QApplication.primaryScreen()
@@ -200,6 +201,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.prefs.geometry = self.geometry().getRect()
         f = files('PyMMSp.config').joinpath('prefs.json')
         config.to_json(self.prefs, f)
+        self.io_threads.stop_threads()
         self.inst_handles.close_all()
 
     def connect2monitor_syn(self, id_):

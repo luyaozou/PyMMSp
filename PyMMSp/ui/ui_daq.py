@@ -87,9 +87,32 @@ class DialogAbsConfig(QtWidgets.QDialog):
         dir_ = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select the directory to save data')
         self.lblDir.setText(dir_)
 
+    def add_setting_list(self, list_scan_settings: [AbsScanSetting,]):
+        """ Add a list of scan settings """
+        # verify the length of the setting list and the current item list
+        n_setting = len(list_scan_settings)
+        n_item = len(self.ListSetupItem)
+        if n_setting < n_item:
+            # load new values for the first n_setting items,
+            # and then remove all extra items
+            for item, setting in zip(self.ListSetupItem[:n_setting], list_scan_settings):
+                item.set_item(setting)
+            for i in range(n_setting, n_item):
+                item = self.ListSetupItem.pop()
+                self._remove_item_from_widget(item)
+        else:
+            # load new values for all _BatchSetupItems in the ListSetupItem
+            # and then create new items
+            for item, setting in zip(self.ListSetupItem, list_scan_settings):
+                item.set_item(setting)
+            for i, setting in enumerate(list_scan_settings[n_item:]):
+                item = _BatchSetupItem(parent=self)
+                item.set_item(setting)
+                self._add_item_to_widget(item)
+
     def add_item(self):
-        """ Add batch entry to this dialog window """
-        item = batchSetupItem(parent=self)
+        """ Add batch item to this dialog window """
+        item = _BatchSetupItem(parent=self)
         # get the current last entry
         if self.ListSetupItem:
             last_item = self.ListSetupItem[-1]
@@ -98,6 +121,20 @@ class DialogAbsConfig(QtWidgets.QDialog):
         else:
             pass
         # add this entry to the layout and to the entry list
+        self._add_item_to_widget(item)
+
+    def remove_item(self, clicked_btn):
+        # remove this entry
+        idx = self._delBtnGroup.id(clicked_btn)
+        item = self.ListSetupItem.pop(idx)
+        # remove the widget from the layout
+        self._remove_item_from_widget(item)
+        for i, next_item in enumerate(self.ListSetupItem[idx:]):
+            # modify the index of other items after idx 1
+            self._delBtnGroup.removeButton(next_item.btnDel)
+            self._delBtnGroup.addButton(next_item.btnDel, id=idx + i)
+
+    def _add_item_to_widget(self, item):
         self.ListSetupItem.append(item)
         row = len(self.ListSetupItem)
         self.setupItemLayout.addWidget(item.btnDel, row, 0)
@@ -116,13 +153,9 @@ class DialogAbsConfig(QtWidgets.QDialog):
         self.setupItemLayout.addWidget(item.inpPressTol, row, 13)
         # note that the row starts with 1 (because of the header)
         # while list / button index starts with 0
-        self._delBtnGroup.addButton(item.btnDel, row-1)
+        self._delBtnGroup.addButton(item.btnDel, row - 1)
 
-    def remove_item(self, clicked_btn):
-        # remove this entry
-        idx = self._delBtnGroup.id(clicked_btn)
-        item = self.ListSetupItem.pop(idx)
-        # remove the widget from the layout
+    def _remove_item_from_widget(self, item):
         self.setupItemLayout.removeWidget(item.btnDel)
         self.setupItemLayout.removeWidget(item.inpFreqStart)
         self.setupItemLayout.removeWidget(item.inpFreqStop)
@@ -139,17 +172,10 @@ class DialogAbsConfig(QtWidgets.QDialog):
         self.setupItemLayout.removeWidget(item.inpPressTol)
         self._delBtnGroup.removeButton(item.btnDel)
         item.delete()
-        for i, next_item in enumerate(self.ListSetupItem[idx:]):
-            # modify the index of other items after idx 1
-            self._delBtnGroup.removeButton(next_item.btnDel)
-            self._delBtnGroup.addButton(next_item.btnDel, id=idx + i)
 
 
 class DialogAbsScan(QtWidgets.QDialog):
     """ Scanning window """
-
-    # define a pyqt signal to control batch scans
-    next_entry_signal = QtCore.pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -159,7 +185,7 @@ class DialogAbsScan(QtWidgets.QDialog):
 #        self.entry_settings = entry_settings
 
         # Create the QTabWidget
-        tabWidget = QtWidgets.QTabWidget()
+        self.tabWidget = QtWidgets.QTabWidget()
         # Create the first tab and its layout
         self.inpFStart = ui_shared.create_double_spin_box(0, minimum=50000, maximum=1500000, dec=2)
         self.inpFStop = ui_shared.create_double_spin_box(0, minimum=50000, maximum=1500000, dec=2)
@@ -177,16 +203,18 @@ class DialogAbsScan(QtWidgets.QDialog):
         tab2Layout.addRow(QtWidgets.QLabel('Range (MHz)'), self.inpFRange)
         tab2.setLayout(tab2Layout)
         # Add tabs to the QTabWidget
-        tabWidget.addTab(tab1, 'Start-Stop')
-        tabWidget.addTab(tab2, 'Center-Range')
+        self.tabWidget.addTab(tab1, 'Start-Stop')
+        self.tabWidget.addTab(tab2, 'Center-Range')
+        self.tabWidget.setSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum,
+                                     QtWidgets.QSizePolicy.Policy.Minimum)
 
-        self.inpFStep = ui_shared.create_double_spin_box(0, minimum=0, dec=1)
+        self.inpFStep = ui_shared.create_double_spin_box(0, minimum=0, dec=1, width=125)
         self.inpAvg = ui_shared.create_int_spin_box(1, minimum=1)
         self.comboSens = QtWidgets.QComboBox()
         self.comboSens.addItems(SENS_STR)
         self.comboTau = QtWidgets.QComboBox()
         self.comboTau.addItems(TAU_STR)
-        self.inpDwellTime = ui_shared.create_double_spin_box(0, minimum=0, dec=0)
+        self.inpDwellTime = ui_shared.create_double_spin_box(0, minimum=0, dec=0, width=125)
         self.inpBufferLen = ui_shared.create_int_spin_box(1, minimum=1)
         self.comboMod = QtWidgets.QComboBox()
         self.comboMod.addItems(MODU_MODE)
@@ -195,6 +223,7 @@ class DialogAbsScan(QtWidgets.QDialog):
         self.inpPress = ui_shared.create_double_spin_box(0, minimum=0, dec=1)
         self.inpPressTol = ui_shared.create_double_spin_box(0, minimum=0, dec=1)
         commonWidgetLayout = QtWidgets.QGridLayout()
+        commonWidgetLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         commonWidgetLayout.addWidget(QtWidgets.QLabel('Step (kHz)'), 0, 0)
         commonWidgetLayout.addWidget(self.inpFStep, 0, 1)
         commonWidgetLayout.addWidget(QtWidgets.QLabel('Dwell time (ms)'), 0, 2)
@@ -224,16 +253,16 @@ class DialogAbsScan(QtWidgets.QDialog):
         self.btnPause = QtWidgets.QPushButton('Pause')
         self.btnPause.setToolTip('Pause data acquisition')
         self.btnPause.setCheckable(True)
-        self.btnBatchAbort = QtWidgets.QPushButton('Abort')
-        self.btnBatchAbort.setToolTip('Abort current scan')
+        self.btnAbort = QtWidgets.QPushButton('Abort')
+        self.btnAbort.setToolTip('Abort current scan')
         quickConfigBtnLayout.addWidget(self.btnStart)
         quickConfigBtnLayout.addWidget(self.btnPause)
-        quickConfigBtnLayout.addWidget(self.btnBatchAbort)
-
+        quickConfigBtnLayout.addWidget(self.btnAbort)
+        quickConfigBtnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         # Add the QTabWidget to the quickConfig group box
         quickConfig = QtWidgets.QGroupBox('Quick Scan Setup ')
         quickConfigLayout = QtWidgets.QVBoxLayout()
-        quickConfigLayout.addWidget(tabWidget)
+        quickConfigLayout.addWidget(self.tabWidget)
         quickConfigLayout.addLayout(commonWidgetLayout)
         quickConfigLayout.addLayout(quickConfigBtnLayout)
         quickConfig.setLayout(quickConfigLayout)
@@ -328,6 +357,35 @@ class DialogAbsScan(QtWidgets.QDialog):
         mainLayout.addWidget(rightWidget)
         self.setLayout(mainLayout)
 
+    def get_quick_scan_settings(self):
+        """ Get the quick scan settings """
+        if self.tabWidget.currentIndex() == 0:
+            # the first tab is selected
+            freq_start = self.inpFStart.value()
+            freq_stop = self.inpFStop.value()
+        else:
+            # the second tab is selected
+            freq_center = self.inpFCenter.value()
+            freq_range = self.inpFRange.value()
+            freq_start = freq_center - freq_range / 2
+            freq_stop = freq_center + freq_range / 2
+
+        return AbsScanSetting(
+            freq_start=freq_start,
+            freq_stop=freq_stop,
+            freq_step=self.inpFStep.value() * 1e-3,
+            avg=self.inpAvg.value(),
+            sens_idx=self.comboSens.currentIndex(),
+            tau_idx=self.comboTau.currentIndex(),
+            dwell_time=self.inpDwellTime.value() * 1e-3,
+            buffer_len=self.inpBufferLen.value(),
+            mod_mode_idx=self.comboMod.currentIndex(),
+            mod_freq=self.inpModFreq.value() * 1e3,
+            mod_depth=self.inpModDepth.value(),
+            press=self.inpPress.value(),
+            press_tol=self.inpPressTol.value()
+        )
+
 
 class BatchListWidget(QtWidgets.QWidget):
     """ Batch list display """
@@ -355,7 +413,7 @@ class BatchListWidget(QtWidgets.QWidget):
         if n < len(list_scan_settings):
             for i, setting in enumerate(list_scan_settings[n:]):
                 row = i + n + 1
-                item = batchDispItem(row, parent=self)
+                item = _BatchDispItem(row, parent=self)
                 item.set_item(setting)
                 self.batchLayout.addWidget(item.lblNo, row, 0)
                 self.batchLayout.addWidget(item.lblStartF, row, 1)
@@ -381,7 +439,7 @@ class BatchListWidget(QtWidgets.QWidget):
                 entry.set_color_grey()
 
 
-class batchSetupItem(QtWidgets.QWidget):
+class _BatchSetupItem(QtWidgets.QWidget):
     """ Frequency window entry for scanning job configuration with captions """
 
     def __init__(self, parent=None):
@@ -459,7 +517,7 @@ class batchSetupItem(QtWidgets.QWidget):
         self.inpPressTol.setValue(entry_setting.press_tol)
 
 
-class batchDispItem(QtWidgets.QWidget):
+class _BatchDispItem(QtWidgets.QWidget):
     """ Single batch list entry in display mode.
     entry = (comment [str], start [float, MHz], stop [float, MHz],
              step [float, MHz], avg [int], sens_idx [int], tc_idx [int],

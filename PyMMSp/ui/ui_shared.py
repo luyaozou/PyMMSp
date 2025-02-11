@@ -357,7 +357,7 @@ class BtnSwitch(QtWidgets.QPushButton):
 
 
 def create_double_spin_box(v, minimum=None, maximum=None, step=1., stepType=0,
-                           dec=1, prefix=None, suffix=None):
+                           dec=1, prefix=None, suffix=None, width=None):
     """ Create a QDoubleSpinBox with preset values """
 
     box = QtWidgets.QDoubleSpinBox()
@@ -390,6 +390,11 @@ def create_double_spin_box(v, minimum=None, maximum=None, step=1., stepType=0,
     else:
         pass
 
+    if isinstance(width, type(None)):
+        pass
+    else:
+        box.setFixedWidth(width)
+
     # one needs to set the value at last so that the value
     # does not get clipped by default minimum and maximum
     box.setValue(v)
@@ -398,7 +403,7 @@ def create_double_spin_box(v, minimum=None, maximum=None, step=1., stepType=0,
 
 
 def create_int_spin_box(v, minimum=None, maximum=None, step=1, stepType=0,
-                        prefix=None, suffix=None):
+                        prefix=None, suffix=None, width=None):
     """ Create a QSpinBox with preset values """
 
     box = QtWidgets.QSpinBox()
@@ -430,7 +435,12 @@ def create_int_spin_box(v, minimum=None, maximum=None, step=1, stepType=0,
     else:
         pass
 
-    # one needs to set the value at last so that the value
+    if isinstance(width, type(None)):
+        pass
+    else:
+        box.setFixedWidth(width)
+
+        # one needs to set the value at last so that the value
     # does not get clipped by default minimum and maximum
     box.setValue(v)
 

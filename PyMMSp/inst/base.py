@@ -1,5 +1,7 @@
 #! encoding = utf-8
 
+import threading
+import queue
 import pyvisa
 import serial
 import socket
@@ -15,6 +17,7 @@ from PyMMSp.inst.oscillo import Oscilloscope_Info, OSCILLO_MODELS, OscilloAPI, O
 from PyMMSp.inst.power_supp import Power_Supp_Info, POWER_SUPP_MODELS, PowerSuppAPI, PowerSuppSimDecoder, get_power_supp_info
 from PyMMSp.inst.flow import Flow_Info, FLOW_CTRL_MODELS, FlowAPI, FlowSimDecoder, get_flow_info
 from PyMMSp.inst.gauge import Gauge_Info, GAUGE_CTRL_MODELS, GaugeAPI, GaugeSimDecoder, get_gauge_info
+from PyMMSp.inst.valve import Valve_Info, VALVE_MODELS, ValveAPI, ValveSimDecoder, get_valve_info
 from PyMMSp.inst.base_simulator import SimHandle
 
 
@@ -27,6 +30,8 @@ INST_TYPES = (
     'Flow Controller',
     'Gauge Controller 1',
     'Gauge Controller 2',
+    'Valve 1',
+    'Valve 2',
 )
 
 INST_MODEL_DICT = {
@@ -38,6 +43,8 @@ INST_MODEL_DICT = {
     'Flow Controller': FLOW_CTRL_MODELS,
     'Gauge Controller 1': GAUGE_CTRL_MODELS,
     'Gauge Controller 2': GAUGE_CTRL_MODELS,
+    'Valve 1': VALVE_MODELS,
+    'Valve 2': VALVE_MODELS,
 }
 
 CONNECTION_TYPES = (
@@ -45,6 +52,91 @@ CONNECTION_TYPES = (
     'COM',
     'GPIB VISA',
 )
+
+
+class IOThreads:
+    """ Holder for IO threads. """
+
+    def __init__(self, handles: 'Handles'):
+
+        self._threads = {
+            'syn': {
+                'thread': threading.Thread(target=self.handle_thread, args=('syn',)),
+                'handle': handles.h_syn,
+            },
+            'lockin': {
+                'thread': threading.Thread(target=self.handle_thread, args=('lockin',)),
+                'handle': handles.h_lockin,
+            },
+            'awg': {
+                'thread': threading.Thread(target=self.handle_thread, args=('awg',)),
+                'handle': handles.h_awg,
+            },
+            'oscillo': {
+                'thread': threading.Thread(target=self.handle_thread, args=('oscillo',)),
+                'handle': handles.h_oscillo,
+            },
+            'uca': {
+                'thread': threading.Thread(target=self.handle_thread, args=('uca',)),
+                'handle': handles.h_uca,
+            },
+            'flow': {
+                'thread': threading.Thread(target=self.handle_thread, args=('flow',)),
+                'handle': handles.h_flow,
+            },
+            'gauge1': {
+                'thread': threading.Thread(target=self.handle_thread, args=('gauge1',)),
+                'handle': handles.h_gauge1,
+            },
+            'gauge2': {
+                'thread': threading.Thread(target=self.handle_thread, args=('gauge2',)),
+                'handle': handles.h_gauge2,
+            },
+            'valve1': {
+                'thread': threading.Thread(target=self.handle_thread, args=('valve1',)),
+                'handle': handles.h_valve1,
+            },
+            'valve2': {
+                'thread': threading.Thread(target=self.handle_thread, args=('valve2',)),
+                'handle': handles.h_valve2,
+            },
+        }
+        self._stop_event = threading.Event()
+        self._task_queue = queue.Queue()
+        self._result_queue = queue.Queue()
+        for thread in self._threads.values():
+            thread['thread'].start()
+
+    def handle_thread(self, thread_key):
+        while not self._stop_event.is_set():
+            try:
+                task = self._task_queue.get(timeout=1)
+                if task is None:
+                    break
+                func, args, kwargs = task
+                handle = self._threads[thread_key]['handle']
+                result = func(handle, *args, **kwargs)
+                self._result_queue.put(result)
+            except queue.Empty:
+                continue
+
+    def stop_threads(self):
+        self._stop_event.set()
+        for _ in self._threads:
+            self._task_queue.put(None)
+        for thread in self._threads.values():
+            thread['thread'].join()
+
+    def submit_task(self, thread_key, func, *args, **kwargs):
+        handle = self._threads[thread_key]['handle']
+        self._task_queue.put((func, handle, args, kwargs))
+
+    def get_result(self):
+        return self._result_queue.get()
+
+    def update_handle(self, thread_key, new_handle):
+        if thread_key in self._threads:
+            self._threads[thread_key]['handle'] = new_handle
 
 
 class Handles:
@@ -79,6 +171,12 @@ class Handles:
         self.h_gauge2 = None
         self.api_gauge2 = None
         self.info_gauge2 = Gauge_Info()
+        self.h_valve1 = None
+        self.api_valve1 = None
+        self.info_valve1 = Valve_Info()
+        self.h_valve2 = None
+        self.api_valve2 = None
+        self.info_valve2 = Valve_Info()
 
     def close_all(self):
         for key, value in self.__dict__.items():
@@ -431,10 +529,15 @@ class _VISAHandle:
 class DynamicSynAPI(SynAPI):
     """ Dynamic API loading API_MAP file to create real functions """
 
-    def __init__(self, api_map_file):
+    def __init__(self, api_map_file, handles):
         functions = _create_funcs(api_map_file)
+        self.handles = handles
         for name, func in functions.items():
             setattr(self, name, func)
+
+    def submit(self, func_name, handle, *args, **kwargs):
+        api_func = getattr(self, func_name)
+        self.handles.submit_task(api_func, handle, *args, **kwargs)
 
 
 class DynamicLockinAPI(LockinAPI):
