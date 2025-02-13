@@ -1,0 +1,8 @@
+presets:   
+  data_transmission:
+    "data_bits": 8
+    "stop_bits": 1
+    "parity": None
+  gauge: 
+    "1": 1
+    "2": 2
