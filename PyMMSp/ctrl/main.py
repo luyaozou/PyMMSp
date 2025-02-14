@@ -1,11 +1,10 @@
 #! encoding = utf-8
 """ Main GUI Window """
-
+import queue
 import datetime
 from os.path import isfile
 
 from PyQt6 import QtCore, QtWidgets
-from PyQt6.QtCore import Qt
 from importlib.resources import files
 
 import PyMMSp.ui.ui_daq
@@ -15,7 +14,7 @@ from PyMMSp.ui import ui_dialog
 from PyMMSp.ui import ui_menu
 from PyMMSp.ui import ui_shared
 from PyMMSp.daq import abs
-from PyMMSp.inst.base import Handles, IOThreads
+from PyMMSp.inst.base import Handles, Threads
 from PyMMSp.inst import lockin as api_lia
 from PyMMSp.inst import base as api_gen
 from PyMMSp.inst import synthesizer as api_syn
@@ -35,7 +34,6 @@ from PyMMSp.daq import (abs,
 from PyMMSp.config import config
 
 
-
 class MainWindow(QtWidgets.QMainWindow):
     """ Implements the main window """
 
@@ -49,7 +47,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.prefs = config.Prefs()
         # Initiate instrument objects
         self.inst_handles = Handles()
-        self.io_threads = IOThreads(self.inst_handles)
+        # initialise working threads for each instrument.
+        # each instrument has its own working thread so that all communications
+        # to this instrument is not blocked by other communications
+        self.threads = Threads()
 
         # set default geometry
         screen = QtWidgets.QApplication.primaryScreen()
@@ -98,7 +99,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ctrl_flow = ctrl_flow.CtrlFlow(
             self.prefs, self.ui, self.inst_handles.h_flow, parent=self)
         # controller of scanning routines
-        self.ctrl_abs_bb = abs.CtrlAbsBBScan(self.prefs, self.ui, self.inst_handles, parent=self)
+        self.ctrl_abs_bb = abs.CtrlAbsBBScan(
+            self.prefs, self.ui, self.inst_handles, self.threads, parent=self)
 
         # connect menubar signals
         self.menuBar.instSelAction.triggered.connect(self.on_sel_inst)
@@ -106,7 +108,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.menuBar.scanAbsAction.triggered.connect(self.ui.dAbsScan.exec)
         self.menuBar.scanCEAction.triggered.connect(self.on_scan_cavity)
         self.menuBar.lwaParserAction.triggered.connect(self.on_lwa_parser)
-        self.menuBar.testModeAction.toggled.connect(self.refresh_inst)
 
         self.ui.synPanel.comboMonitor.currentIndexChanged[int].connect(self.connect2monitor_syn)
         self.ui.lockinPanel.comboMonitor.currentIndexChanged[int].connect(self.connect2monitor_lockin)
@@ -121,14 +122,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self.menuBar.testModeAction.isChecked():
             self.setWindowTitle('Yo! Go PyMMSp! [TEST MODE]')
-            self.statusBar.testModeLabel.show()
+            # self.statusBar.testModeLabel.show()
             self.ui.synPanel.setChecked(True)
             self.ui.lockinPanel.setChecked(True)
             self.ui.oscilloPanel.setChecked(True)
             self.ui.motorPanel.setChecked(True)
-            self.ui.synStatus.setChecked(True)
-            self.ui.liaStatus.setChecked(True)
-            self.ui.scopeStatus.setChecked(True)
         else:
             self.setWindowTitle('Yo! Go PyMMSp!')
             self.statusBar.testModeLabel.hide()
@@ -201,7 +199,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.prefs.geometry = self.geometry().getRect()
         f = files('PyMMSp.config').joinpath('prefs.json')
         config.to_json(self.prefs, f)
-        self.io_threads.stop_threads()
+        # close working threads
+        self.threads.join_all()
         self.inst_handles.close_all()
 
     def connect2monitor_syn(self, id_):
@@ -227,6 +226,3 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def connect2monitor_awg(self, id_):
         pass
-
-
-

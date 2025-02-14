@@ -66,6 +66,7 @@ class Prefs:
     version: str = VERSION
     geometry: tuple = (100, 100, 1600, 900)
     is_test: bool = False
+    tmp_dir: str = str(TEMP_DIR)
 
 
 @dataclass
@@ -80,8 +81,10 @@ class AbsScanSetting:
     tau_idx: int = 0
     dwell_time: float = 0
     buffer_len: int = 0
-    mod_mode_idx: int = 0
-    mod_freq: float = 0
-    mod_depth: float = 0
+    modu_mode_idx: int = 0
+    modu_freq: float = 0
+    modu_amp: float = 0
+    ac_gain: int = 0
+    is_press: bool = True
     press: float = 0
     press_tol: float = 0

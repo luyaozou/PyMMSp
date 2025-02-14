@@ -1,6 +1,6 @@
 #! encoding = utf-8
 
-import threading
+from PyQt6 import QtCore
 import queue
 import pyvisa
 import serial
@@ -54,89 +54,60 @@ CONNECTION_TYPES = (
 )
 
 
-class IOThreads:
-    """ Holder for IO threads. """
+class Threads:
+    """ Store all the threads in this class for convenience """
 
-    def __init__(self, handles: 'Handles'):
+    def __init__(self):
+        self.t_syn = _WorkerThread(name='thread_syn')
+        self.t_lockin = _WorkerThread(name='thread_lockin')
+        self.t_awg = _WorkerThread(name='thread_awg')
+        self.t_oscillo = _WorkerThread(name='thread_oscillo')
+        self.t_uca = _WorkerThread(name='thread_uca')
+        self.t_flow = _WorkerThread(name='thread_flow')
+        self.t_gauge1 = _WorkerThread(name='thread_gauge1')
+        self.t_gauge2 = _WorkerThread(name='thread_gauge2')
+        self.t_valve1 = _WorkerThread(name='thread_valve1')
+        self.t_valve2 = _WorkerThread(name='thread_valve2')
 
-        self._threads = {
-            'syn': {
-                'thread': threading.Thread(target=self.handle_thread, args=('syn',)),
-                'handle': handles.h_syn,
-            },
-            'lockin': {
-                'thread': threading.Thread(target=self.handle_thread, args=('lockin',)),
-                'handle': handles.h_lockin,
-            },
-            'awg': {
-                'thread': threading.Thread(target=self.handle_thread, args=('awg',)),
-                'handle': handles.h_awg,
-            },
-            'oscillo': {
-                'thread': threading.Thread(target=self.handle_thread, args=('oscillo',)),
-                'handle': handles.h_oscillo,
-            },
-            'uca': {
-                'thread': threading.Thread(target=self.handle_thread, args=('uca',)),
-                'handle': handles.h_uca,
-            },
-            'flow': {
-                'thread': threading.Thread(target=self.handle_thread, args=('flow',)),
-                'handle': handles.h_flow,
-            },
-            'gauge1': {
-                'thread': threading.Thread(target=self.handle_thread, args=('gauge1',)),
-                'handle': handles.h_gauge1,
-            },
-            'gauge2': {
-                'thread': threading.Thread(target=self.handle_thread, args=('gauge2',)),
-                'handle': handles.h_gauge2,
-            },
-            'valve1': {
-                'thread': threading.Thread(target=self.handle_thread, args=('valve1',)),
-                'handle': handles.h_valve1,
-            },
-            'valve2': {
-                'thread': threading.Thread(target=self.handle_thread, args=('valve2',)),
-                'handle': handles.h_valve2,
-            },
-        }
-        self._stop_event = threading.Event()
-        self._task_queue = queue.Queue()
-        self._result_queue = queue.Queue()
-        for thread in self._threads.values():
-            thread['thread'].start()
+    def join_all(self):
+        self.t_syn.join()
+        self.t_lockin.join()
+        self.t_awg.join()
+        self.t_oscillo.join()
+        self.t_uca.join()
+        self.t_flow.join()
+        self.t_gauge1.join()
+        self.t_gauge2.join()
+        self.t_valve1.join()
+        self.t_valve2.join()
 
-    def handle_thread(self, thread_key):
-        while not self._stop_event.is_set():
-            try:
-                task = self._task_queue.get(timeout=1)
-                if task is None:
-                    break
-                func, args, kwargs = task
-                handle = self._threads[thread_key]['handle']
-                result = func(handle, *args, **kwargs)
-                self._result_queue.put(result)
-            except queue.Empty:
-                continue
 
-    def stop_threads(self):
-        self._stop_event.set()
-        for _ in self._threads:
-            self._task_queue.put(None)
-        for thread in self._threads.values():
-            thread['thread'].join()
+class _WorkerThread(QtCore.QThread):
 
-    def submit_task(self, thread_key, func, *args, **kwargs):
-        handle = self._threads[thread_key]['handle']
-        self._task_queue.put((func, handle, args, kwargs))
+    def __init__(self, name='', parent=None):
+        super().__init__(parent)
+        self._name = name
+        self._queue = queue.Queue()
+        self._result = None
+        self._ev_loop = QtCore.QEventLoop()
+        self.start()
 
-    def get_result(self):
-        return self._result_queue.get()
+    def run(self):
+        while True:
+            func, args, kwargs = self._queue.get()
+            if func is None:
+                break
+            self._result = func(*args, **kwargs)
+            self._ev_loop.quit()
 
-    def update_handle(self, thread_key, new_handle):
-        if thread_key in self._threads:
-            self._threads[thread_key]['handle'] = new_handle
+    def call(self, func, *args, **kwargs):
+        self._queue.put((func, args, kwargs))
+        self._ev_loop.exec()
+        return self._result
+
+    def join(self):
+        self._queue.put((None, (), {}))
+        self.wait()
 
 
 class Handles:

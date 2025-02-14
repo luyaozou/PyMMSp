@@ -2,12 +2,9 @@
 
 from PyQt6 import QtWidgets
 import random
-from math import ceil, floor, log10
+from math import ceil, floor
 import numpy as np
 from pyqtgraph import siFormat
-from PyMMSp.inst import lockin as api_lia
-from PyMMSp.inst import validator as api_val
-from PyMMSp.inst import synthesizer as api_syn
 from PyMMSp.libs.consts import BUTTONLABEL
 
 
@@ -188,25 +185,6 @@ def gen_x_array(start, stop, step):
         return np.flipud(x)
     else:
         return x
-
-
-def jpl_scan_time(jpl_entry_settings):
-    """ Estimate the time expense of batch scan JPL style """
-
-    if isinstance(jpl_entry_settings, list):
-        pass
-    else:
-        jpl_entry_settings = [jpl_entry_settings]
-
-    total_time = 0
-    for entry in jpl_entry_settings:
-        start, stop, step = entry[1:4]
-        # estimate total data points to be taken
-        data_points = ceil((abs(stop - start) + step) / step) * entry[4]
-        # time expense for this entry in seconds
-        total_time += data_points * entry[7] * 1e-3
-
-    return total_time
 
 
 class CommStatusBulb(QtWidgets.QPushButton):

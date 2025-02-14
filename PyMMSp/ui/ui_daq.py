@@ -14,12 +14,13 @@ class DialogAbsConfig(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle('Absorption Scan Configuration')
-        self.setMinimumSize(1200, 600)
+        self.setMinimumSize(1280, 600)
         self.setWindowFlags(QtCore.Qt.WindowType.Window)
 
         # Add top buttons
         self.btnDir = QtWidgets.QPushButton('Save data to directory: ')
         self.lblDir = QtWidgets.QLabel()
+        self.ckPress = QtWidgets.QCheckBox('Regulate pressure')
         topButtonLayout = QtWidgets.QHBoxLayout()
         topButtonLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
         topButtonLayout.addWidget(self.btnDir)
@@ -27,12 +28,18 @@ class DialogAbsConfig(QtWidgets.QDialog):
         topButtons = QtWidgets.QWidget()
         topButtons.setLayout(topButtonLayout)
 
+        top2Layout = QtWidgets.QHBoxLayout()
+        top2Layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+        top2Layout.addWidget(self.ckPress)
+
         # Add bottom buttons
         cancelButton = QtWidgets.QPushButton(ui_shared.btn_label('reject'))
         acceptButton = QtWidgets.QPushButton(ui_shared.btn_label('confirm'))
         acceptButton.setDefault(True)
+        self.btnEstimate = QtWidgets.QPushButton('Estimate Time')
         bottomButtonLayout = QtWidgets.QHBoxLayout()
         bottomButtonLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        bottomButtonLayout.addWidget(self.btnEstimate)
         bottomButtonLayout.addWidget(cancelButton)
         bottomButtonLayout.addWidget(acceptButton)
         bottomButtons = QtWidgets.QWidget()
@@ -44,7 +51,7 @@ class DialogAbsConfig(QtWidgets.QDialog):
         self.setupItemLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         # add entries
         self.btnAddItem = QtWidgets.QPushButton('+')
-        self.btnAddItem.setFixedWidth(40)
+        self.btnAddItem.setFixedWidth(30)
         self.setupItemLayout.addWidget(self.btnAddItem, 0, 0)
         self.setupItemLayout.addWidget(QtWidgets.QLabel('Start (MHz)'), 0, 1)
         self.setupItemLayout.addWidget(QtWidgets.QLabel('Stop (MHz)'), 0, 2)
@@ -57,8 +64,9 @@ class DialogAbsConfig(QtWidgets.QDialog):
         self.setupItemLayout.addWidget(QtWidgets.QLabel('Modulation'), 0, 9)
         self.setupItemLayout.addWidget(QtWidgets.QLabel('Mod Freq (kHz)'), 0, 10)
         self.setupItemLayout.addWidget(QtWidgets.QLabel('Mod Depth/Dev (%/kHz)'), 0, 11)
-        self.setupItemLayout.addWidget(QtWidgets.QLabel('Target p (mBar)'), 0, 12)
-        self.setupItemLayout.addWidget(QtWidgets.QLabel('p Tolerance (mBar)'), 0, 13)
+        self.setupItemLayout.addWidget(QtWidgets.QLabel('AC Gain (dB)'), 0, 12)
+        self.setupItemLayout.addWidget(QtWidgets.QLabel('Target p (μBar)'), 0, 13)
+        self.setupItemLayout.addWidget(QtWidgets.QLabel('p Tolerance (μBar)'), 0, 14)
         self._delBtnGroup = QtWidgets.QButtonGroup()
         # self.add_entry()
 
@@ -72,6 +80,7 @@ class DialogAbsConfig(QtWidgets.QDialog):
         # Set up main layout
         mainLayout = QtWidgets.QVBoxLayout(self)
         mainLayout.addWidget(topButtons)
+        mainLayout.addLayout(top2Layout)
         mainLayout.addWidget(entryArea)
         mainLayout.addWidget(bottomButtons)
         self.setLayout(mainLayout)
@@ -109,6 +118,13 @@ class DialogAbsConfig(QtWidgets.QDialog):
                 item = _BatchSetupItem(parent=self)
                 item.set_item(setting)
                 self._add_item_to_widget(item)
+
+    def get_list_settings(self):
+        a_list = [item.get_setting() for item in self.ListSetupItem]
+        # also need to check if the pressure regulation is checked
+        for setting in a_list:
+            setting.is_press = self.ckPress.isChecked()
+        return a_list
 
     def add_item(self):
         """ Add batch item to this dialog window """
@@ -148,9 +164,10 @@ class DialogAbsConfig(QtWidgets.QDialog):
         self.setupItemLayout.addWidget(item.inpBufferLen, row, 8)
         self.setupItemLayout.addWidget(item.comboMod, row, 9)
         self.setupItemLayout.addWidget(item.inpModFreq, row, 10)
-        self.setupItemLayout.addWidget(item.inpModDepth, row, 11)
-        self.setupItemLayout.addWidget(item.inpPress, row, 12)
-        self.setupItemLayout.addWidget(item.inpPressTol, row, 13)
+        self.setupItemLayout.addWidget(item.inpModAmp, row, 11)
+        self.setupItemLayout.addWidget(item.inpACGain, row, 12)
+        self.setupItemLayout.addWidget(item.inpPress, row, 13)
+        self.setupItemLayout.addWidget(item.inpPressTol, row, 14)
         # note that the row starts with 1 (because of the header)
         # while list / button index starts with 0
         self._delBtnGroup.addButton(item.btnDel, row - 1)
@@ -167,7 +184,8 @@ class DialogAbsConfig(QtWidgets.QDialog):
         self.setupItemLayout.removeWidget(item.inpBufferLen)
         self.setupItemLayout.removeWidget(item.comboMod)
         self.setupItemLayout.removeWidget(item.inpModFreq)
-        self.setupItemLayout.removeWidget(item.inpModDepth)
+        self.setupItemLayout.removeWidget(item.inpModAmp)
+        self.setupItemLayout.removeWidget(item.inpACGain)
         self.setupItemLayout.removeWidget(item.inpPress)
         self.setupItemLayout.removeWidget(item.inpPressTol)
         self._delBtnGroup.removeButton(item.btnDel)
@@ -219,9 +237,17 @@ class DialogAbsScan(QtWidgets.QDialog):
         self.comboMod = QtWidgets.QComboBox()
         self.comboMod.addItems(MODU_MODE)
         self.inpModFreq = ui_shared.create_double_spin_box(0, minimum=0, dec=3)
-        self.inpModDepth = ui_shared.create_double_spin_box(0, minimum=0, dec=2)
+        self.inpModAmp = ui_shared.create_double_spin_box(0, minimum=0, dec=2)
+        self.inpACGain = ui_shared.create_int_spin_box(0, minimum=0, maximum=72)
+        self.boxPress = QtWidgets.QGroupBox('Regulate Pressure')
+        self.boxPress.setCheckable(True)
+        boxPressLayout = QtWidgets.QFormLayout()
         self.inpPress = ui_shared.create_double_spin_box(0, minimum=0, dec=1)
         self.inpPressTol = ui_shared.create_double_spin_box(0, minimum=0, dec=1)
+        boxPressLayout.addRow(QtWidgets.QLabel('Target p (μBar)'), self.inpPress)
+        boxPressLayout.addRow(QtWidgets.QLabel('p Tolerance (μBar)'), self.inpPressTol)
+        self.boxPress.setLayout(boxPressLayout)
+
         commonWidgetLayout = QtWidgets.QGridLayout()
         commonWidgetLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         commonWidgetLayout.addWidget(QtWidgets.QLabel('Step (kHz)'), 0, 0)
@@ -241,11 +267,10 @@ class DialogAbsScan(QtWidgets.QDialog):
         commonWidgetLayout.addWidget(QtWidgets.QLabel('Mod Freq (kHz)'), 4, 0, 1, 2)
         commonWidgetLayout.addWidget(self.inpModFreq, 4, 2, 1, 2)
         commonWidgetLayout.addWidget(QtWidgets.QLabel('Mod Depth/Dev (%/kHz)'), 5, 0, 1, 2)
-        commonWidgetLayout.addWidget(self.inpModDepth, 5, 2, 1, 2)
-        commonWidgetLayout.addWidget(QtWidgets.QLabel('Target p (mBar)'), 6, 0, 1, 2)
-        commonWidgetLayout.addWidget(self.inpPress, 6, 2, 1, 2)
-        commonWidgetLayout.addWidget(QtWidgets.QLabel('p Tolerance (mBar)'), 7, 0, 1, 2)
-        commonWidgetLayout.addWidget(self.inpPressTol, 7, 2, 1, 2)
+        commonWidgetLayout.addWidget(self.inpModAmp, 5, 2, 1, 2)
+        commonWidgetLayout.addWidget(QtWidgets.QLabel('AC Gain (dB)'), 6, 0, 1, 2)
+        commonWidgetLayout.addWidget(self.inpACGain, 6, 2, 1, 2)
+        commonWidgetLayout.addWidget(self.boxPress, 7, 0, 1, 4)
 
         quickConfigBtnLayout = QtWidgets.QHBoxLayout()
         self.btnStart = QtWidgets.QPushButton('Start')
@@ -307,42 +332,56 @@ class DialogAbsScan(QtWidgets.QDialog):
         batchLayout.addLayout(btnLayout)
         batchDisplay.setLayout(batchLayout)
 
+        # set up buttons in the left column
+        self.comboSumOverride = QtWidgets.QComboBox()
+        self.comboSumOverride.addItems(['Sum', 'Override'])
+        self.ckAutoRangeX = QtWidgets.QCheckBox('Auto Range X')
+        self.ckAutoRangeY = QtWidgets.QCheckBox('Auto Range Y')
+        self.ckLinkX = QtWidgets.QCheckBox('Link X')
+        self.ckLinkY = QtWidgets.QCheckBox('Link Y')
+        leftBtnsLayout = QtWidgets.QHBoxLayout()
+        leftBtnsLayout.addWidget(self.comboSumOverride)
+        leftBtnsLayout.addWidget(self.ckAutoRangeX)
+        leftBtnsLayout.addWidget(self.ckAutoRangeY)
+        leftBtnsLayout.addWidget(self.ckLinkX)
+        leftBtnsLayout.addWidget(self.ckLinkY)
+
         # set up progress bar
         self.currentProgBar = QtWidgets.QProgressBar()
         self.totalProgBar = QtWidgets.QProgressBar()
         progressLayout = QtWidgets.QGridLayout()
-        progressLayout.addWidget(QtWidgets.QLabel('Current Progress'), 0, 0)
-        progressLayout.addWidget(self.currentProgBar, 0, 1)
-        progressLayout.addWidget(QtWidgets.QLabel('Total progress'), 1, 0)
-        progressLayout.addWidget(self.totalProgBar, 1, 1)
+        progressLayout.addWidget(QtWidgets.QLabel('Total progress'), 0, 0)
+        progressLayout.addWidget(self.totalProgBar, 0, 1)
+        progressLayout.addWidget(QtWidgets.QLabel('Current Progress'), 1, 0)
+        progressLayout.addWidget(self.currentProgBar, 1, 1)
 
-        canvasTotal = pg.PlotWidget()
-        canvasCurrent = pg.PlotWidget()
+        self._canvasTotal = pg.PlotWidget()
+        self._canvasThis = pg.PlotWidget()
         self._curveTotal = pg.PlotCurveItem()
         self._curveTotal.setPen(pg.mkPen(255, 255, 255))
-        self._curveCurrentInTotal = pg.PlotCurveItem()
-        self._curveCurrentInTotal.setPen(pg.mkPen(255, 182, 47))
-        self._curveCurrent = pg.PlotCurveItem()
-        self._curveCurrent.setPen(pg.mkPen(255, 182, 47))
+        self._curveThisInTotal = pg.PlotCurveItem()
+        self._curveThisInTotal.setPen(pg.mkPen(255, 182, 47))
+        self._curveThis = pg.PlotCurveItem()
+        self._curveThis.setPen(pg.mkPen(255, 182, 47))
         canvasPress = pg.PlotWidget()
         self._curvePress = pg.PlotCurveItem()
         self._curvePress.setPen(pg.mkPen(175, 205, 255))
-        canvasTotal.addItem(self._curveTotal)
-        canvasTotal.addItem(self._curveCurrentInTotal)
-        canvasCurrent.addItem(self._curveCurrent)
+        self._canvasTotal.addItem(self._curveTotal)
+        self._canvasTotal.addItem(self._curveThisInTotal)
+        self._canvasThis.addItem(self._curveThis)
         canvasPress.addItem(self._curvePress)
-        canvasCurrent.setXLink(canvasTotal)
-        canvasTotal.getPlotItem().setTitle('Overall Scan')
-        canvasTotal.getPlotItem().setLabels(left='Intensity', bottom='Frequency (MHz)')
-        canvasCurrent.getPlotItem().setTitle('Current Scan')
-        canvasCurrent.getPlotItem().setLabels(left='Intensity', bottom='Frequency (MHz)')
+        self._canvasTotal.getPlotItem().setTitle('Overall Scan')
+        self._canvasTotal.getPlotItem().setLabels(left='Intensity', bottom='Frequency (MHz)')
+        self._canvasThis.getPlotItem().setTitle('Current Scan')
+        self._canvasThis.getPlotItem().setLabels(left='Intensity', bottom='Frequency (MHz)')
         canvasPress.getPlotItem().setTitle('Pressure')
         canvasPress.getPlotItem().setLabels(left='Pressure (mbar)', bottom='Time (s)')
         canvasPress.setFixedHeight(150)
 
         leftLayout = QtWidgets.QVBoxLayout()
-        leftLayout.addWidget(canvasTotal)
-        leftLayout.addWidget(canvasCurrent)
+        leftLayout.addWidget(self._canvasTotal)
+        leftLayout.addWidget(self._canvasThis)
+        leftLayout.addLayout(leftBtnsLayout)
         leftLayout.addLayout(progressLayout)
         rightWidget = QtWidgets.QWidget()
         rightWidget.setFixedWidth(450)
@@ -356,6 +395,11 @@ class DialogAbsScan(QtWidgets.QDialog):
         mainLayout.addLayout(leftLayout)
         mainLayout.addWidget(rightWidget)
         self.setLayout(mainLayout)
+
+        self.ckLinkX.clicked[bool].connect(self._link_x)
+        self.ckLinkY.clicked[bool].connect(self._link_y)
+        self.ckAutoRangeX.clicked[bool].connect(self._auto_range_x)
+        self.ckAutoRangeY.clicked[bool].connect(self._auto_range_y)
 
     def get_quick_scan_settings(self):
         """ Get the quick scan settings """
@@ -379,12 +423,46 @@ class DialogAbsScan(QtWidgets.QDialog):
             tau_idx=self.comboTau.currentIndex(),
             dwell_time=self.inpDwellTime.value() * 1e-3,
             buffer_len=self.inpBufferLen.value(),
-            mod_mode_idx=self.comboMod.currentIndex(),
-            mod_freq=self.inpModFreq.value() * 1e3,
-            mod_depth=self.inpModDepth.value(),
+            modu_mode_idx=self.comboMod.currentIndex(),
+            modu_freq=self.inpModFreq.value() * 1e3,
+            modu_amp=self.inpModAmp.value(),
+            is_press=self.boxPress.isChecked(),
             press=self.inpPress.value(),
             press_tol=self.inpPressTol.value()
         )
+
+    def plot_this(self, x, y):
+        self._curveThis.setData(x, y)
+
+    def plot_total(self, x, y):
+        self._curveTotal.setData(x, y)
+
+    def plot_press(self, x, y):
+        self._curvePress.setData(x, y)
+
+    def _link_x(self, checked):
+        if checked:
+            self._canvasThis.setXLink(self._canvasTotal)
+        else:
+            self._canvasThis.setXLink(None)
+
+    def _link_y(self, checked):
+        if checked:
+            self._canvasThis.setYLink(self._canvasTotal)
+        else:
+            self._canvasThis.setYLink(None)
+
+    def _auto_range_x(self, checked):
+        if checked:
+            self._canvasThis.enableAutoRange(axis=pg.AxisItem.AxisOrientation.Horizontal)
+        else:
+            self._canvasThis.disableAutoRange(axis=pg.AxisItem.AxisOrientation.Horizontal)
+
+    def _auto_range_y(self, checked):
+        if checked:
+            self._canvasThis.enableAutoRange(axis=pg.AxisItem.AxisOrientation.Vertical)
+        else:
+            self._canvasThis.disableAutoRange(axis=pg.AxisItem.AxisOrientation.Vertical)
 
 
 class BatchListWidget(QtWidgets.QWidget):
@@ -398,9 +476,11 @@ class BatchListWidget(QtWidgets.QWidget):
         # set up batch list row header
         # put comment in the first column and make it editable
         self.batchLayout.addWidget(QtWidgets.QLabel('#'), 0, 0)
-        self.batchLayout.addWidget(QtWidgets.QLabel('Start'), 0, 1)
-        self.batchLayout.addWidget(QtWidgets.QLabel('Stop'), 0, 2)
+        self.batchLayout.addWidget(QtWidgets.QLabel('Start (MHz)'), 0, 1)
+        self.batchLayout.addWidget(QtWidgets.QLabel('Stop (MHz)'), 0, 2)
         self.batchLayout.addWidget(QtWidgets.QLabel('Step'), 0, 3)
+        self.batchLayout.addWidget(QtWidgets.QLabel('Buffer'), 0, 4)
+        self.batchLayout.addWidget(QtWidgets.QLabel('Pressure'), 0, 5)
         self.setLayout(self.batchLayout)
         self._item_list = []
 
@@ -419,6 +499,8 @@ class BatchListWidget(QtWidgets.QWidget):
                 self.batchLayout.addWidget(item.lblStartF, row, 1)
                 self.batchLayout.addWidget(item.lblStopF, row, 2)
                 self.batchLayout.addWidget(item.lblStep, row, 3)
+                self.batchLayout.addWidget(item.lblBuffer, row, 4)
+                self.batchLayout.addWidget(item.lblPress, row, 5)
                 self._item_list.append(item)
         # if more items than needed, remove the extra ones
         elif n > len(list_scan_settings):
@@ -428,6 +510,8 @@ class BatchListWidget(QtWidgets.QWidget):
                 self.batchLayout.removeWidget(item.lblStartF)
                 self.batchLayout.removeWidget(item.lblStopF)
                 self.batchLayout.removeWidget(item.lblStep)
+                self.batchLayout.removeWidget(item.lblBuffer)
+                self.batchLayout.removeWidget(item.lblPress)
                 item.delete()
 
     def set_active_entry(self, idx):
@@ -458,11 +542,12 @@ class _BatchSetupItem(QtWidgets.QWidget):
         self.comboMod = QtWidgets.QComboBox()
         self.comboMod.addItems(MODU_MODE)
         self.inpModFreq = ui_shared.create_double_spin_box(0, minimum=0, dec=3)
-        self.inpModDepth = ui_shared.create_double_spin_box(0, minimum=0, dec=2)
+        self.inpModAmp = ui_shared.create_double_spin_box(0, minimum=0, dec=2)
+        self.inpACGain = ui_shared.create_int_spin_box(0, minimum=0, maximum=72)
         self.inpPress = ui_shared.create_double_spin_box(0, minimum=0, dec=1)
         self.inpPressTol = ui_shared.create_double_spin_box(0, minimum=0, dec=1)
         self.btnDel = QtWidgets.QPushButton('-')
-        self.btnDel.setFixedWidth(40)
+        self.btnDel.setFixedWidth(30)
 
     def delete(self):
         """ Delete this entry """
@@ -476,7 +561,8 @@ class _BatchSetupItem(QtWidgets.QWidget):
         self.inpBufferLen.deleteLater()
         self.comboMod.deleteLater()
         self.inpModFreq.deleteLater()
-        self.inpModDepth.deleteLater()
+        self.inpModAmp.deleteLater()
+        self.inpACGain.deleteLater()
         self.inpPress.deleteLater()
         self.inpPressTol.deleteLater()
         self.btnDel.deleteLater()
@@ -493,9 +579,10 @@ class _BatchSetupItem(QtWidgets.QWidget):
             tau_idx=self.comboTau.currentIndex(),
             dwell_time=self.inpDwellTime.value() * 1e-3,
             buffer_len=self.inpBufferLen.value(),
-            mod_mode_idx=self.comboMod.currentIndex(),
-            mod_freq=self.inpModFreq.value() * 1e3,
-            mod_depth=self.inpModDepth.value(),
+            modu_mode_idx=self.comboMod.currentIndex(),
+            modu_freq=self.inpModFreq.value() * 1e3,
+            modu_amp=self.inpModAmp.value(),
+            ac_gain=self.inpACGain.value(),
             press=self.inpPress.value(),
             press_tol=self.inpPressTol.value()
         )
@@ -510,9 +597,10 @@ class _BatchSetupItem(QtWidgets.QWidget):
         self.comboTau.setCurrentIndex(entry_setting.tau_idx)
         self.inpDwellTime.setValue(entry_setting.dwell_time * 1e3)
         self.inpBufferLen.setValue(entry_setting.buffer_len)
-        self.comboMod.setCurrentIndex(entry_setting.mod_mode_idx)
-        self.inpModFreq.setValue(entry_setting.mod_freq * 1e-3)
-        self.inpModDepth.setValue(entry_setting.mod_depth)
+        self.comboMod.setCurrentIndex(entry_setting.modu_mode_idx)
+        self.inpModFreq.setValue(entry_setting.modu_freq * 1e-3)
+        self.inpModAmp.setValue(entry_setting.modu_amp)
+        self.inpACGain.setValue(entry_setting.ac_gain)
         self.inpPress.setValue(entry_setting.press)
         self.inpPressTol.setValue(entry_setting.press_tol)
 
@@ -529,18 +617,27 @@ class _BatchDispItem(QtWidgets.QWidget):
         # add labels
         self.lblNo = QtWidgets.QLabel(str(id_))
         self.lblStartF = QtWidgets.QLabel()
+        self.lblStartF.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
         self.lblStopF = QtWidgets.QLabel()
+        self.lblStopF.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
         self.lblStep = QtWidgets.QLabel()
+        self.lblStep.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
+        self.lblBuffer = QtWidgets.QLabel()
+        self.lblBuffer.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
+        self.lblPress = QtWidgets.QLabel()
+        self.lblPress.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
         # set text color to grey
         self.set_color_grey()
 
     def set_item(self, setting: AbsScanSetting):
-        self.lblStartF.setText(f'{setting.freq_start:.1f} MHz')
-        self.lblStopF.setText(f'{setting.freq_stop:.1f} MHz')
+        self.lblStartF.setText(f'{setting.freq_start:.1f}')
+        self.lblStopF.setText(f'{setting.freq_stop:.1f}')
         if setting.freq_step >= 1:
             self.lblStep.setText(f'{setting.freq_step:.4f} MHz')
         else:
             self.lblStep.setText(f'{setting.freq_step:.1f} kHz')
+        self.lblBuffer.setText(f'{setting.buffer_len}')
+        self.lblPress.setText(f'{setting.press:.1f} μBar')
         # by default set text to grey
         self.set_color_grey()
 
@@ -550,6 +647,8 @@ class _BatchDispItem(QtWidgets.QWidget):
         self.lblStartF.setStyleSheet('color: grey')
         self.lblStopF.setStyleSheet('color: grey')
         self.lblStep.setStyleSheet('color: grey')
+        self.lblBuffer.setStyleSheet('color: grey')
+        self.lblPress.setStyleSheet('color: grey')
 
     def set_color_black(self):
         """ Set text color to black """
@@ -559,10 +658,14 @@ class _BatchDispItem(QtWidgets.QWidget):
         self.lblStartF.setStyleSheet('color: black')
         self.lblStopF.setStyleSheet('color: black')
         self.lblStep.setStyleSheet('color: black')
+        self.lblBuffer.setStyleSheet('color: black')
+        self.lblPress.setStyleSheet('color: black')
 
     def delete(self):
         self.lblNo.deleteLater()
         self.lblStartF.deleteLater()
         self.lblStopF.deleteLater()
         self.lblStep.deleteLater()
+        self.lblBuffer.deleteLater()
+        self.lblPress.deleteLater()
         self.deleteLater()
