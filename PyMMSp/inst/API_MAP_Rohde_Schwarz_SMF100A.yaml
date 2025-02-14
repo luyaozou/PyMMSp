@@ -363,21 +363,21 @@ functions:
     args: ["chan"]
     kwargs: []
     cmd: ":LFO{0:d}:STAT?"
-    channel: False
+    channel: True
     attribute: lfo_stat
     dtype: bool
   - name: set_lfo_stat 
     args: ["chan", "stat"]
     kwargs: []
     cmd: ":LFO{0:d}:STAT {1:d}"
-    channel: False
+    channel: True
     attribute: lfo_stat
     dtype: bool
   - name: get_lfo_source 
     args: ["chan"]
     kwargs: []
     cmd: ":LFO{0:d}:SOUR?"
-    channel: False
+    channel: True
     attribute: lfo_src
     dtype: str
     link_preset: source
@@ -385,7 +385,7 @@ functions:
     args: ["chan", "source"]
     kwargs: []
     cmd: ":LFO{0:d}:SOUR {1:d}" 
-    channel: False
+    channel: True
     attribute: lfo_src
     dtype: str
     link_preset: source
@@ -393,14 +393,14 @@ functions:
     args: ["chan"]
     kwargs: []
     cmd: ":LFO{0:d}:VOLT?"
-    channel: False
+    channel: True
     attribute: lfo_volt
     dtype: float
   - name: set_lfo_ampl 
     args: ["chan", "ampl", "unit"]
     kwargs: []
     cmd: ":LFO{0:d}:VOLT {1:.3f}{2:s}"
-    channel: False
+    channel: True
     attribute: lfo_volt
     dtype: float
     unit:
@@ -425,7 +425,7 @@ functions:
     args: ["chan"]
     kwargs: []
     cmd: "DISP:DIAL:OPEN {0:d}" 
-    channel: False
+    channel: True
     attribute: remote_disp_stat
     dtype: bool
 
