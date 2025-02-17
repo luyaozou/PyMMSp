@@ -5,12 +5,6 @@ presets:
     "stop_bits": 1
     "parity": Even
 functions: 
-  - name: get_inst_id
-    args: []
-    kwargs: []
-    cmd: "ID"
-    attribute: inst_id
-    dtype: str
   - name: get_inst_name
     args: []
     kwargs: []
