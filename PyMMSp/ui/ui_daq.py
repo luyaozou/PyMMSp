@@ -4,7 +4,7 @@ from PyQt6 import QtWidgets, QtCore
 from PyQt6.QtGui import QFont
 import pyqtgraph as pg
 from PyMMSp.ui import ui_shared
-from PyMMSp.config.config import AbsScanSetting
+from PyMMSp.config.config import Prefs, AbsScanSetting
 from PyMMSp.inst.lockin import SENS_STR, TAU_STR, MODU_MODE
 
 
@@ -37,13 +37,28 @@ class DialogAbsConfig(QtWidgets.QDialog):
         acceptButton = QtWidgets.QPushButton(ui_shared.btn_label('confirm'))
         acceptButton.setDefault(True)
         self.btnEstimate = QtWidgets.QPushButton('Estimate Time')
+        self.btnEstimate.setFixedWidth(120)
+        self.btnLoadBatchList = QtWidgets.QPushButton('Load Batch List')
+        self.btnLoadBatchList.setFixedWidth(150)
+        self.btnExportBatchList = QtWidgets.QPushButton('Export Batch List')
+        self.btnExportBatchList.setFixedWidth(150)
+        leftButtonLayout = QtWidgets.QHBoxLayout()
+        leftButtonLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+        leftButtonLayout.addWidget(self.btnLoadBatchList)
+        leftButtonLayout.addWidget(self.btnExportBatchList)
+        leftButtons = QtWidgets.QWidget()
+        leftButtons.setLayout(leftButtonLayout)
+        rightButtonLayout = QtWidgets.QHBoxLayout()
+        rightButtonLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        rightButtonLayout.addWidget(self.btnEstimate)
+        rightButtonLayout.addWidget(cancelButton)
+        rightButtonLayout.addWidget(acceptButton)
+        rightButtons = QtWidgets.QWidget()
+        rightButtons.setLayout(rightButtonLayout)
         bottomButtonLayout = QtWidgets.QHBoxLayout()
-        bottomButtonLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
-        bottomButtonLayout.addWidget(self.btnEstimate)
-        bottomButtonLayout.addWidget(cancelButton)
-        bottomButtonLayout.addWidget(acceptButton)
-        bottomButtons = QtWidgets.QWidget()
-        bottomButtons.setLayout(bottomButtonLayout)
+        bottomButtonLayout.addWidget(leftButtons)
+        bottomButtonLayout.addStretch()
+        bottomButtonLayout.addWidget(rightButtons)
 
         # Add freq config entries
         self.ListSetupItem = []
@@ -82,7 +97,7 @@ class DialogAbsConfig(QtWidgets.QDialog):
         mainLayout.addWidget(topButtons)
         mainLayout.addLayout(top2Layout)
         mainLayout.addWidget(entryArea)
-        mainLayout.addWidget(bottomButtons)
+        mainLayout.addLayout(bottomButtonLayout)
         self.setLayout(mainLayout)
 
         cancelButton.clicked[bool].connect(self.reject)
@@ -123,7 +138,7 @@ class DialogAbsConfig(QtWidgets.QDialog):
         a_list = [item.get_setting() for item in self.ListSetupItem]
         # also need to check if the pressure regulation is checked
         for setting in a_list:
-            setting.is_press = self.ckPress.isChecked()
+            setting.abs_is_press = self.ckPress.isChecked()
         return a_list
 
     def add_item(self):
@@ -190,6 +205,15 @@ class DialogAbsConfig(QtWidgets.QDialog):
         self.setupItemLayout.removeWidget(item.inpPressTol)
         self._delBtnGroup.removeButton(item.btnDel)
         item.delete()
+
+    def load_prefs(self, prefs: Prefs):
+        self.lblDir.setText(prefs.abs_data_dir)
+        self.ckPress.setChecked(prefs.abs_is_press)
+
+    def fetch_prefs_(self, prefs: Prefs):
+        prefs.abs_data_dir = self.lblDir.text()
+        prefs.abs_is_press = self.ckPress.isChecked()
+
 
 
 class DialogAbsScan(QtWidgets.QDialog):
@@ -463,6 +487,54 @@ class DialogAbsScan(QtWidgets.QDialog):
             self._canvasThis.enableAutoRange(axis=pg.AxisItem.AxisOrientation.Vertical)
         else:
             self._canvasThis.disableAutoRange(axis=pg.AxisItem.AxisOrientation.Vertical)
+
+    def load_prefs(self, prefs: Prefs):
+        self.comboSumOverride.setCurrentIndex(prefs.abs_sum_mode_idx)
+        self.ckAutoRangeX.setChecked(prefs.abs_is_auto_range_x)
+        self.ckAutoRangeY.setChecked(prefs.abs_is_auto_range_y)
+        self.ckLinkX.setChecked(prefs.abs_is_link_x)
+        self.ckLinkY.setChecked(prefs.abs_is_link_y)
+        self.inpFStart.setValue(prefs.abs_f_start)
+        self.inpFStop.setValue(prefs.abs_f_stop)
+        self.inpFCenter.setValue(prefs.abs_f_center)
+        self.inpFRange.setValue(prefs.abs_f_range)
+        self.inpFStep.setValue(prefs.abs_f_step)
+        self.inpAvg.setValue(prefs.abs_avg)
+        self.comboSens.setCurrentIndex(prefs.abs_sens_idx)
+        self.comboTau.setCurrentIndex(prefs.abs_tau_idx)
+        self.inpDwellTime.setValue(prefs.abs_dwell_time)
+        self.inpBufferLen.setValue(prefs.abs_buffer_len)
+        self.comboMod.setCurrentIndex(prefs.abs_modu_mode_idx)
+        self.inpModFreq.setValue(prefs.abs_modu_freq)
+        self.inpModAmp.setValue(prefs.abs_modu_amp)
+        self.inpACGain.setValue(prefs.abs_ac_gain)
+        self.boxPress.setChecked(prefs.abs_is_press)
+        self.inpPress.setValue(prefs.abs_press)
+        self.inpPressTol.setValue(prefs.abs_press_tol)
+
+    def fetch_prefs_(self, prefs: Prefs):
+        prefs.abs_sum_mode_idx = self.comboSumOverride.currentIndex()
+        prefs.abs_is_auto_range_x = self.ckAutoRangeX.isChecked()
+        prefs.abs_is_auto_range_y = self.ckAutoRangeY.isChecked()
+        prefs.abs_is_link_x = self.ckLinkX.isChecked()
+        prefs.abs_is_link_y = self.ckLinkY.isChecked()
+        prefs.abs_f_start = self.inpFStart.value()
+        prefs.abs_f_stop = self.inpFStop.value()
+        prefs.abs_f_center = self.inpFCenter.value()
+        prefs.abs_f_range = self.inpFRange.value()
+        prefs.abs_f_step = self.inpFStep.value()
+        prefs.abs_avg = self.inpAvg.value()
+        prefs.abs_sens_idx = self.comboSens.currentIndex()
+        prefs.abs_tau_idx = self.comboTau.currentIndex()
+        prefs.abs_dwell_time = self.inpDwellTime.value()
+        prefs.abs_buffer_len = self.inpBufferLen.value()
+        prefs.abs_modu_mode_idx = self.comboMod.currentIndex()
+        prefs.abs_modu_freq = self.inpModFreq.value()
+        prefs.abs_modu_amp = self.inpModAmp.value()
+        prefs.abs_ac_gain = self.inpACGain.value()
+        prefs.abs_is_press = self.boxPress.isChecked()
+        prefs.abs_press = self.inpPress.value()
+        prefs.abs_press_tol = self.inpPressTol.value()
 
 
 class BatchListWidget(QtWidgets.QWidget):

@@ -7,6 +7,7 @@ from PyMMSp.inst.base import CONNECTION_TYPES
 from PyMMSp.inst import flow as api_flow
 from PyMMSp.libs import lwa
 from PyMMSp.ui import ui_shared
+from PyMMSp.config.config import Prefs
 from pyqtgraph import siFormat
 import pyqtgraph as pg
 
@@ -45,6 +46,12 @@ class DialogConfigIndvInst(QtWidgets.QDialog):
             self.editInstAddr.setInputMask('COM0;0')
         elif text == 'Ethernet':
             self.editInstAddr.setInputMask('000.000.000.000:_')
+
+    def load_prefs(self, prefs: Prefs):
+        pass
+
+    def fetch_prefs_(self, prefs: Prefs):
+        pass
 
 
 class DialogConnInst(QtWidgets.QDialog):
@@ -144,6 +151,12 @@ class DialogConnInst(QtWidgets.QDialog):
         cancelButton.clicked.connect(self.reject)
         acceptButton.clicked.connect(self.accept)
 
+    def load_prefs(self, prefs: Prefs):
+        pass
+
+    def fetch_prefs_(self, prefs: Prefs):
+        pass
+
 
 class DialogOscillo(QtWidgets.QDialog):
 
@@ -162,6 +175,12 @@ class DialogOscillo(QtWidgets.QDialog):
         self.setLayout(thisLayout)
 
         self.btnOk.clicked.connect(self.accept)
+
+    def load_prefs(self, prefs: Prefs):
+        pass
+
+    def fetch_prefs_(self, prefs: Prefs):
+        pass
 
 
 class DialogFlow(QtWidgets.QDialog):
@@ -244,6 +263,12 @@ class DialogFlow(QtWidgets.QDialog):
         for btn_tuple in self._btnMap:
             cmd, pfmt, dtype, lbl, cfg = btn_tuple
             yield cmd, lbl
+
+    def load_prefs(self, prefs: Prefs):
+        pass
+
+    def fetch_prefs_(self, prefs: Prefs):
+        pass
 
 
 class _MKSChannel(QtWidgets.QGroupBox):
@@ -570,6 +595,12 @@ class DialogGCF(QtWidgets.QDialog):
                    entry.inpDensity.value() * self.UNIT_DENSITY[entry.unitDensity.currentText()],
                    entry.inpCP.value() * self.UNIT_CP[entry.unitCP.currentText()])
 
+    def load_prefs(self, prefs: Prefs):
+        pass
+
+    def fetch_prefs_(self, prefs: Prefs):
+        pass
+
 
 class _GCFGasEntry(QtWidgets.QWidget):
     """ MKS gas entry, include gas properties:
@@ -695,6 +726,12 @@ class DialogGCFGasSel(QtWidgets.QDialog):
             self.gasList.addItem(QtWidgets.QListWidgetItem(txt))
         self.gasList.setCurrentRow(0)
 
+    def load_prefs(self, prefs: Prefs):
+        pass
+
+    def fetch_prefs_(self, prefs: Prefs):
+        pass
+
 
 class DialogAWG(QtWidgets.QDialog):
 
@@ -713,6 +750,12 @@ class DialogAWG(QtWidgets.QDialog):
         self.setLayout(thisLayout)
 
         self.btnOk.clicked.connect(self.accept)
+
+    def load_prefs(self, prefs: Prefs):
+        pass
+
+    def fetch_prefs_(self, prefs: Prefs):
+        pass
 
 
 class DialogPowerSupp(QtWidgets.QDialog):
@@ -733,6 +776,11 @@ class DialogPowerSupp(QtWidgets.QDialog):
 
         self.btnOk.clicked.connect(self.accept)
 
+    def load_prefs(self, prefs: Prefs):
+        pass
+
+    def fetch_prefs_(self, prefs: Prefs):
+        pass
 
 
 class DialogCloseInst(QtWidgets.QDialog):
@@ -768,6 +816,12 @@ class DialogCloseInst(QtWidgets.QDialog):
         self.setLayout(mainLayout)
 
         okButton.clicked.connect(self.accept)
+
+    def load_prefs(self, prefs: Prefs):
+        pass
+
+    def fetch_prefs_(self, prefs: Prefs):
+        pass
 
 
 class DialogSyn(QtWidgets.QDialog):
@@ -958,6 +1012,12 @@ class DialogSyn(QtWidgets.QDialog):
         self.lfSrcLabel.setText(info.LFSrc)
         self.lfVolLabel.setText(siFormat(info.LFVoltage, suffix='V'))
 
+    def load_prefs(self, prefs: Prefs):
+        pass
+
+    def fetch_prefs_(self, prefs: Prefs):
+        pass
+
 
 class DialogLockin(QtWidgets.QDialog):
     """ Dialog window for displaying full lockin settings. """
@@ -1085,6 +1145,12 @@ class DialogLockin(QtWidgets.QDialog):
         self.outputFront1Label.setText(info.front1_txt)
         self.outputFront2Label.setText(info.front2_txt)
         self.outputSRateLabel.setText(info.sample_rate_txt)
+
+    def load_prefs(self, prefs: Prefs):
+        pass
+
+    def fetch_prefs_(self, prefs: Prefs):
+        pass
 
 
 class LWAParserDialog(QtWidgets.QDialog):
@@ -1407,3 +1473,9 @@ class DialogGauge(QtWidgets.QDialog):
 
     def plot(self, data):
         self.curve.setData(data)
+
+    def load_prefs(self, prefs: Prefs):
+        pass
+
+    def fetch_prefs_(self, prefs: Prefs):
+        pass

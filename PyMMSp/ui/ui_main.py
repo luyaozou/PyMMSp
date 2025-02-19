@@ -16,6 +16,7 @@ from PyMMSp.inst import validator as api_val
 from PyMMSp.ui import ui_dialog
 from PyMMSp.ui import ui_shared
 from PyMMSp.ui import ui_daq
+from PyMMSp.config.config import Prefs
 
 
 NUM_MONITORS = 6        # number of monitors. later this should be moved to config file
@@ -99,6 +100,74 @@ class MainUI(QtWidgets.QWidget):
     def get_monitor(self, i):
         # return the i-th monitor
         return self._monitors[i]
+
+    def load_prefs(self, prefs: Prefs):
+        """ Load preferences """
+        self.synPanel.load_prefs(prefs)
+        self.lockinPanel.load_prefs(prefs)
+        self.oscilloPanel.load_prefs(prefs)
+        self.awgPanel.load_prefs(prefs)
+        self.dcPanel.load_prefs(prefs)
+        self.flowPanel.load_prefs(prefs)
+        self.gaugePanel.load_prefs(prefs)
+        self.motorPanel.load_prefs(prefs)
+        self.synPanel.comboMonitor.setCurrentIndex(prefs.syn_panel_to_monitor_idx)
+        self.lockinPanel.comboMonitor.setCurrentIndex(prefs.lockin_panel_to_monitor_idx)
+        self.oscilloPanel.comboMonitor.setCurrentIndex(prefs.oscillo_panel_to_monitor_idx)
+        self.awgPanel.comboMonitor.setCurrentIndex(prefs.awg_panel_to_monitor_idx)
+        self.dcPanel.comboMonitor.setCurrentIndex(prefs.dc_panel_to_monitor_idx)
+        self.flowPanel.comboMonitor.setCurrentIndex(prefs.flow_panel_to_monitor_idx)
+        self.gaugePanel.comboMonitor.setCurrentIndex(prefs.gauge_panel_to_monitor_idx)
+        self.motorPanel.comboMonitor.setCurrentIndex(prefs.motor_panel_to_monitor_idx)
+        for i, monitor in enumerate(self._monitors):
+            monitor.load_prefs(prefs, i)
+        self.dAbsScan.load_prefs(prefs)
+        self.dAbsConfig.load_prefs(prefs)
+        self.dConnInst.load_prefs(prefs)
+        self.dSyn.load_prefs(prefs)
+        self.dLockin.load_prefs(prefs)
+        self.dOscillo.load_prefs(prefs)
+        self.dGauge.load_prefs(prefs)
+        self.dFlow.load_prefs(prefs)
+        self.dGCF.load_prefs(prefs)
+        self.dAWG.load_prefs(prefs)
+        self.dPowerSupp.load_prefs(prefs)
+        self.dCloseInst.load_prefs(prefs)
+
+    def fetch_prefs_(self, prefs: Prefs):
+        """ Fetch preferences """
+        self.synPanel.fetch_prefs_(prefs)
+        self.lockinPanel.fetch_prefs_(prefs)
+        self.oscilloPanel.fetch_prefs_(prefs)
+        self.awgPanel.fetch_prefs_(prefs)
+        self.dcPanel.fetch_prefs_(prefs)
+        self.flowPanel.fetch_prefs_(prefs)
+        self.gaugePanel.fetch_prefs_(prefs)
+        self.motorPanel.fetch_prefs_(prefs)
+        prefs.syn_panel_to_monitor_idx = self.synPanel.comboMonitor.currentIndex()
+        prefs.lockin_panel_to_monitor_idx = self.lockinPanel.comboMonitor.currentIndex()
+        prefs.oscillo_panel_to_monitor_idx = self.oscilloPanel.comboMonitor.currentIndex()
+        prefs.awg_panel_to_monitor_idx = self.awgPanel.comboMonitor.currentIndex()
+        prefs.dc_panel_to_monitor_idx = self.dcPanel.comboMonitor.currentIndex()
+        prefs.flow_panel_to_monitor_idx = self.flowPanel.comboMonitor.currentIndex()
+        prefs.gauge_panel_to_monitor_idx = self.gaugePanel.comboMonitor.currentIndex()
+        prefs.motor_panel_to_monitor_idx = self.motorPanel.comboMonitor.currentIndex()
+        for i, monitor in enumerate(self._monitors):
+            monitor.fetch_prefs_(prefs, i)
+        self.dAbsScan.fetch_prefs_(prefs)
+        self.dAbsConfig.fetch_prefs_(prefs)
+        self.dConnInst.fetch_prefs_(prefs)
+        self.dSyn.fetch_prefs_(prefs)
+        self.dLockin.fetch_prefs_(prefs)
+        self.dOscillo.fetch_prefs_(prefs)
+        self.dGauge.fetch_prefs_(prefs)
+        self.dFlow.fetch_prefs_(prefs)
+        self.dGCF.fetch_prefs_(prefs)
+        self.dAWG.fetch_prefs_(prefs)
+        self.dPowerSupp.fetch_prefs_(prefs)
+        self.dCloseInst.fetch_prefs_(prefs)
+
+
 
 
 class SynStatus(QtWidgets.QGroupBox):
@@ -350,6 +419,7 @@ class SynPanel(QtWidgets.QGroupBox):
         self.statusBulb = ui_shared.CommStatusBulb()
         self.btnConfig = QtWidgets.QPushButton('Configure')
         self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(['None',])
         self.comboMonitor.addItems(list(f'Monitor {i+1}' for i in range(NUM_MONITORS)))
         btnLayout = QtWidgets.QHBoxLayout()
         btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
@@ -461,6 +531,14 @@ class SynPanel(QtWidgets.QGroupBox):
         self.lfSwitchBtn.setText('ON' if info.lf_toggle else 'OFF')
         self.lfVolFill.setText(f'{info.lf_vol:.3f}')
 
+    def load_prefs(self, prefs: Prefs):
+        self.inpHarm.setValue(prefs.syn_harm)
+        self.inpFreq.setValue(prefs.syn_freq)
+
+    def fetch_prefs_(self, prefs: Prefs):
+        prefs.syn_harm = self.inpHarm.value()
+        prefs.syn_freq = self.inpFreq.value()
+
 
 class GeneralCtrlPanel(QtWidgets.QGroupBox):
 
@@ -473,6 +551,7 @@ class GeneralCtrlPanel(QtWidgets.QGroupBox):
         self.statusBulb = ui_shared.CommStatusBulb()
         self.btnConfig = QtWidgets.QPushButton('Configure')
         self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(['None',])
         self.comboMonitor.addItems(list(f'Monitor {i + 1}' for i in range(NUM_MONITORS)))
         btnLayout = QtWidgets.QHBoxLayout()
         btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
@@ -484,6 +563,12 @@ class GeneralCtrlPanel(QtWidgets.QGroupBox):
         thisLayout = QtWidgets.QVBoxLayout()
         thisLayout.addLayout(btnLayout)
         self.setLayout(thisLayout)
+
+    def load_prefs(self, prefs: Prefs):
+        pass
+
+    def fetch_prefs_(self, prefs: Prefs):
+        pass
 
 
 class LockinPanel(QtWidgets.QGroupBox):
@@ -509,6 +594,7 @@ class LockinPanel(QtWidgets.QGroupBox):
         # -- Define buttons --
         self.btnConfig = QtWidgets.QPushButton('Configure')
         self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(['None',])
         self.comboMonitor.addItems(list(f'Monitor {i + 1}' for i in range(NUM_MONITORS)))
         btnLayout = QtWidgets.QHBoxLayout()
         btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
@@ -565,6 +651,7 @@ class OscilloPanel(QtWidgets.QGroupBox):
         # -- Define buttons --
         self.btnConfig = QtWidgets.QPushButton('Configure')
         self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(['None',])
         self.comboMonitor.addItems(list(f'Monitor {i + 1}' for i in range(NUM_MONITORS)))
         btnLayout = QtWidgets.QHBoxLayout()
         btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
@@ -607,6 +694,7 @@ class AWGPanel(QtWidgets.QGroupBox):
         # -- Define buttons --
         self.btnConfig = QtWidgets.QPushButton('Configure')
         self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(['None',])
         self.comboMonitor.addItems(list(f'Monitor {i + 1}' for i in range(NUM_MONITORS)))
         btnLayout = QtWidgets.QHBoxLayout()
         btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
@@ -635,6 +723,7 @@ class PowerSupplyPanel(QtWidgets.QGroupBox):
         # -- Define buttons --
         self.btnConfig = QtWidgets.QPushButton('Configure')
         self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(['None',])
         self.comboMonitor.addItems(list(f'Monitor {i + 1}' for i in range(NUM_MONITORS)))
         btnLayout = QtWidgets.QHBoxLayout()
         btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
@@ -663,6 +752,7 @@ class FlowCtrlPanel(QtWidgets.QGroupBox):
         # -- Define buttons --
         self.btnConfig = QtWidgets.QPushButton('Configure')
         self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(['None',])
         self.comboMonitor.addItems(list(f'Monitor {i + 1}' for i in range(NUM_MONITORS)))
         btnLayout = QtWidgets.QHBoxLayout()
         btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
@@ -691,6 +781,7 @@ class GaugePanel(QtWidgets.QGroupBox):
         # -- Define buttons --
         self.btnConfig = QtWidgets.QPushButton('Configure')
         self.comboMonitor = QtWidgets.QComboBox()
+        self.comboMonitor.addItems(['None',])
         self.comboMonitor.addItems(list(f'Monitor {i + 1}' for i in range(NUM_MONITORS)))
         btnLayout = QtWidgets.QHBoxLayout()
         btnLayout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
@@ -748,3 +839,15 @@ class Monitor(QtWidgets.QGroupBox):
 
     def update_plot(self, data):
         self.curve.setData(data)
+
+    def load_prefs(self, prefs: Prefs, i: int):
+        self.comboXRange.setCurrentIndex(prefs.monitor_xrange_idx[i])
+        self.comboYRange.setCurrentIndex(prefs.monitor_yrange_idx[i])
+        self.comboRate.setCurrentIndex(prefs.monitor_refresh_rate_idx[i])
+        self.inpXLen.setValue(prefs.monitor_x_pts[i])
+
+    def fetch_prefs_(self, prefs: Prefs, i: int):
+        prefs.monitor_xrange_idx[i] = self.comboXRange.currentIndex()
+        prefs.monitor_yrange_idx[i] = self.comboYRange.currentIndex()
+        prefs.monitor_refresh_rate_idx[i] = self.comboRate.currentIndex()
+        prefs.monitor_x_pts[i] = self.inpXLen.value()

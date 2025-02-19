@@ -79,6 +79,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Set main window widgets
         self.ui = ui_main.MainUI(self)
+        self.ui.load_prefs(self.prefs)
         self.setCentralWidget(self.ui)
 
         # controller of instruments
@@ -196,6 +197,7 @@ class MainWindow(QtWidgets.QMainWindow):
         #     self.inst_handles.close_all()
         # else:
         #     ev.ignore()
+        self.ui.fetch_prefs_(self.prefs)
         self.prefs.geometry = self.geometry().getRect()
         f = files('PyMMSp.config').joinpath('prefs.json')
         config.to_json(self.prefs, f)

@@ -3,7 +3,7 @@
 """ System configuration files """
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from PyMMSp.libs.consts import VERSION, TEMP_DIR
 
 
@@ -67,6 +67,51 @@ class Prefs:
     geometry: tuple = (100, 100, 1600, 900)
     is_test: bool = False
     tmp_dir: str = str(TEMP_DIR)
+
+    syn_harm: int = 1
+    syn_freq: float = 50000.
+
+    # monitor settings
+    syn_panel_to_monitor_idx: int = 1
+    lockin_panel_to_monitor_idx: int = 2
+    oscillo_panel_to_monitor_idx: int = 3
+    awg_panel_to_monitor_idx: int = 4
+    dc_panel_to_monitor_idx: int = 0
+    flow_panel_to_monitor_idx: int = 5
+    gauge_panel_to_monitor_idx: int = 6
+    motor_panel_to_monitor_idx: int = 0
+
+    n_monitors: int = 6
+    monitor_xrange_idx: list = field(default_factory=lambda: [0 for _ in range(6)])
+    monitor_yrange_idx: list = field(default_factory=lambda: [0 for _ in range(6)])
+    monitor_x_pts: list = field(default_factory=lambda: [100 for _ in range(6)])
+    monitor_refresh_rate_idx: list = field(default_factory=lambda: [0 for _ in range(6)])
+
+    # abs scan settings
+    abs_data_dir: str = str(TEMP_DIR)
+    abs_is_press: bool = False
+    abs_sum_mode_idx: int = 0
+    abs_is_auto_range_x: bool = True
+    abs_is_auto_range_y: bool = True
+    abs_is_link_x: bool = True
+    abs_is_link_y: bool = True
+    abs_f_start: float = 50000.
+    abs_f_stop: float = 50000.
+    abs_f_center: float = 50000.
+    abs_f_range: float = 1.
+    abs_f_step: float = 1.
+    abs_dwell_time: float = 50
+    abs_avg: int = 1
+    abs_buffer_len: int = 100
+    abs_sens_idx: int = 0
+    abs_tau_idx: int = 0
+    abs_modu_mode_idx: int = 0
+    abs_modu_freq: float = 0.
+    abs_modu_amp: float = 0.
+    abs_ac_gain: int = 0
+    abs_press: float = 1.
+    abs_press_tol: float = 1.
+
 
 
 @dataclass
