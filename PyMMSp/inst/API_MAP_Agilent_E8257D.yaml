@@ -179,17 +179,52 @@ functions:
     channel: True
     attribute: am_depth_db
     dtype: float
+  - name: get_lf_freq 
+    args: ["chan"]
+    kwargs: []
+    cmd: ""
+    channel: True
+    attribute: lf_freq
+    dtype: float
+  - name: set_lf_freq 
+    args: ["chan", "freq", "unit"]
+    kwargs: []
+    cmd: ""
+    channel: True
+    attribute: lf_freq
+    dtype: float
+    unit:
+      base: "HZ"
+      prefix:
+          K: 1e3
+          M: 1e6
+          G: 1e9
+  - name: get_lf_waveform 
+    args: ["chan"]
+    kwargs: []
+    cmd: ""
+    channel: True
+    attribute: lf_waveform
+    dtype: str
+    link_preset: waveform
+  - name: set_lf_waveform
+    args: ["chan", "waveform"]
+    kwargs: []
+    cmd: ""
+    channel: True
+    attribute: fm_waveform
+    dtype: str
+    attribute: fm_stat
+    dtype: bool
   - name: get_fm_stat
     args: ["chan"]
     kwargs: []
     cmd: ":FM{0:d}:STAT?"
     channel: True
-    attribute: fm_stat
-    dtype: bool
   - name: set_fm_stat
     args: ["chan", "stat"]
     kwargs: []
-    cmd: ":FM{0:d}:STAT {1:d}"
+    cmd: ""
     channel: True
     attribute: fm_stat
     dtype: bool

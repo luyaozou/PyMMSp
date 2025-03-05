@@ -1,0 +1,403 @@
+presets: 
+functions: 
+  - name: get_inst_name
+    args: []
+    kwargs: []
+    cmd: "NAME"
+    attribute: inst_name
+    dtype: str
+  - name: set_volt_input
+    args: ["input_conf"]
+    kwargs: []
+    cmd: "VMODE {0:s}"
+    attribute: input_conf
+    dtype: int
+    input_conf: 
+        "grouded": 0
+        "A input": 1
+        "B input": 2
+        "A-B diff mode": 3
+  - name: set_input_shield
+    args: ["connector"]
+    kwargs: []
+    cmd: "FLOAT {0:s}"
+    attribute: input_conf
+    dtype: str
+    connector: 
+        ground: 0
+        float: 1
+  - name: set_fet_input
+    args: ["input_device"]
+    kwargs: []
+    cmd: "FET {0:s}]"
+    attribute: input_conf
+    dtype: str
+    input_device: 
+        bipolar: 0
+        FET: 1
+  - name: set_coupling_control
+    args: ["coupl_mod"]
+    kwargs: []
+    cmd: "DCCOUPLE {0:s}"
+    attribute: input_conf
+    dtype: str
+    coupl_mode: 
+        AC: 0
+        DC: 1
+  - name: get_sens
+    args: []
+    kwargs: []
+    cmd: "SEN."
+    attribute: sensitivity
+    dtype: float
+  - name: set_sens
+    args: ["level"]
+    kwargs: []
+    cmd: "SEN {0:s}"
+    attribute: sensitivity
+    dtype: float
+    level: 
+        10nV: 3
+        20nV: 4
+        50nV: 5
+        100nV: 6
+        200nV: 7
+        500nV: 8
+        1µV: 9
+        2µV: 10
+        5µV: 11
+        10µV: 12
+        20µV: 13
+        50µV: 14
+        100µV: 15
+        200µV: 16
+        500µV: 17
+        1mV: 18
+        2mV: 19
+        5mV: 20
+        10mV: 21
+        20mV: 22
+        50mV: 23
+        100mV: 24
+        200mV: 25
+        500mV: 26
+        1V: 27
+  - name: set_auto_sens
+    args: []
+    kwargs: []
+    cmd: "AS"
+    attribute: sensitivity
+    dtype: str
+  - name: get_gain
+    args: []
+    kwargs: []
+    cmd: "ACGAIN"
+    attribute: gain_control
+    dtype: int
+  - name: set_gain
+    args: ["gain"]
+    kwargs: []
+    cmd: "ACGAIN {0:s}"
+    attribute: gain_control
+    dtype: int
+    gain:
+        "0 dB": 0
+        "6 dB": 1
+        "12 dB": 2
+        "18 dB": 3
+        "24 dB": 4
+        "30 dB": 5
+        "36 dB": 6
+        "42 dB": 7
+        "48 dB": 8
+        "54 dB": 9
+        "60 dB": 10
+        "66 dB": 11
+        "72 dB": 12
+        "78 dB": 13
+        "84 dB": 14
+        "90 dB": 15
+  - name: set_auto_gain
+    args: ["stat"]
+    kwargs: []
+    cmd: "AUTOMATIC {0:s}"
+    attribute: gain_control
+    dtype: str
+    stat: 
+        manual: 0
+        automatic: 1
+  - name: set_line_filter
+    args: ["select", "filter"]
+    kwargs: []
+    cmd: "LF {0:s} {1:s}"
+    attribute: line_filter
+    dtype: str
+    select:
+        "OFF": 0
+        "50 Hz or 60 Hz": 1
+        "100 Hz or 120 Hz": 2
+        "both filters": 3
+    filter: 
+        "60 Hz": 0
+        "50 Hz": 1
+  - name: set_ref_mode
+    args: ["mode"]
+    kwargs: []
+    cmd: "REFMODE {0:s}"
+    attribute: ref_config
+    dtype: str
+    mode: 
+        "single/virtual ref mode": 0
+        "dual harmonic mode": 1
+        "dual reference mode": 2
+  - name: set_source
+    args: ["source"]
+    kwargs: []
+    cmd: "IE {0:s}"
+    attribute: ref_config
+    dtype: str
+    source: 
+        "INT": 0
+        "EXTERNAL DIGITAL": 1
+        "EXTERNAL ANALOG": 2
+  - name: set_source_chan
+    args: ["chan", "source"]
+    kwargs: []
+    cmd: "IE{0:d} {0:s}"
+    channel: True
+    attribute: ref_config
+    dtype: str
+    source: 
+        "INT": 0
+        "EXTERNAL DIGITAL": 1
+        "EXTERNAL ANALOG": 2
+  - name: get_harmonics_control
+    args: []
+    kwargs: []
+    cmd: "REFN"
+    attribute: harmonics_control
+    dtype: int
+  - name: set_harmonics_control
+    args: ["harmonic"]
+    kwargs: []
+    cmd: "REFN {0:d}"
+    attribute: harmonics_control
+    dtype: int
+  - name: get_phase
+    args: []
+    kwargs: []
+    cmd: "PHA."
+    attribute: phase_control
+    dtype: float
+  - name: set_phase
+    args: ["phase"]
+    kwargs: []
+    cmd: "REFP {0:g}"
+    attribute: phase_control
+    dtype: float
+  - name: set_auto_phase
+    args: []
+    kwargs: []
+    cmd: "AQN"
+    attribute: phase_control
+    dtype: str
+  - name: get_ref_freq
+    args: []
+    kwargs: []
+    cmd: "FRQ."
+    attribute: frequency_control
+    dtype: float
+  - name: set_ref_freq_chan
+    args: ["chan"]
+    kwargs: []
+    cmd: "FRQ{0:d}."
+    channel: True
+    attribute: frequency_control
+    dtype: float
+  - name: set_noise_mode
+    args: ["mode"]
+    kwargs: []
+    cmd: "NOISEMODE {0:s}"
+    attribute: noise_control
+    dtype: str
+    mode:
+        "Noise mode off": 0
+        "Noise mode on": 1
+  - name: get_time_const
+    args: []
+    kwargs: []
+    cmd: "TC."
+    attribute: time_constant_control
+    dtype: int
+  - name: set_time_constant
+    args: ["constant"]
+    kwargs: []
+    cmd: "TC {0:s}"
+    attribute: time_constant_control
+    dtype: int
+    constant: 
+        10µs: 0
+        20µs: 1
+        50µs: 2
+        100µs: 3
+        200µs: 4
+        500µs: 5
+        1ms: 6
+        2ms: 7
+        5ms: 8
+        10ms: 9
+        20ms: 10
+        50ms: 11
+        100ms: 12
+        200ms: 13
+        500ms: 14
+        1s: 15
+        2s: 16
+        5s: 17
+        10s: 18
+        20s: 19
+        50s: 20
+  - name: set_slope
+    args: ["slope"]
+    kwargs: []
+    cmd: "SLOPE {0:s}"
+    attribute: slope_control
+    dtype: str
+    slope:
+        "6 dB/octave": 0
+        "12 dB/octave": 1
+        "18 dB/octave": 2
+        "24 dB/octave": 3
+  - name: set_fast_mode
+    args: ["mode"]
+    kwargs: []
+    cmd: "FASTMODE {0:s}"
+    attribute: output_config
+    dtype: str
+    mode:
+        "fast mode off": 0
+        "fast mode on": 1
+  - name: get_x_value
+    args: []
+    kwargs: []
+    cmd: "X."
+    attribute: output_value
+    dtype: float
+  - name: get_y_value
+    args: []
+    kwargs: []
+    cmd: "Y."
+    attribute: output_value
+    dtype: float
+  - name: get_xy_value
+    args: []
+    kwargs: []
+    cmd: "XY."
+    attribute: output_value
+    dtype: float
+  - name: get_mag_value
+    args: []
+    kwargs: []
+    cmd: "MAG."
+    attribute: output_value
+    dtype: float
+  - name: get_mag_phase_value
+    args: []
+    kwargs: []
+    cmd: "MP."
+    attribute: output_value
+    dtype: float
+  - name: get_noise_value
+    args: []
+    kwargs: []
+    cmd: "NN."
+    attribute: output_value
+    dtype: float
+  - name: set_buffer_mode
+    args: ["mode"]
+    kwargs: []
+    cmd: "CMODE {0:s}"
+    attribute: buffer_control
+    dtype: int
+    mode: 
+        standard: 0
+        fast: 1
+  - name: reset_buffer
+    args: []
+    kwargs: []
+    cmd: "NC"
+    attribute: buffer_control
+    dtype: str
+  - name: get_buffer_lenght
+    args: []
+    kwargs: []
+    cmd: "LEN"
+    attribute: buffer_lenght
+    dtype: int
+  - name: set_buffer_lenght
+    args: []
+    kwargs: []
+    cmd: "LEN {0:d}"
+    attribute: buffer_lenght
+    dtype: int
+  - name: get_buffer_type
+    args: []
+    kwargs: []
+    cmd: "CBD"
+    attribute: data_acquisition
+    dtype: int
+  - name: set_buffer_type
+    args: ["byte"]
+    kwargs: []
+    cmd: "CBD {0:s}"
+    attribute: data_acquisition
+    dtype: int
+    byte: 
+        X: 17
+        Y: 18
+        XY: 19
+        MAG: 20
+        PHASE: 24
+  - name: set_storage_interval
+    args: ["interval"]
+    kwargs: []
+    cmd: "STR {0:d}"
+    attribute: data_acquisition
+    dtype: str
+  - name: start_data_acq
+    args: []
+    kwargs: []
+    cmd: "TD"
+    attribute: data_acquisition
+    dtype: float
+  - name: stop_data_acq
+    args: []
+    kwargs: []
+    cmd: "HC"
+    attribute: data_acquisition
+    dtype: str
+  - name: get_buffer
+    args: ["mode"]
+    kwargs: []
+    cmd: "DC. {0:s}"
+    attribute: data_acquisition
+    dtype: float
+    mode:
+        X: 0
+        Y: 1
+  - name: get_acq_info
+    args: []
+    kwargs: []
+    cmd: "M"
+    attribute: acquisition_info
+    dtype: str
+  - name: get_err_msg
+    args: []
+    kwargs: []
+    cmd: "ST"
+    attribute: err_msg
+    dtype: str
+    stop_cond:
+        "On HC command": 0
+        "Ext rising edge": 1
+        "Ext falling edge": 2

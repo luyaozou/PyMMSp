@@ -1,0 +1,159 @@
+presets:   
+  data_transmission:
+    "baudrate": 38400
+    "data_bits": 8
+    "stop_bits": 1
+    "parity": None
+functions:
+  - name: get_inst_name
+    args: []
+    kwargs: []
+    cmd: "?ID"
+    attribute: inst_name
+    dtype: str
+  - name: get_stat
+    args: []
+    kwargs: []
+    cmd: "ST"
+    attribute: get_stat
+    dtype: str
+  - name: auto_zero
+    args: ["chan"]
+    kwargs: []
+    cmd: "AZ{0:d}"
+    channel: True
+    attribute: auto_zero
+    dtype: str
+  - name: reset_stat
+    args: []
+    kwargs: []
+    cmd: "RE"
+    attribute: reset_stat
+    dtype: str
+  - name: get_rem_mode
+    args: []
+    kwargs: []
+    cmd: "?RT"
+    attribute: rem_mode
+    dtype: str
+  - name: set_rem_mode
+    args: ["enable"]
+    kwargs: []
+    cmd: "RT,{0:s}"
+    attribute: rem_mode
+    dtype: str
+    enable:
+        ON: ON
+        OFF: OFF
+  - name: get_dial_disp
+    args: []
+    kwargs: []
+    cmd: "?DG"
+    attribute: displayed_dialog
+    dtype: str
+  - name: set_dial_disp
+    args: ["disp_num"]
+    kwargs: []
+    cmd: "DG,{0:d}"
+    attribute: displayed_dialog
+    dtype: str
+  - name: get_disp
+    args: ["disp_num", "disp_line"]
+    kwargs: []
+    cmd: "?DP{0:d},{1:d}"
+    attribute: disp_stat
+    dtype: str
+  - name: set_disp
+    args: ["disp_num", "disp_line", "tags", "chan"]
+    kwargs: []
+    cmd: "DP{0:d},{1:d},{2:s},{3:d}"
+    channel: True
+    attribute: disp_stat
+    dtype: str
+    tags: 
+        SP: 0
+        VA: 1
+        CH: 2
+        FL: 3
+        PR: 4
+        EX: 5
+  - name: query_p
+    args: ["chan"]
+    kwargs: []
+    cmd: "?AV{0:d}"
+    channel: True
+    attribute: pressure
+    dtype: float
+  - name: query_p_unit
+    args: ["chan"]
+    kwargs: []
+    cmd: "?RG{0:d}"
+    channel: True
+    attribute: range_unit
+    dtype: float
+  - name: set_range_unit
+    args: ["chan", "range", "unit"]
+    kwargs: []
+    cmd: "RG{0:d},{1:g},{2:s}"
+    channel: True
+    attribute: range_unit
+    dtype: str
+    unit: 
+        ubar: 0
+        mbar: 1
+        bar: 2
+        mTorr: 3
+        Torr: 4
+        KTor: 5
+        Pa: 6
+        kPa: 7
+        %: 19
+  - name: get_gain
+    args: ["chan"]
+    kwargs: []
+    cmd: "?GN{0:d}"
+    channel: True
+    attribute: gain
+    dtype: float
+  - name: set_gain
+    args: ["chan", "gain"]
+    kwargs: []
+    cmd: "GN{0:d},{1:g}"
+    channel: True
+    attribute: gain
+    dtype: str
+  - name: get_offset
+    args: ["chan"]
+    kwargs: []
+    cmd: "?OF{0:d}"
+    channel: True
+    attribute: offset
+    dtype: str
+  - name: set_offset
+    args: ["chan", "offset"]
+    kwargs: []
+    cmd: "OF{0:d},{1:g}"
+    channel: True
+    attribute: offset
+    dtype: str
+  - name: get_sig_mode
+    args: ["chan"]
+    kwargs: []
+    cmd: "?SM{0:d}"
+    channel: True
+    attribute: signal_mode
+    dtype: str
+  - name: set_sig_mode
+    args: ["chan", "smode"]
+    kwargs: []
+    cmd: "SM{0:d},{1:d}"
+    channel: True
+    attribute: signal_mode
+    dtype: str
+    smode: 
+        METER: 0
+        OFF: 1
+        INDEP: 2
+        EXTRN: 3
+        SLAVE: 4
+        RTD: 5

@@ -1,0 +1,173 @@
+presets:   
+  data_transmission:
+    "data_bits": 8
+    "stop_bits": 1
+    "parity": None
+  gauge: 
+    "1": 1
+    "2": 2
+functions:
+  - name: get_answer
+    args: []
+    kwargs: []
+    cmd: "\x05"
+    attribute: get_answer
+    dtype: str
+  - name: get_soft_vers
+    args: []
+    kwargs: []
+    cmd: "PNR"
+    attribute: soft_id
+    dtype: str
+  - name: get_gauge_id
+    args: []
+    kwargs: []
+    cmd: "TID"
+    attribute: gauge_id
+    dtype: str
+  - name: disp_test
+    args: ["mode"]
+    kwargs: []
+    cmd: "DIS,{0:s}"
+    attribute: disp_test
+    dtype: int
+    mode:
+        stop : 0
+        start : 1
+  - name: get_press
+    args: []
+    kwargs: []
+    cmd: "PR{gauge}"
+    channel: True
+    attribute: gauge_press
+    dtype: float
+  - name: get_all_press
+    args: []
+    kwargs: []
+    cmd: "PRX"
+    attribute: gauge_press
+    dtype: float
+  - name: get_press_cont
+    args: ["interval"]
+    kwargs: []
+    cmd: "COM,{0:s}"
+    attribute: gauge_press
+    dtype: float
+    interval: 
+        100 ms: 0
+        1s: 1
+        1min: 2
+  - name: set_display
+    args: []
+    kwargs: []
+    cmd: "SCT[,{gauge}]"
+    channel: True
+    attribute: set_display
+    dtype: int
+  - name: get_error
+    args: []
+    kwargs: []
+    cmd: "ERR"
+    attribute: get_error
+    dtype: str
+  - name: set_reset
+    args: []
+    kwargs: []
+    cmd: "RES[,1]"
+    attribute: set_reset
+    dtype: str
+  - name: set_filter
+    args: ["spd1", "spd2"]
+    kwargs: []
+    cmd: "FIL[,{0:s},{1:s}]"
+    channel: False
+    attribute: set_filter
+    dtype: int
+    spd1:
+        fast: 0
+        normal: 1
+        slow: 2
+    spd2:
+        fast: 0
+        normal: 1
+        slow: 2
+  - name: set_limit
+    args: ["limit1", "limit2"]
+    kwargs: []
+    cmd: "FSR[,{0:s},{1:s}]"
+    attribute: set_limit
+    channel: False
+    dtype: int
+    limit1:
+        0.01 mbar : 0
+        0.1 mbar : 1
+        1 mbar : 2
+        10 mbar : 3
+        100 mbar : 4
+        1000 mbar : 5
+        2 bar : 6
+        5 bar : 7
+        10 bar : 8
+        50 bar : 9
+    limit2:
+        0.01 mbar : 0
+        0.1 mbar : 1
+        1 mbar : 2
+        10 mbar : 3
+        100 mbar : 4
+        1000 mbar : 5
+        2 bar : 6
+        5 bar : 7
+        10 bar : 8
+        50 bar : 9
+  - name: set_offset
+    args: ["offset1", "offset2"]
+    kwargs: []
+    cmd: OFD[,{0:.2f},{1:.2f}]
+    channel: False
+    attribute: set_offset
+    dtype: float
+  - name: set_offset_corr
+    args: ["mode1", "mode2"]
+    kwargs: []
+    cmd: "OFC[,{0:s},{1:s}]"
+    channel: False
+    attribute: set_offset_corr
+    dtype: int
+    mode1: 
+        off : 0
+        on : 1
+        auto : 2
+    mode2: 
+        off : 0
+        on : 1
+        auto : 2
+  - name: set_unit
+    args: ["unit"]
+    kwargs: []
+    cmd: "UNI,{0:s}"
+    attribute: set_unit
+    dtype: int
+    unit: 
+        mbar : 0
+        Torr : 1
+        Pascal : 2
+  - name: set_baud
+    args: ["baud"]
+    kwargs: []
+    cmd: "BAU,{0:s}"
+    attribute: set_baud
+    dtype: int
+    baud:
+        9600 : 0
+        19200 : 1
+        38400 : 2
+  - name: set_res
+    args: ["resolution"]
+    kwargs: []
+    cmd: "DCD,{0:s}"
+    attribute: set_res
+    dtype: int
+    resolution:
+        2 decimals: 2
+        3 decimals: 3

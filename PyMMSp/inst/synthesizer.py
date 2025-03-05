@@ -198,6 +198,18 @@ class SynAPI(ABC):
 
     def set_am_depth_db(self, handle, chan: int, depth: float):
         pass
+        
+    def get_lf_freq(self, handle, chan: int) -> float : 
+        pass
+        
+    def set_lf_freq(self, handle, chan: int) -> float :
+        pass
+        
+    def get_lf_waveform(self, handle, chan: int) -> str :
+        pass
+        
+    def get_lf_waveform(self, handle, chan: int) -> str : 
+        pass
 
     def get_fm_stat(self, handle, chan: int) -> bool:
         pass

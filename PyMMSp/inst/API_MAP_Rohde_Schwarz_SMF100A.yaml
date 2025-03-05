@@ -1,0 +1,432 @@
+presets:
+  waveform:
+    "SIN": 0
+    "SQU": 1
+    "TRI": 2
+    "TRAP": 3
+  source:
+    "INT": 0
+    "EXT": 1
+    "EXT1": 2
+    "EXT2": 3
+    "LF1": 4
+    "LF2": 5
+    "NOIS": 6
+functions:
+  - name: get_inst_name 
+    args: []
+    kwargs: []
+    cmd: IDN?
+    channel: False
+    attribute: inst_name
+    dtype: str
+  - name: init_syn 
+    args: ["chan"]
+    kwargs: []
+    cmd: ":AM{0:d}:SOUR INT; :AM{0:d}:STAT OFF; :FM{0:d}:SOUR INT; :FM{0:d}:STAT OFF; :OUTP:MOD 0; :LFO{0:d}:SOUR LF1; :LFO{0:d}:VOLT 0VP; :POW:MODE FIX; :FREQ:MODE CW; :DISP:DIAL:CLOS:ALL" 
+    attribute: inst_stat
+    dtype: bool
+  - name: get_power_stat 
+    args: []
+    kwargs: []
+    cmd: ":OUTP?"
+    channel: False
+    attribute: pow_stat
+    dtype: bool
+  - name: set_power_stat 
+    args: ["stat"]
+    kwargs: []
+    cmd: ":OUTP {0:d}"
+    channel: False
+    attribute: pow_stat
+    dtype: bool
+  - name: get_power_level 
+    args: []
+    kwargs: []
+    cmd: ":POW:POW?"
+    channel: False
+    attribute: pow
+    dtype: float
+  - name: set_power_level 
+    args: ["level"]
+    kwargs: []
+    cmd: ":POW:POW {0:g}dBm"
+    channel: False
+    attribute: pow
+    dtype: float
+    unit:
+      base: "DBM"
+  - name: get_cw_freq 
+    args: []
+    kwargs: []
+    cmd: ":FREQ:CW?"
+    channel: False
+    attribute: freq_cw
+    dtype: float
+  - name: set_cw_freq 
+    args: ["freq", "unit"]
+    kwargs: []
+    cmd: ":FREQ:CW {0:.3f}{1:s}"
+    channel: False
+    attribute: freq_cw
+    dtype: float
+    unit:
+      base: "HZ"
+      prefix:
+          K: 1e3
+          M: 1e6
+          G: 1e9
+  - name: get_modu_stat 
+    args: []
+    kwargs: []
+    cmd: ":MOD:STAT?"
+    channel: False
+    attribute: modu_stat
+    dtype: bool
+  - name: set_modu_stat 
+    args: ["stat"]
+    kwargs: []
+    cmd: ":MOD:STAT {0:d}"
+    channel: False
+    attribute: modu_stat
+    dtype: bool
+  - name: get_am_stat 
+    args: ["chan"]
+    kwargs: []
+    cmd: ":AM{0:d}:STAT?"
+    channel: True
+    attribute: am_stat
+    dtype: bool
+  - name: set_am_stat 
+    args: ["chan", "stat"]
+    kwargs: []
+    cmd: ":AM{0:d}:STAT {1:d}"
+    channel: True
+    attribute: am_stat
+    dtype: bool
+  - name: get_am_source 
+    args: ["chan"]
+    kwargs: []
+    cmd: ":AM{0:d}:SOUR?"
+    channel: True
+    attribute: am_src
+    dtype: str
+    link_preset: source
+  - name: set_am_source 
+    args: ["chan", "source"]
+    kwargs: []
+    cmd: ":AM{0:d}:SOUR {1:d}"
+    channel: True
+    attribute: am_src
+    dtype: str
+    link_preset: source
+  - name: get_am_waveform
+    args: ["chan"]
+    kwargs: []
+    cmd: ""
+    channel: True
+    attribute: am_waveform
+    dtype: str
+    link_preset: waveform
+  - name: set_am_waveform
+    args: ["chan", "waveform"]
+    kwargs: []
+    cmd: ""
+    channel: True
+    attribute: am_waveform
+    dtype: str
+    link_preset: waveform
+  - name: get_am_freq
+    args: ["chan"]
+    kwargs: []
+    cmd: ""
+    channel: True
+    attribute: am_freq
+    dtype: float
+  - name: set_am_freq
+    args: ["chan", "freq", "unit"]
+    kwargs: []
+    cmd: ""
+    channel: True
+    attribute: am_freq
+    dtype: float
+    unit:
+      base: "HZ"
+      prefix:
+          K: 1e3
+          M: 1e6
+          G: 1e9
+  - name: get_am_depth_pct 
+    args: ["chan"]
+    kwargs: []
+    cmd: "AM{0:d}:DEPT?"
+    channel: True
+    attribute: am_depth_pct
+    dtype: float
+  - name: get_am_depth_db
+    args: ["chan"]
+    kwargs: []
+    cmd: ""
+    channel: True
+    attribute: am_depth_db
+    dtype: float
+  - name: set_am_depth_pct 
+    args: ["chan", "depth"]
+    kwargs: []
+    cmd: "AM{0:d}:DEPT {1:.2f}PCT"
+    channel: True
+    attribute: am_depth_pct
+    dtype: float
+  - name: set_am_depth_db
+    args: ["chan", "depth"]
+    kwargs: []
+    cmd: ""
+    channel: True
+    attribute: am_depth_db
+    dtype: float
+  - name: get_lf_freq 
+    args: ["chan"]
+    kwargs: []
+    cmd: "LFO{0:d}:FREQ?"
+    channel: True
+    attribute: am_freq
+    dtype: float
+  - name: set_lf_freq
+    args: ["chan", "freq", "unit"]
+    kwargs: []
+    cmd: "LFO{0:d}:FREQ {1:.3f}{2:s}"
+    channel: True
+    attribute: lf_freq
+    dtype: float
+    unit:
+      base: "HZ"
+      prefix:
+          K: 1e3
+          M: 1e6
+          G: 1e9
+  - name: get_lf_waveform 
+    args: ["chan"]
+    kwargs: []
+    cmd: "LFO{0:d}:SHAP?"
+    channel: True
+    attribute: lf_waveform
+    dtype: str
+    link_preset: waveform
+  - name: set_lf_waveform 
+    args: ["chan", "waveform"]
+    kwargs: []
+    cmd: "LFO{0:d}:SHAP {1:d}"
+    channel: True
+    attribute: fm_waveform
+    dtype: str
+  - name: get_fm_stat
+    link_preset: waveform
+    kwargs: []
+    cmd: ":FM{0:d}:STAT?"
+    channel: True
+    attribute: fm_stat
+    dtype: bool
+  - name: set_fm_stat
+    args: ["chan", "stat"]
+    kwargs: []
+    cmd: ":FM{0:d}:STAT {1:d}"
+    channel: True
+    attribute: fm_stat
+    dtype: bool
+  - name: get_fm_freq
+    args: ["chan"]
+    kwargs: []
+    cmd: ""
+    channel: True
+    attribute: fm_freq
+    dtype: float
+  - name: set_fm_freq
+    args: ["chan", "freq", "unit"]
+    kwargs: []
+    cmd: ""
+    channel: True
+    attribute: fm_freq
+    dtype: float
+    unit:
+        base: "HZ"
+        prefix:
+            K: 1e3
+            M: 1e6
+            G: 1e9
+  - name: get_fm_dev 
+    args: ["chan"]
+    kwargs: []
+    cmd: "FM{0:d}:DEV?"
+    channel: True
+    attribute: fm_dev
+    dtype: float
+  - name: set_fm_dev 
+    args: ["chan", "freq", "unit"]
+    kwargs: []
+    cmd: "FM{0:d}:DEV {1:.3f}{2:s}"
+    channel: True
+    attribute: fm_dev
+    dtype: float
+    unit:
+        base: "HZ"
+        prefix:
+            K: 1e3
+            M: 1e6
+            G: 1e9
+  - name: get_fm_waveform
+    args: ["chan"]
+    kwargs: []
+    cmd: ""
+    channel: True
+    attribute: fm_waveform
+    dtype: str
+    link_preset: waveform
+  - name: set_fm_waveform
+    args: ["chan", "waveform"]
+    kwargs: []
+    cmd: ""
+    channel: True
+    attribute: fm_waveform
+    dtype: str
+    link_preset: waveform
+  - name: get_pm_stat 
+    args: ["chan"]
+    kwargs: []
+    cmd: ":PM{0:d}:STAT?"
+    channel: True
+    attribute: pm_stat
+    dtype: bool
+  - name: set_pm_stat 
+    args: ["chan", "stat"]
+    kwargs: []
+    cmd: ":PM{0:d}:STAT {1:d}"
+    channel: True
+    attribute: pm_stat
+    dtype: bool
+  - name: get_pm_freq
+    args: ["chan"]
+    kwargs: []
+    cmd: "PM{0:d}:INT{0:d}:FREQ?"
+    channel: True
+    attribute: pm_freq
+    dtype: float
+  - name: set_pm_freq
+    args: ["chan", "freq", "unit"]
+    kwargs: []
+    cmd: "PM{0:d}:INT{0:d}:FREQ {1:.3f}{2:s}"
+    channel: True
+    attribute: pm_freq
+    dtype: float
+    unit:
+        base: "HZ"
+        prefix:
+            K: 1e3
+            M: 1e6
+            G: 1e9
+  - name: get_pm_dev 
+    args: ["chan"]
+    kwargs: []
+    cmd: "PM{0:d}:DEV?" 
+    channel: True
+    attribute: pm_dev
+    dtype: float
+  - name: set_pm_dev 
+    args: ["chan", "freq", "unit"]
+    kwargs: []
+    cmd: "PM{0:d}:DEV {1:.3f}{2:s}"
+    channel: True
+    attribute: pm_dev
+    dtype: float
+    unit:
+        base: "HZ"
+        prefix:
+            K: 1e3
+            M: 1e6
+            G: 1e9
+  - name: get_pm_waveform
+    args: ["chan"]
+    kwargs: []
+    cmd: "PM{0:d}:INT{0:d}:FUNC:SHAP?"
+    channel: True
+    attribute: pm_waveform
+    dtype: str
+    link_preset: waveform
+  - name: set_pm_waveform
+    args: ["chan", "waveform"]
+    kwargs: []
+    cmd: "PM{0:d}:INT{0:d}:FUNC:SHAP {1:d}"
+    channel: True
+    attribute: pm_waveform
+    dtype: str
+    link_preset: waveform
+  - name: get_lfo_stat 
+    args: ["chan"]
+    kwargs: []
+    cmd: ":LFO{0:d}:STAT?"
+    channel: True
+    attribute: lfo_stat
+    dtype: bool
+  - name: set_lfo_stat 
+    args: ["chan", "stat"]
+    kwargs: []
+    cmd: ":LFO{0:d}:STAT {1:d}"
+    channel: True
+    attribute: lfo_stat
+    dtype: bool
+  - name: get_lfo_source 
+    args: ["chan"]
+    kwargs: []
+    cmd: ":LFO{0:d}:SOUR?"
+    channel: True
+    attribute: lfo_src
+    dtype: str
+    link_preset: source
+  - name: set_lfo_source 
+    args: ["chan", "source"]
+    kwargs: []
+    cmd: ":LFO{0:d}:SOUR {1:d}" 
+    channel: True
+    attribute: lfo_src
+    dtype: str
+    link_preset: source
+  - name: get_lfo_ampl 
+    args: ["chan"]
+    kwargs: []
+    cmd: ":LFO{0:d}:VOLT?"
+    channel: True
+    attribute: lfo_volt
+    dtype: float
+  - name: set_lfo_ampl 
+    args: ["chan", "ampl", "unit"]
+    kwargs: []
+    cmd: ":LFO{0:d}:VOLT {1:.3f}{2:s}"
+    channel: True
+    attribute: lfo_volt
+    dtype: float
+    unit:
+        base: "VP"
+        prefix:
+            M: 1e-3
+  - name: get_err 
+    args: []
+    kwargs: []
+    cmd: "SYST:ERR:ALL?"
+    channel: False
+    attribute: err_msg
+    dtype: str
+  - name: get_remote_disp_stat
+    args: []
+    kwargs: []
+    cmd: "DISP:DIAL:ID?"
+    channel: False
+    attribute: remote_disp_stat
+    dtype: bool
+  - name: set_remote_disp_stat
+    args: ["chan"]
+    kwargs: []
+    cmd: "DISP:DIAL:OPEN {0:d}" 
+    channel: True
+    attribute: remote_disp_stat
+    dtype: bool
+
+trouver les commandes équivalentes pour set/get_remote_disp_stat (pas trouvé)
