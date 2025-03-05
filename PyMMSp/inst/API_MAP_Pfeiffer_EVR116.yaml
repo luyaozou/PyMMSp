@@ -10,7 +10,7 @@ presets:
     "data_bits": 7
     "stop_bits": 2
 functions:
-  - name: get_vers
+  - name: get_inst_name
     args: []
     kwargs: []
     cmd: "v?"

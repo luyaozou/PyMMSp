@@ -5,11 +5,11 @@ presets:
     "stop_bits": 1
     "parity": None
 functions:
-  - name: get_id
+  - name: get_inst_name
     args: []
     kwargs: []
     cmd: "?ID"
-    attribute: get_id
+    attribute: inst_name
     dtype: str
   - name: get_stat
     args: []
@@ -77,14 +77,14 @@ functions:
         FL: 3
         PR: 4
         EX: 5
-  - name: get_press
+  - name: query_p
     args: ["chan"]
     kwargs: []
     cmd: "?AV{0:d}"
     channel: True
-    attribute: get_press
+    attribute: pressure
     dtype: float
-  - name: get_range_unit
+  - name: query_p_unit
     args: ["chan"]
     kwargs: []
     cmd: "?RG{0:d}"

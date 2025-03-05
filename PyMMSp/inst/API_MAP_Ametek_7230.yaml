@@ -1,38 +1,11 @@
 presets: 
-  data_transmission:
-    "baudrate": 19200
-    "data_bits": 8
-    "stop_bits": 1
-    "parity": Even
 functions: 
-  - name: get_inst_id
-    args: []
-    kwargs: []
-    cmd: "ID"
-    attribute: inst_id
-    dtype: str
   - name: get_inst_name
     args: []
     kwargs: []
     cmd: "NAME"
     attribute: inst_name
     dtype: str
-  - name: get_stat
-    args: []
-    kwargs: []
-    cmd: "ST"
-    attribute: inst_stat
-    dtype: int
-  - name: set_input_mode
-    args: ["input_mode"]
-    kwargs: []
-    cmd: "IMODE {0:s}"
-    attribute: input_config
-    dtype: str
-    input_mode:
-        "current mode off - volt mode enabled": 0
-        "high bandwidht current mode" : 1
-        "low noise current mode": 2
   - name: set_volt_input
     args: ["input_conf"]
     kwargs: []
@@ -44,16 +17,6 @@ functions:
         "A input": 1
         "B input": 2
         "A-B diff mode": 3
-  - name: set_demod_signal_source
-    args: ["sig_source"]
-    kwargs: []
-    cmd: "DEMOD2SRC {0:s}
-    attribute: input_conf
-    dtype: str
-    sig_source: 
-        "main signal channel ADC": 0
-        "ADC1": 1
-        "Demodulator 1 X channel output": 2
   - name: set_input_shield
     args: ["connector"]
     kwargs: []
@@ -125,12 +88,18 @@ functions:
     cmd: "AS"
     attribute: sensitivity
     dtype: str
+  - name: get_gain
+    args: []
+    kwargs: []
+    cmd: "ACGAIN"
+    attribute: gain_control
+    dtype: int
   - name: set_gain
     args: ["gain"]
     kwargs: []
     cmd: "ACGAIN {0:s}"
     attribute: gain_control
-    dtype: str
+    dtype: int
     gain:
         "0 dB": 0
         "6 dB": 1
@@ -202,6 +171,12 @@ functions:
         "INT": 0
         "EXTERNAL DIGITAL": 1
         "EXTERNAL ANALOG": 2
+  - name: get_harmonics_control
+    args: []
+    kwargs: []
+    cmd: "REFN"
+    attribute: harmonics_control
+    dtype: int
   - name: set_harmonics_control
     args: ["harmonic"]
     kwargs: []
@@ -248,18 +223,6 @@ functions:
     mode:
         "Noise mode off": 0
         "Noise mode on": 1
-  - name: set_noise_bufflen
-    args: ["function"]
-    kwargs: []
-    cmd: "NNBUF {0:s}"
-    attribute: noise_control
-    dtype: str
-    function:
-        "Noise buffer off": 0
-        "1s Noise buffer": 1
-        "2s Noise buffer": 2
-        "3s Noise buffer": 3
-        "4s Noise buffer": 4
   - name: get_time_const
     args: []
     kwargs: []
@@ -294,15 +257,6 @@ functions:
         10s: 18
         20s: 19
         50s: 20
-  - name: set_sync_time_const
-    args: ["effect"]
-    kwargs: []
-    cmd: "SYNC {0:s}"
-    attribute: time_constant_control
-    dtype: str
-    effect: 
-        "synchronous time constant disabled": 0
-        "synchronous time constant enabled": 1
   - name: set_slope
     args: ["slope"]
     kwargs: []
@@ -314,30 +268,6 @@ functions:
         "12 dB/octave": 1
         "18 dB/octave": 2
         "24 dB/octave": 3
-  - name: set_x_offset
-    args: ["stat"]
-    kwargs: ["offset"]
-    cmd: "XOF {0:s} {1}"
-    attribute: offset_control
-    dtype: str
-    stat: 
-        off: 0
-        on: 1
-  - name: set_y_offset
-    args: ["stat"]
-    kwargs: ["offset"]
-    cmd: "YOF {0:s} {1}"
-    attribute: offset_control
-    dtype: str
-    stat: 
-        off: 0
-        on: 1
-  - name: set_auto_offset
-    args: []
-    kwargs: []
-    cmd: "AXO"
-    attribute: offset_control
-    dtype: str
   - name: set_fast_mode
     args: ["mode"]
     kwargs: []
@@ -383,23 +313,7 @@ functions:
     cmd: "NN."
     attribute: output_value
     dtype: float
-  - name: set_oscill_ampl
-    args: ["ampl"]
-    kwargs: []
-    cmd: "OA. {0:g}"
-    attribute: oscillator_control
-    dtype: float
-  - name: set_oscill_freq
-    args: ["freq", "unit"]
-    kwargs: []
-    cmd: "OF. {0:.3f}{1:s}"
-    attribute: oscillator_control
-    dtype: float
-    unit:
-      base: "HZ"
-      prefix:
-          K: 1e3
-  - name: set_buffer_curve_mode
+  - name: set_buffer_mode
     args: ["mode"]
     kwargs: []
     cmd: "CMODE {0:s}"
@@ -408,18 +322,81 @@ functions:
     mode: 
         standard: 0
         fast: 1
-  - name: set_data_acq
+  - name: reset_buffer
+    args: []
+    kwargs: []
+    cmd: "NC"
+    attribute: buffer_control
+    dtype: str
+  - name: get_buffer_lenght
+    args: []
+    kwargs: []
+    cmd: "LEN"
+    attribute: buffer_lenght
+    dtype: int
+  - name: set_buffer_lenght
+    args: []
+    kwargs: []
+    cmd: "LEN {0:d}"
+    attribute: buffer_lenght
+    dtype: int
+  - name: get_buffer_type
+    args: []
+    kwargs: []
+    cmd: "CBD"
+    attribute: data_acquisition
+    dtype: int
+  - name: set_buffer_type
+    args: ["byte"]
+    kwargs: []
+    cmd: "CBD {0:s}"
+    attribute: data_acquisition
+    dtype: int
+    byte: 
+        X: 17
+        Y: 18
+        XY: 19
+        MAG: 20
+        PHASE: 24
+  - name: set_storage_interval
+    args: ["interval"]
+    kwargs: []
+    cmd: "STR {0:d}"
+    attribute: data_acquisition
+    dtype: str
+  - name: start_data_acq
     args: []
     kwargs: []
     cmd: "TD"
     attribute: data_acquisition
     dtype: float
-  - name: set_cont_data_acq
-    args: ["stop_cond"]
+  - name: stop_data_acq
+    args: []
     kwargs: []
-    cmd: "TDC {0:s}"
+    cmd: "HC"
+    attribute: data_acquisition
+    dtype: str
+  - name: get_buffer
+    args: ["mode"]
+    kwargs: []
+    cmd: "DC. {0:s}"
     attribute: data_acquisition
     dtype: float
+    mode:
+        X: 0
+        Y: 1
+  - name: get_acq_info
+    args: []
+    kwargs: []
+    cmd: "M"
+    attribute: acquisition_info
+    dtype: str
+  - name: get_err_msg
+    args: []
+    kwargs: []
+    cmd: "ST"
+    attribute: err_msg
+    dtype: str
     stop_cond:
         "On HC command": 0
         "Ext rising edge": 1
